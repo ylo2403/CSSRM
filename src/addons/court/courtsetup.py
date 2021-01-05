@@ -72,7 +72,7 @@ class CourtSetupCommand(Bloxlink.Module):
         groups          = setup_args["groups"]
         archive_category = setup_args["archive_category"]
 
-        addon_data = await self.r.db("bloxlink").table("addonData").get(str(guild.id)).run() or {}
+        addon_data = await self.r.table("addonData").get(str(guild.id)).run() or {}
         court_data = addon_data.get("court") or {}
 
         category = None
