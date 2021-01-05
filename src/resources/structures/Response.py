@@ -223,7 +223,7 @@ class Response(Bloxlink.Module):
                             return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
                     else:
                         try:
-                            await channel.send(self.author.mention + ", **check your DMs!**", allowed_mentions=allowed_mentions)
+                            await self.channel.send(self.author.mention + ", **check your DMs!**", allowed_mentions=allowed_mentions)
                         except asyncio.TimeoutError:
                             return None
 
