@@ -186,7 +186,7 @@ class SettingsCommand(Bloxlink.Module):
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False,
                     "choices": ("enable", "disable", "clear")
-                }])
+                }], last=True)
 
                 parsed_bool_choice = parsed_value["choice"]
 
@@ -211,7 +211,7 @@ class SettingsCommand(Bloxlink.Module):
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False,
                     "max": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
                     parsed_value = DEFAULTS.get(choice)
@@ -232,7 +232,7 @@ class SettingsCommand(Bloxlink.Module):
                     "exceptions": ("clear",),
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False
-                }]))["role"]
+                }], last=True))["role"]
 
                 if parsed_value == "clear":
                     parsed_value = DEFAULTS.get(choice)
@@ -256,7 +256,7 @@ class SettingsCommand(Bloxlink.Module):
                     "formatting": False,
                     "exceptions": ("clear",),
                     "max": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
                     parsed_value = DEFAULTS.get(choice)
@@ -279,7 +279,7 @@ class SettingsCommand(Bloxlink.Module):
                     "formatting": False,
                     "exceptions": ["clear"],
                     "choices": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
                     parsed_value = DEFAULTS.get(choice)
@@ -361,7 +361,7 @@ class SettingsCommand(Bloxlink.Module):
                 "embed_color": ORANGE_COLOR,
                 "type": "choice",
                 "footer": "Say **yes** to clear all of your settings, or **no** to cancel."
-            }]))["continue"]
+            }], last=True))["continue"]
 
             if cont == "no":
                 raise CancelledPrompt
@@ -447,7 +447,7 @@ class SettingsCommand(Bloxlink.Module):
                         "embed_color": ORANGE_COLOR,
                         "formatting": False,
                         "footer": "Say **yes** to delete these roles, or **no** to cancel."
-                    }]))["delete_roles"]
+                    }], last=True))["delete_roles"]
 
                     if delete_roles == "yes":
                         for role_id in role_ids:

@@ -85,7 +85,7 @@ class Arguments:
 	def in_prompt(author):
 		return prompts.get(author.id)
 
-	async def prompt(self, arguments, error=False, embed=True, dm=False, no_dm_post=False):
+	async def prompt(self, arguments, error=False, embed=True, dm=False, no_dm_post=False, last=False):
 		prompts[self.author.id] = True
 
 		checked_args = 0
@@ -114,6 +114,9 @@ class Arguments:
 			while checked_args != len(arguments):
 				if err_count == PROMPT["PROMPT_ERROR_COUNT"]:
 					raise CancelledPrompt("Too many failed attempts.", type="delete")
+
+				if last and checked_args +1 == len(arguments):
+					self.skipped_args = [" ".join(self.skipped_args)]
 
 				prompt = arguments[checked_args]
 				skipped_arg = self.skipped_args and self.skipped_args[0]

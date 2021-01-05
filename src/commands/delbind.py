@@ -320,7 +320,7 @@ class UnBindCommand(Bloxlink.Module):
                         "type": "number",
                         "formatting": False
                     },
-                ]))["bind_id"])
+                ], last=True))["bind_id"])
 
                 all_binds = role_binds_trello.get(bind_category_plural, {})
                 saving_binds = role_binds.get(bind_category_plural)

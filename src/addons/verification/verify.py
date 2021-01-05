@@ -165,7 +165,7 @@ class VerifyCommand(Bloxlink.Module):
                 "name": "welcome_message",
                 "formatting": False,
                 "max": 1500
-            }]))["welcome_message"]
+            }], last=True))["welcome_message"]
 
             if trello_board and trello_binds_list:
                 try:

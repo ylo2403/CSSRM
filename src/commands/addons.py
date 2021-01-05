@@ -92,7 +92,7 @@ class AddonsCommand(Bloxlink.Module):
                 "type": "choice",
                 "choices": ["enable", "disable"]
             },
-        ])
+        ], last=True)
 
         addon_choice = parsed_args["addon_choice"]
         enable = parsed_args["enable"] == "enable"

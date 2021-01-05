@@ -77,7 +77,7 @@ class CaseCommand(Bloxlink.Module):
                 "footer": "Say **skip** to skip this step.",
                 "embed_title": "New Case"
             }
-        ])
+        ], last=True)
 
         case_id   = case_args["case_id"] if case_args["case_id"].lower() != "skip" else None
         case_name = case_args["case_title"]
@@ -180,7 +180,7 @@ class CaseCommand(Bloxlink.Module):
                 "choices": groups,
                 "formatting": False
             }
-        ])
+        ], last=True)
 
         group_members     = parsed_args["users"]
         group_members_ids = [str(m.id) for m in parsed_args["users"]]
@@ -246,7 +246,7 @@ class CaseCommand(Bloxlink.Module):
                 "choices": groups,
                 "formatting": False
             }
-        ])
+        ], last=True)
 
         group_members     = parsed_args["users"]
         group_members_ids = [str(m.id) for m in parsed_args["users"]]
@@ -347,7 +347,7 @@ class CaseCommand(Bloxlink.Module):
                 "prompt": "Please provide a Case ID.",
                 "name": "case_id"
             }
-        ]))["case_id"]
+        ], last=True))["case_id"]
 
         response = CommandArgs.response
         prefix   = CommandArgs.prefix
@@ -481,7 +481,7 @@ class CaseCommand(Bloxlink.Module):
                 "choices": groups,
                 "formatting": False
             }
-        ])
+        ], last=True)
 
         group = parsed_args["group"]
         group_members = current_case["groupMembers"].get(group) or []
@@ -536,7 +536,7 @@ class CaseCommand(Bloxlink.Module):
                 "choices": groups,
                 "formatting": False
             }
-        ])
+        ], last=True)
 
         group = parsed_args["group"]
         group_members = current_case["groupMembers"].get(group) or []

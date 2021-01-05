@@ -93,7 +93,7 @@ class GroupLockCommand(Bloxlink.Module):
                               "is to provide your Group Link and any other instructions for them.",
                     "name": "dm_message",
                     "max": 1500
-                }]))["dm_message"]
+                }], last=True))["dm_message"]
             else:
                 dm_message = None
 
@@ -116,7 +116,7 @@ class GroupLockCommand(Bloxlink.Module):
                     "name": "group",
                     "validation": self.validate_group
                 }
-            ]))["group"]
+            ], last=True))["group"]
 
             if not groups.get(group.group_id):
                 raise Message("This group isn't in your server-lock!")

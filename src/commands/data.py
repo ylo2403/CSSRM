@@ -98,7 +98,7 @@ class DataCommand(Bloxlink.Module):
                 "name": "backup_name",
                 "max": 30
             }
-        ])
+        ], last=True)
 
         backup_name = parsed_args["backup_name"]
 
@@ -237,7 +237,7 @@ class DataCommand(Bloxlink.Module):
                             "embed_color": ORANGE_COLOR,
                             "footer": "Say **yes** to continue, or **no** to cancel."
                         }
-                    ])
+                    ], last=True)
 
                     if parsed_args["confirm"] == "yes":
                         await self._restore(guild, chosen_backup)

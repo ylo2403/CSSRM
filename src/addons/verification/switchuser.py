@@ -84,7 +84,7 @@ class SwitchUserCommand(Bloxlink.Module):
                             "type": "choice",
                             "choices": ("yes", "no")
                         }
-                    ])
+                    ], last=True)
 
                     guild = parsed_args["guild"]
                     username = parsed_args["account"]

@@ -295,7 +295,7 @@ class BindCommand(Bloxlink.Module):
                             "formatting": False
 
                         }
-                    ])
+                    ], last=True)
 
                     pending_roleset_names = []
 
@@ -572,7 +572,7 @@ class BindCommand(Bloxlink.Module):
                    "name": "role",
                    "type": "role"
                 },
-            ])
+            ], last=True)
 
             discord_role = vg_parsed_args["role"]
 

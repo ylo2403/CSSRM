@@ -80,7 +80,7 @@ class LogChannelCommand(Bloxlink.Module):
                 "type": "channel",
                 "exceptions": ["clear", "delete"]
             }
-        ])
+        ], last=True)
 
         log_type = parsed_args["log_type"]
 

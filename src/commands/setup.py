@@ -242,7 +242,7 @@ class SetupCommand(Bloxlink.Module):
                 "embed_color": BROWN_COLOR,
                 "formatting": False
             }
-        ], dm=True, no_dm_post=True)
+        ], dm=True, no_dm_post=True, last=True)
 
         if group and group != "skip":
             merge_replace = parsed_args_2.get("merge_replace")

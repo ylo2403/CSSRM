@@ -210,7 +210,7 @@ class ProfileCommand(Bloxlink.Module):
                         "name": "reason",
                         "footer": "Say **skip** to skip this option.",
                     }
-                ]))["reason"]
+                ], last=True))["reason"]
 
                 profile_data["activityNotice"] = {
                     "returnTimestamp": date_of_return.timestamp(),
@@ -237,7 +237,7 @@ class ProfileCommand(Bloxlink.Module):
                     "exceptions": ("clear",),
                     "footer": "Say **clear** to reset all of your favorite games.",
                 }
-            ]))["favorite_games"]
+            ], last=True))["favorite_games"]
 
             if isinstance(favorite_games, str) and favorite_games.lower() == "clear":
                 profile_data.pop("favoriteGames", None)
@@ -265,7 +265,7 @@ class ProfileCommand(Bloxlink.Module):
                     "exceptions": ("clear",),
                     "footer": "Say **clear** to reset all of your favorite items.",
                 }
-            ]))["favorite_items"]
+            ], last=True))["favorite_items"]
 
             if isinstance(favorite_items, str) and favorite_items.lower() == "clear":
                 profile_data.pop("favoriteCatalogItems", None)
@@ -293,7 +293,7 @@ class ProfileCommand(Bloxlink.Module):
                     "exceptions": ("clear",),
                     "footer": "Say **clear** to clear/disable this field.",
                 }
-            ]))["accepting_trades"]
+            ], last=True))["accepting_trades"]
 
             if isinstance(accepting_trades, str) and accepting_trades.lower() == "clear":
                 profile_data.pop("acceptingTrades", None)

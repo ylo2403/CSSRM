@@ -65,7 +65,7 @@ class CourtSetupCommand(Bloxlink.Module):
                 "name": "groups",
                 "type": "list",
             }
-        ]) # TODO: ask for Trello information
+        ], last=True)
 
         judge_roles     = setup_args["judge_roles"]
         log_channel     = setup_args["log_channel"]

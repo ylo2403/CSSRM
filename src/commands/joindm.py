@@ -61,7 +61,7 @@ class JoinDMCommand(Bloxlink.Module):
                             f"these templates: ```{NICKNAME_TEMPLATES}```",
                 "name": "text",
                 "formatting": False
-            }]))["text"]
+            }], last=True))["text"]
 
             guild_data["verifiedDM"] = parsed_args_2
             await set_guild_value(guild, "verifiedDM", parsed_args_2)
@@ -108,7 +108,7 @@ class JoinDMCommand(Bloxlink.Module):
                             f"these templates: ```{UNVERIFIED_TEMPLATES}```",
                 "name": "text",
                 "formatting": False
-            }]))["text"]
+            }], last=True))["text"]
 
             guild_data["unverifiedDM"] = parsed_args_2
             await set_guild_value(guild, "unverifiedDM", parsed_args_2)
