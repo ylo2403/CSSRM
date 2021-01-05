@@ -95,8 +95,8 @@ class CaseCommand(Bloxlink.Module):
 
         overwrites = {
             guild.default_role: PermissionOverwrite(read_messages=False),
-            guild.me: PermissionOverwrite(read_messages=True),
-            author: PermissionOverwrite(read_messages=True, mention_everyone=True, manage_messages=True)
+            guild.me: PermissionOverwrite(read_messages=True, send_messages=True),
+            author: PermissionOverwrite(read_messages=True, send_messages=True, mention_everyone=True, manage_messages=True)
         }
 
         try:
@@ -196,7 +196,7 @@ class CaseCommand(Bloxlink.Module):
 
         try:
             for group_member in group_members:
-                await channel.set_permissions(group_member, read_messages=True)
+                await channel.set_permissions(group_member, read_messages=True, send_messages=True)
         except Forbidden:
             raise Error("I've saved your group members, but I was unable to set their permissions for this "
                         "channel. Please add the group members to this channel, or give me the ``Manage Channel`` "
@@ -551,7 +551,7 @@ class CaseCommand(Bloxlink.Module):
             member = guild.get_member(int(member_id))
 
             if member:
-                await channel.set_permissions(member, read_messages=True)
+                await channel.set_permissions(member, read_messages=True, send_messages=True)
 
 
         await response.success(f"Successfully **unmuted** the members from group ``{group}``!")
