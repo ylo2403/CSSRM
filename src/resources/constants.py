@@ -162,6 +162,7 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     #"groupShoutChannel":     (lambda g, gd: g.get_channel(int(gd.get("groupShoutChannel", "0"))),  None, None, True, "Group shouts will be sent to your Discord channel."),
     "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
+    "deleteCommands":        (None, "number", 25, False, "Set X higher than 0 to delete every command after X seconds."),
     "trelloBindMode":        (None, "choice", ("merge", "replace"), False, "Choose 'replace' if trello binds should replace the server binds, or 'merge' if trello binds should be merged with the server binds. Default = merge."),
 }
 
@@ -192,6 +193,7 @@ DEFAULTS = {
     #"groupShoutChannel": None,
     "whiteLabel": False,
     "promptDelete": True,
+    "deleteCommands": 0,
     "inactiveRole": None,
     "banRelatedAccounts": False,
     "unbanRelatedAccounts": False,
@@ -232,6 +234,7 @@ TABLE_STRUCTURE = {
     ],
     "canary": [
         "guilds",
+        "addonData"
     ],
     "patreon": [
         "refreshTokens",

@@ -76,7 +76,7 @@ class Arguments:
 			return await self.response.send(text, dm=dm, no_dm_post=True)
 
 		if msg and not dm:
-			self.messages.append(msg.id)
+			self.messages.append(msg)
 
 		return msg
 
@@ -152,7 +152,7 @@ class Arguments:
 								skipped_arg = message.content
 
 								if prompt.get("delete_original", True):
-									self.messages.append(message.id)
+									self.messages.append(message)
 
 							if skipped_arg == "cluster timeout":
 								skipped_arg = "cancel (timeout)"
@@ -163,7 +163,7 @@ class Arguments:
 							skipped_arg = message.content
 
 							if prompt.get("delete_original", True):
-								self.messages.append(message.id)
+								self.messages.append(message)
 
 						skipped_arg_lower = skipped_arg.lower()
 						if skipped_arg_lower == "cancel":

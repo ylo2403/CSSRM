@@ -88,11 +88,13 @@ class Commands(Bloxlink.Module):
         author = message.author
         channel = message.channel
 
+        guild_permissions = guild and guild.me.guild_permissions
+
         channel_id = channel and str(channel.id)
-        guild_id = guild and str(guild.id)
+        guild_id   = guild and str(guild.id)
 
         trello_board = guild and await get_board(guild)
-        prefix, _ = await get_prefix(guild, trello_board)
+        prefix, _    = await get_prefix(guild, trello_board)
 
         client_match = re.search(f"<@!?{self.client.user.id}>", content)
         check = (content[:len(prefix)].lower() == prefix.lower() and prefix) or client_match and client_match.group(0)
@@ -381,7 +383,9 @@ class Commands(Bloxlink.Module):
                             Bloxlink.error(traceback.format_exc(), title=f"Error source: {command_name}.py")
 
                         finally:
-                            messages = arguments.messages + response.delete_message_queue
+                            delete_messages = response.delete_message_queue
+                            prompt_messages = arguments.messages
+                            bot_responses   = response.bot_responses
 
                             if arguments.dm_post:
                                 if arguments.cancelled:
@@ -391,21 +395,28 @@ class Commands(Bloxlink.Module):
 
                                 try:
                                     await arguments.dm_post.edit(content=content)
-                                except (NotFound, Forbidden):
+                                except NotFound:
                                     pass
 
+                            if guild and guild_permissions.manage_messages:
+                                delete_options = await get_guild_value(guild, ["promptDelete", DEFAULTS.get("promptDelete")], ["deleteCommands", DEFAULTS.get("deleteCommands")])
 
-                            if messages:
-                                if not trello_options_checked and trello_board:
-                                    trello_options, _ = await get_options(trello_board)
-                                    guild_data.update(trello_options)
-                                    trello_options_checked = True
+                                delete_commands_after = delete_options["deleteCommands"]
+                                prompt_delete         = delete_options["promptDelete"]
 
-                                if not actually_dm and guild_data.get("promptDelete", DEFAULTS.get("promptDelete")):
-                                    try:
-                                        await channel.purge(limit=100, check=lambda m: m.id in (*arguments.messages, *response.delete_message_queue))
-                                    except (Forbidden, HTTPException):
-                                        pass
+                                if prompt_delete and prompt_messages:
+                                    delete_messages += prompt_messages
+
+                                if delete_commands_after:
+                                    delete_messages.append(message)
+                                    delete_messages += bot_responses
+
+                                    await asyncio.sleep(delete_commands_after)
+
+                                try:
+                                    await channel.purge(limit=100, check=lambda m: m in delete_messages)
+                                except (Forbidden, HTTPException):
+                                    pass
 
                         break
 
@@ -416,21 +427,24 @@ class Commands(Bloxlink.Module):
         else:
             check_verify_channel = True
 
-        if check_verify_channel and guild:
+        if guild and guild_permissions.manage_messages:
             if not isinstance(author, Member):
                 try:
                     author = await guild.fetch_member(author.id)
                 except NotFound:
                     return
 
-            verify_channel_id = await get_guild_value(guild, "verifyChannel")
+            if check_verify_channel:
+                verify_channel_id = await get_guild_value(guild, "verifyChannel")
 
-            if verify_channel_id and channel_id == verify_channel_id:
-                if not find(lambda r: r.name in MAGIC_ROLES, author.roles):
-                    try:
-                        await message.delete()
-                    except (Forbidden, NotFound):
-                        pass
+                if verify_channel_id and channel_id == verify_channel_id:
+                    if not find(lambda r: r.name in MAGIC_ROLES, author.roles):
+                        try:
+                            await message.delete()
+                        except (Forbidden, NotFound):
+                            pass
+
+
 
 
     def new_command(self, command_structure, addon=None):

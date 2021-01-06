@@ -103,6 +103,7 @@ class Response(Bloxlink.Module):
         self.command = CommandArgs.command
 
         self.delete_message_queue = []
+        self.bot_responses        = []
 
         if self.command.addon:
             if hasattr(self.command.addon, "whitelabel"):
@@ -126,9 +127,7 @@ class Response(Bloxlink.Module):
         return ResponseLoading(self, text)
 
     def delete(self, *messages):
-        for message in messages:
-            if message:
-                self.delete_message_queue.append(message.id)
+        self.delete_message_queue += messages
 
     async def send(self, content=None, embed=None, on_error=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, channel_override=None, allowed_mentions=None):
         if dm and not IS_DOCKER:
@@ -161,18 +160,22 @@ class Response(Bloxlink.Module):
                             self.webhook_only = False
 
                             try:
-                                await channel.send("Customized Bot is enabled, but I couldn't "
-                                                   "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                                msg = await channel.send("Customized Bot is enabled, but I couldn't "
+                                                         "create the webhook! Please give me the ``Manage Webhooks`` permission.")
                             except (Forbidden, NotFound):
                                 pass
+                            else:
+                                self.bot_responses.append(msg)
             else:
                 self.webhook_only = False
 
                 try:
-                    await channel.send("Customized Bot is enabled, but I couldn't "
-                                       "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                    msg = await channel.send("Customized Bot is enabled, but I couldn't "
+                                             "create the webhook! Please give me the ``Manage Webhooks`` permission.")
                 except (Forbidden, NotFound):
                     pass
+                else:
+                    self.bot_responses.append(msg)
 
 
         paginate = False
@@ -209,11 +212,15 @@ class Response(Bloxlink.Module):
                     except asyncio.TimeoutError:
                         return None
 
+                    else:
+                        self.bot_responses.append(msg)
+
                 if dm and not no_dm_post and not actually_dm:
                     if webhook:
                         try:
-                            await webhook.send(content=self.author.mention + ", **check your DMs!**",
-                                               username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
+                            msg_ = await webhook.send(content=self.author.mention + ", **check your DMs!**",
+                                                     username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
+
                         except asyncio.TimeoutError:
                             return None
 
@@ -221,11 +228,17 @@ class Response(Bloxlink.Module):
                             await cache_pop(f"webhooks:{channel.id}")
 
                             return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
+                        else:
+                            self.bot_responses.append(msg_)
                     else:
                         try:
-                            await self.channel.send(self.author.mention + ", **check your DMs!**", allowed_mentions=allowed_mentions)
+                            msg_ = await self.channel.send(self.author.mention + ", **check your DMs!**", allowed_mentions=allowed_mentions)
+
                         except asyncio.TimeoutError:
                             return None
+
+                        else:
+                            self.bot_responses.append(msg_)
 
                 return msg
 
@@ -238,24 +251,32 @@ class Response(Bloxlink.Module):
                             msg = await webhook.send(content=on_error or content, embed=embed,
                                                      wait=True, username=self.bot_name, avatar_url=self.bot_avatar,
                                                      allowed_mentions=allowed_mentions)
+
                         except NotFound:
                             await cache_pop(f"webhooks:{channel.id}")
 
                             return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
 
                         else:
+                            self.bot_responses.append(msg)
+
                             return msg
 
-                    return await channel.send(content=on_error or content, embed=embed, files=files, allowed_mentions=allowed_mentions)
+                    msg = await channel.send(content=on_error or content, embed=embed, files=files, allowed_mentions=allowed_mentions)
+
+                    self.bot_responses.append(msg)
+
+                    return msg
 
                 except (Forbidden, NotFound):
                     try:
                         if dm:
                             if webhook:
                                 try:
-                                    await webhook.send(f"{self.author.mention}, I was unable to DM you. "
-                                                        "Please check your privacy settings and try again.",
-                                                        username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
+                                    msg_ = await webhook.send(f"{self.author.mention}, I was unable to DM you. "
+                                                               "Please check your privacy settings and try again.",
+                                                               username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
+
                                 except asyncio.TimeoutError:
                                     return None
 
@@ -264,12 +285,19 @@ class Response(Bloxlink.Module):
 
                                     return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
 
+                                else:
+                                    self.bot_responses.append(msg_)
+
                             else:
                                 try:
-                                    await self.channel.send(f"{self.author.mention}, I was unable to DM you. "
-                                                            "Please check your privacy settings and try again.", allowed_mentions=allowed_mentions)
+                                    msg_ = await self.channel.send(f"{self.author.mention}, I was unable to DM you. "
+                                                                   "Please check your privacy settings and try again.", allowed_mentions=allowed_mentions)
+
                                 except asyncio.TimeoutError:
                                     return None
+
+                                else:
+                                    self.bot_responses.append(msg_)
                         else:
                             try:
                                 await self.author.send(f"You attempted to use command {self.args.command_name} in "
@@ -287,6 +315,7 @@ class Response(Bloxlink.Module):
                 if not ignore_http_check:
                     if self.webhook_only:
                         self.webhook_only = False
+
                         return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
 
                     else:
