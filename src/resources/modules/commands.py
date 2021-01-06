@@ -187,7 +187,7 @@ class Commands(Bloxlink.Module):
 
                                     try:
                                         await message.delete()
-                                    except Forbidden:
+                                    except (Forbidden, NotFound):
                                         pass
 
                                     return
@@ -197,7 +197,7 @@ class Commands(Bloxlink.Module):
 
                                     try:
                                         await message.delete()
-                                    except Forbidden:
+                                    except (Forbidden, NotFound):
                                         pass
 
                                     return
@@ -207,7 +207,7 @@ class Commands(Bloxlink.Module):
 
                                     try:
                                         await message.delete()
-                                    except Forbidden:
+                                    except (Forbidden, NotFound):
                                         pass
 
                                     return

@@ -37,16 +37,18 @@ class Resolver(Bloxlink.Module):
             content = message.content
 
         if content.isdigit():
-            min = arg.get("min", -100)
+            min = arg.get("min", 1)
             max = arg.get("max", 100)
 
+            int_content = int(content)
+
             if arg.get("min") or arg.get("max"):
-                if min <= len(content) <= max:
-                    return int(content), None
+                if min <= int_content <= max:
+                    return int_content, None
                 else:
                     return False, f'Number character count not in range: {min}-{max}'
             else:
-                return int(content), None
+                return int_content, None
 
         return False, "You must pass a number"
 
