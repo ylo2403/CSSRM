@@ -2602,7 +2602,7 @@ class RobloxUser(Bloxlink.Module):
                 badges = roblox_data["badges"]
             else:
                 premium = False
-                badges = []
+                badges = set()
 
                 data, _ = await fetch(f"{BASE_URL}/badges/roblox?userId={roblox_data['id']}")
 
@@ -2615,7 +2615,7 @@ class RobloxUser(Bloxlink.Module):
                     if "Builders Club" in badge["Name"]:
                         premium = True
                     else:
-                        badges.append(badge["Name"])
+                        badges.add(badge["Name"])
 
                 roblox_data["badges"] = badges
                 roblox_data["premium"] = premium
