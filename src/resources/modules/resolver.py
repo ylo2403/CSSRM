@@ -204,7 +204,7 @@ class Resolver(Bloxlink.Module):
                     channel = None
 
                     if lookup_string.isdigit():
-                        channel = guild.get_text_channel(int(lookup_string))
+                        channel = find(lambda c: c.id == int(lookup_string), guild.text_channels)
                     else:
                         channel = find(lambda c: c.name == lookup_string, guild.text_channels)
 
