@@ -128,3 +128,5 @@ src/commands/verifyall.py
 src/commands/whitelabel.py
 src/config.py
 src/resources/constants.py
+src/addons/verification/verifyall.py
+src/commands/precedent.py
