@@ -12,13 +12,14 @@ class VerifyChannelCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.aliases = ["verificationchannel"]
         self.category = "Administration"
+        self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
         prefix = CommandArgs.prefix
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         async with response.loading():
             try:

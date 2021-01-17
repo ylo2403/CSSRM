@@ -29,12 +29,11 @@ class PrefixCommand(Bloxlink.Module):
         self.category = "Administration"
 
     async def __main__(self, CommandArgs):
-        locale = CommandArgs.locale
         response = CommandArgs.response
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         new_prefix = CommandArgs.parsed_args.get("new_prefix")

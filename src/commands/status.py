@@ -23,8 +23,8 @@ class StatusCommand(Bloxlink.Module):
         self.dm_allowed = True
 
     async def __main__(self, CommandArgs):
-        user = CommandArgs.parsed_args.get("user") or CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        user = CommandArgs.parsed_args.get("user") or CommandArgs.author
+        guild = CommandArgs.guild
         response = CommandArgs.response
 
         embed = Embed()

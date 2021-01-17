@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from discord import Embed, Object
+from discord import Embed
 from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
 from resources.constants import (NICKNAME_TEMPLATES, GREEN_COLOR, BROWN_COLOR, ARROW, VERIFY_URL, # pylint: disable=import-error
                                 ACCOUNT_SETTINGS_URL, TRELLO)
@@ -18,8 +18,8 @@ class VerifyCommand(Bloxlink.Module):
         self.examples = ["add", "unlink", "view", "blox_link"]
         self.category = "Account"
         self.cooldown = 5
-        self.aliases = ["getrole", "getroles"]
         self.dm_allowed = True
+        self.slash_enabled = True
 
     @staticmethod
     async def validate_username(message, content):
@@ -34,8 +34,8 @@ class VerifyCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         trello_board = CommandArgs.trello_board
         guild_data = CommandArgs.guild_data
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
@@ -104,9 +104,9 @@ class VerifyCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """link a new account to Bloxlink"""
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        if CommandArgs.message.guild:
+        if CommandArgs.guild:
             guild_data = CommandArgs.guild_data
 
             if not guild_data.get("hasBot"):
@@ -132,9 +132,9 @@ class VerifyCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
         response = CommandArgs.response
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         if not guild:
@@ -202,7 +202,7 @@ class VerifyCommand(Bloxlink.Module):
     async def view(CommandArgs):
         """view your linked account(s)"""
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         response = CommandArgs.response
 
         try:
@@ -241,14 +241,14 @@ class VerifyCommand(Bloxlink.Module):
             embed.add_field(name="Secondary Accounts", value=parsed_accounts_str or "No secondary account saved")
             embed.set_author(name=author, icon_url=author.avatar_url)
 
-            await response.send(embed=embed, dm=True, strict_post=True)
+            await response.send(embed=embed, dm=True, hidden=False, strict_post=True)
 
     @staticmethod
     @Bloxlink.subcommand()
     async def unlink(CommandArgs):
         """unlink an account from Bloxlink"""
 
-        if CommandArgs.message.guild:
+        if CommandArgs.guild:
             await CommandArgs.response.reply(f"to manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")
         else:
             await CommandArgs.response.send(f"To manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")

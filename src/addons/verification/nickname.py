@@ -41,8 +41,8 @@ class NicknameCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         global_nickname = CommandArgs.parsed_args["global_nickname"]
 

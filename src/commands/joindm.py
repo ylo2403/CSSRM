@@ -37,8 +37,8 @@ class JoinDMCommand(Bloxlink.Module):
         guild_data = CommandArgs.guild_data
         verifiedDM = guild_data.get("verifiedDM", DEFAULTS.get("welcomeMessage"))
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         response = CommandArgs.response
 
@@ -82,7 +82,8 @@ class JoinDMCommand(Bloxlink.Module):
     async def unverified(self, CommandArgs):
         """set the DM message of people who are UNVERIFIED on Bloxlink"""
 
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         unverifiedDM = guild_data.get("unverifiedDM")
 
@@ -120,9 +121,6 @@ class JoinDMCommand(Bloxlink.Module):
             await set_guild_value(guild, "unverifiedDM", None)
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
 
         await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``joinDM`` option for ``unverified`` members.", BROWN_COLOR)
 

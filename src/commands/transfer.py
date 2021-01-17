@@ -25,8 +25,8 @@ class TransferCommand(Bloxlink.Module):
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         transfer_to = CommandArgs.parsed_args.get("user")
         response = CommandArgs.response
         prefix = CommandArgs.prefix
@@ -76,8 +76,8 @@ class TransferCommand(Bloxlink.Module):
     async def disable(self, CommandArgs):
         """disable your Bloxlink premium transfer"""
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         response = CommandArgs.response
 
         author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}

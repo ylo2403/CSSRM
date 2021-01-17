@@ -16,241 +16,313 @@ prompts = {}
 
 
 class Arguments:
-	def __init__(self, CommandArgs):
-		self.message = CommandArgs.message
-		self.author = CommandArgs.message.author
+    def __init__(self, CommandArgs, author, channel, command, guild=None, message=None, subcommand=None, slash_command=None):
+        self.channel = channel
+        self.author  = author
+        self.message = message
+        self.guild   = guild
 
-		self.response = CommandArgs.response
-		self.locale = CommandArgs.locale
+        self.command    = command
+        self.subcommand = subcommand
 
-		self.prefix = CommandArgs.prefix
+        self.command_args = CommandArgs
+        self.response     = CommandArgs.response
+        self.locale       = CommandArgs.locale
+        self.prefix       = CommandArgs.prefix
 
-		self.messages = []
-		self.dm_post = None
-		self.cancelled = False
-		self.dm_false_override = False
-		self.skipped_args = []
+        self.messages  = []
+        self.dm_post   = None
+        self.cancelled = False
+        self.dm_false_override = False
+        self.skipped_args = []
 
+        self.slash_command = slash_command
 
-	async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False):
-		embed_color = embed_color or INVISIBLE_COLOR
+        self.parsed_args = {}
 
-		if self.dm_false_override:
-			dm = False
+    async def initial_command_args(self, text_after=None):
+        if self.subcommand:
+            prompts = self.subcommand[1].get("arguments")
+        else:
+            prompts = self.command.arguments
 
-		if footer:
-			footer = f"{footer}\n"
-		else:
-			footer = ""
 
-		if not embed:
-			if is_prompt:
-				text = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
+        if self.slash_command:
+            if not isinstance(self.slash_command, bool):
+                self.skipped_args = [x[1] for x in self.slash_command]
 
-			return await self.response.send(text, dm=dm, no_dm_post=True)
+            self.parsed_args = await self.prompt(prompts, slash_command=True) if prompts else {}
+            self.command_args.add(parsed_args=self.parsed_args, string_args=[])
 
-		description = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}"
+            return
 
-		if type == "error":
-			new_embed = Embed(title=embed_title or self.locale("prompt.errors.title"))
-			new_embed.colour = RED_COLOR
+        arg_len = len(prompts) if prompts else 0
+        skipped_args = []
+        split = text_after.split(" ")
+        temp = []
 
-			show_help_tip = random.randint(1, 100)
+        for arg in split:
+            if arg:
+                if arg.startswith('"') and arg.endswith('"'):
+                    arg = arg.replace('"', "")
 
-			if show_help_tip <= TIP_CHANCES["PROMPT_ERROR"]:
-				description = f"{description}\n\nExperiencing issues? Our [Support Server]({SERVER_INVITE}) has a team of Helpers ready to help you if you're having trouble!"
-		else:
-			new_embed = Embed(title=embed_title or self.locale("prompt.title"))
-			new_embed.colour = embed_color
+                if len(skipped_args) + 1 == arg_len:
+                    t = text_after.replace('"', "")
+                    toremove = " ".join(skipped_args)
 
-		new_embed.description = description
+                    if t.startswith(toremove):
+                        t = t[len(toremove):]
 
-		new_embed.set_footer(text=self.locale("prompt.timeoutWarning", timeout=PROMPT["PROMPT_TIMEOUT"]))
+                    t = t.strip()
 
-		msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True)
+                    skipped_args.append(t)
 
-		if not msg:
-			if is_prompt:
-				text = f"{text}\n\n{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
+                    break
 
-			return await self.response.send(text, dm=dm, no_dm_post=True)
+                if arg.startswith('"') or (temp and not arg.endswith('"')):
+                    temp.append(arg.replace('"', ""))
 
-		if msg and not dm:
-			self.messages.append(msg)
+                elif arg.endswith('"'):
+                    temp.append(arg.replace('"', ""))
+                    skipped_args.append(" ".join(temp))
+                    temp.clear()
 
-		return msg
+                else:
+                    skipped_args.append(arg)
 
+        if len(skipped_args) > 1:
+            self.skipped_args = skipped_args
+        else:
+            if text_after:
+                self.skipped_args = [text_after]
+            else:
+                self.skipped_args = []
 
-	@staticmethod
-	def in_prompt(author):
-		return prompts.get(author.id)
+        if prompts:
+            self.parsed_args = await self.prompt(prompts)
 
-	async def prompt(self, arguments, error=False, embed=True, dm=False, no_dm_post=False, last=False):
-		prompts[self.author.id] = True
+        self.command_args.add(parsed_args=self.parsed_args, string_args=text_after and text_after.split(" ") or [])
 
-		checked_args = 0
-		err_count = 0
-		resolved_args = {}
-		had_args = {x:True for x, y in enumerate(self.skipped_args)}
 
-		if dm:
-			if IS_DOCKER:
-				try:
-					m = await self.author.send("Loading setup...")
-				except Forbidden:
-					dm = False
-				else:
-					try:
-						await m.delete()
-					except NotFound:
-						pass
+    async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False):
+        embed_color = embed_color or INVISIBLE_COLOR
 
-					if not no_dm_post:
-						self.dm_post = await self.response.send(f"{self.author.mention}, **please check your DMs to continue.**")
-			else:
-				dm = False
+        if self.dm_false_override:
+            dm = False
 
-		try:
-			while checked_args != len(arguments):
-				if err_count == PROMPT["PROMPT_ERROR_COUNT"]:
-					raise CancelledPrompt("Too many failed attempts.", type="delete")
+        if footer:
+            footer = f"{footer}\n"
+        else:
+            footer = ""
 
-				if last and checked_args +1 == len(arguments):
-					self.skipped_args = [" ".join(self.skipped_args)]
+        if not embed:
+            if is_prompt:
+                text = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-				prompt = arguments[checked_args]
-				skipped_arg = self.skipped_args and self.skipped_args[0]
-				message = self.message
+            return await self.response.send(text, dm=dm, no_dm_post=True)
 
-				if prompt.get("optional") and not had_args.get(checked_args):
-					resolved_args[prompt["name"]] = None
-					checked_args += 1
+        description = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}"
 
-					continue
+        if type == "error":
+            new_embed = Embed(title=embed_title or self.locale("prompt.errors.title"))
+            new_embed.colour = RED_COLOR
 
-				formatting = prompt.get("formatting", True)
-				prompt_text = prompt["prompt"]
+            show_help_tip = random.randint(1, 100)
 
-				if not skipped_arg:
-					try:
-						if formatting:
-							prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
+            if show_help_tip <= TIP_CHANCES["PROMPT_ERROR"]:
+                description = f"{description}\n\nExperiencing issues? Our [Support Server]({SERVER_INVITE}) has a team of Helpers ready to help you if you're having trouble!"
+        else:
+            new_embed = Embed(title=embed_title or self.locale("prompt.title"))
+            new_embed.colour = embed_color
 
-						await self.say(prompt_text, embed_title=prompt.get("embed_title"), embed_color=prompt.get("embed_color"), footer=prompt.get("footer"), type=error and "error", embed=embed, dm=dm)
+        new_embed.description = description
 
-						if dm and IS_DOCKER:
-							message_content = await broadcast(self.author.id, type="DM", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
-							skipped_arg = message_content[0]
+        new_embed.set_footer(text=self.locale("prompt.timeoutWarning", timeout=PROMPT["PROMPT_TIMEOUT"]))
 
-							if not skipped_arg:
-								await self.say("Cluster which handles DMs is temporarily unavailable. Please say your message in the server instead of DMs.", type="error", embed=embed, dm=dm)
-								self.dm_false_override = True
-								dm = False
+        msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True)
 
-								message = await Bloxlink.wait_for("message", check=self._check_prompt(), timeout=PROMPT["PROMPT_TIMEOUT"])
+        if not msg:
+            if is_prompt:
+                text = f"{text}\n\n{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-								skipped_arg = message.content
+            return await self.response.send(text, dm=dm, no_dm_post=True)
 
-								if prompt.get("delete_original", True):
-									self.messages.append(message)
+        if msg and not dm:
+            self.messages.append(msg.id)
 
-							if skipped_arg == "cluster timeout":
-								skipped_arg = "cancel (timeout)"
+        return msg
 
-						else:
-							message = await Bloxlink.wait_for("message", check=self._check_prompt(dm), timeout=PROMPT["PROMPT_TIMEOUT"])
 
-							skipped_arg = message.content
+    @staticmethod
+    def in_prompt(author):
+        return prompts.get(author.id)
 
-							if prompt.get("delete_original", True):
-								self.messages.append(message)
+    async def prompt(self, arguments, error=False, embed=True, dm=False, no_dm_post=False, last=False, slash_command=False):
+        prompts[self.author.id] = True
 
-						skipped_arg_lower = skipped_arg.lower()
-						if skipped_arg_lower == "cancel":
-							raise CancelledPrompt(type="delete", dm=dm)
-						elif skipped_arg_lower == "cancel (timeout)":
-							raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
+        checked_args = 0
+        err_count = 0
+        resolved_args = {}
+        had_args = {x:True for x, y in enumerate(self.skipped_args)}
 
-					except TimeoutError:
-						raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
+        if dm:
+            if IS_DOCKER:
+                try:
+                    m = await self.author.send("Loading setup...")
+                except Forbidden:
+                    dm = False
+                else:
+                    try:
+                        await m.delete()
+                    except NotFound:
+                        pass
 
-				skipped_arg_lower = skipped_arg.lower()
+                    if not no_dm_post:
+                        self.dm_post = await self.response.send(f"{self.author.mention}, **please check your DMs to continue.**")
+            else:
+                dm = False
 
-				if skipped_arg_lower in prompt.get("exceptions", []):
-					checked_args += 1
-					resolved_args[prompt["name"]] = skipped_arg_lower
+        try:
+            while checked_args != len(arguments):
+                if err_count == PROMPT["PROMPT_ERROR_COUNT"]:
+                    raise CancelledPrompt("Too many failed attempts.", type="delete")
 
-					continue
+                if last and checked_args +1 == len(arguments):
+                    self.skipped_args = [" ".join(self.skipped_args)]
 
-				resolver_types = prompt.get("type", "string")
+                prompt = arguments[checked_args]
+                skipped_arg = self.skipped_args and str(self.skipped_args[0])
+                message = self.message
 
-				if not isinstance(resolver_types, list):
-					resolver_types = [resolver_types]
+                if prompt.get("optional") and not had_args.get(checked_args):
+                    resolved_args[prompt["name"]] = None
+                    checked_args += 1
 
-				resolve_errors = []
-				resolved = False
-				error_message = None
+                    continue
 
-				for resolver_type in resolver_types:
-					resolver = get_resolver(resolver_type)
-					resolved, error_message = await resolver(message, prompt, skipped_arg)
+                formatting = prompt.get("formatting", True)
+                prompt_text = prompt["prompt"]
 
-					if resolved:
-						if prompt.get("validation"):
-							res = [await prompt["validation"](content=skipped_arg, message=not dm and message)]
+                if not skipped_arg:
+                    try:
+                        if formatting:
+                            prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
 
-							if isinstance(res[0], tuple):
-								if not res[0][0]:
-									error_message = res[0][1]
-									resolved = False
+                        await self.say(prompt_text, embed_title=prompt.get("embed_title"), embed_color=prompt.get("embed_color"), footer=prompt.get("footer"), type=error and "error", embed=embed, dm=dm)
 
-							else:
-								if not res[0]:
-									error_message = "Prompt failed validation. Please try again."
-									resolved = False
+                        if dm and IS_DOCKER:
+                            message_content = await broadcast(self.author.id, type="DM", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
+                            skipped_arg = message_content[0]
 
-							if resolved:
-								resolved = res[0]
-					else:
-						error_message = f"{self.locale('prompt.errors.invalidArgument', arg='**' + resolver_type + '**')}: ``{error_message}``"
+                            if not skipped_arg:
+                                await self.say("Cluster which handles DMs is temporarily unavailable. Please say your message in the server instead of DMs.", type="error", embed=embed, dm=dm)
+                                self.dm_false_override = True
+                                dm = False
 
-					if error_message:
-						resolve_errors.append(error_message)
-					else:
-						break
+                                message = await Bloxlink.wait_for("message", check=self._check_prompt(), timeout=PROMPT["PROMPT_TIMEOUT"])
 
-				if resolved:
-					checked_args += 1
-					resolved_args[prompt["name"]] = resolved
-				else:
-					await self.say("\n".join(resolve_errors), type="error", embed=embed, dm=dm)
+                                skipped_arg = message.content
 
-					try:
-						self.skipped_args[checked_args] = None
-						had_args[checked_args] = True
-					except IndexError:
-						pass
+                                if prompt.get("delete_original", True):
+                                    self.messages.append(message.id)
 
-					err_count += 1
+                            if skipped_arg == "cluster timeout":
+                                skipped_arg = "cancel (timeout)"
 
-				if self.skipped_args:
-					self.skipped_args.pop(0)
+                        else:
+                            message = await Bloxlink.wait_for("message", check=self._check_prompt(dm), timeout=PROMPT["PROMPT_TIMEOUT"])
 
+                            skipped_arg = message.content
 
-			return resolved_args
+                            if prompt.get("delete_original", True):
+                                self.messages.append(message.id)
 
-		finally:
-			prompts.pop(self.author.id, None)
+                        skipped_arg_lower = skipped_arg.lower()
+                        if skipped_arg_lower == "cancel":
+                            raise CancelledPrompt(type="delete", dm=dm)
+                        elif skipped_arg_lower == "cancel (timeout)":
+                            raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
 
+                    except TimeoutError:
+                        raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
 
-	def _check_prompt(self, dm=False):
-		def wrapper(message):
-			if message.author.id  == self.message.author.id:
-				if dm:
-					return not message.guild
-				else:
-					return message.channel.id == self.message.channel.id
-			else:
-				return False
+                skipped_arg_lower = str(skipped_arg).lower()
 
-		return wrapper
+                if skipped_arg_lower in prompt.get("exceptions", []):
+                    checked_args += 1
+                    resolved_args[prompt["name"]] = skipped_arg_lower
+
+                    continue
+
+                resolver_types = prompt.get("type", "string")
+
+                if not isinstance(resolver_types, list):
+                    resolver_types = [resolver_types]
+
+                resolve_errors = []
+                resolved = False
+                error_message = None
+
+                for resolver_type in resolver_types:
+                    resolver = get_resolver(resolver_type)
+                    resolved, error_message = await resolver(prompt, content=skipped_arg, guild=self.guild, message=message)
+
+                    if resolved:
+                        if prompt.get("validation"):
+                            res = [await prompt["validation"](content=skipped_arg, message=not dm and message)]
+
+                            if isinstance(res[0], tuple):
+                                if not res[0][0]:
+                                    error_message = res[0][1]
+                                    resolved = False
+
+                            else:
+                                if not res[0]:
+                                    error_message = "Prompt failed validation. Please try again."
+                                    resolved = False
+
+                            if resolved:
+                                resolved = res[0]
+                    else:
+                        error_message = f"{self.locale('prompt.errors.invalidArgument', arg='**' + resolver_type + '**')}: ``{error_message}``"
+
+                    if error_message:
+                        resolve_errors.append(error_message)
+                    else:
+                        break
+
+                if resolved:
+                    checked_args += 1
+                    resolved_args[prompt["name"]] = resolved
+                else:
+                    await self.say("\n".join(resolve_errors), type="error", embed=embed, dm=dm)
+
+                    try:
+                        self.skipped_args[checked_args] = None
+                        had_args[checked_args] = True
+                    except IndexError:
+                        pass
+
+                    err_count += 1
+
+                if self.skipped_args:
+                    self.skipped_args.pop(0)
+
+
+            return resolved_args
+
+        finally:
+            prompts.pop(self.author.id, None)
+
+
+    def _check_prompt(self, dm=False):
+        def wrapper(message):
+            if message.author.id  == self.author.id:
+                if dm:
+                    return not message.guild
+                else:
+                    return message.channel.id == self.channel.id
+            else:
+                return False
+
+        return wrapper

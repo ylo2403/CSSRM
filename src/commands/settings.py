@@ -69,7 +69,7 @@ class SettingsCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your server settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
@@ -121,7 +121,7 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         message = CommandArgs.message
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
         guild = CommandArgs.message.guild
         guild_data = CommandArgs.guild_data
@@ -144,15 +144,23 @@ class SettingsCommand(Bloxlink.Module):
         elif choice == "Linked Groups":
             raise Message(f"You can link your group from ``{prefix}bind``!", type="success")
         elif choice == "joinDM":
-            message.content = f"{prefix}joindm"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}joindm"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with ``{prefix}joindm``!")
         elif choice == "groupShoutChannel":
-            message.content = f"{prefix}shoutproxy"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}shoutproxy"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with ``{prefix}shoutproxy``!")
         elif choice == "whiteLabel":
-            message.content = f"{prefix}whitelabel"
-            return await parse_message(message)
-
+            if message:
+                message.content = f"{prefix}whitelabel"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with ``{prefix}whitelabel``!")
 
         option_find = OPTIONS.get(choice)
 
@@ -336,9 +344,9 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
 
@@ -495,7 +503,7 @@ class SettingsCommand(Bloxlink.Module):
     async def help(self, CommandArgs):
         """provides a description of all changeable settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Settings Help")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)

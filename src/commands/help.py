@@ -21,12 +21,14 @@ class HelpCommand(Bloxlink.Module):
             }
         ]
         self.dm_allowed = True
+        self.slash_enabled = True
+        self.slash_ack = False
 
     async def __main__(self, CommandArgs):
         command_name = CommandArgs.parsed_args.get("command_name")
         prefix = CommandArgs.prefix
         response = CommandArgs.response
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         if command_name:
             command_name = command_name.lower()
@@ -97,7 +99,7 @@ class HelpCommand(Bloxlink.Module):
 
                         embed.add_field(name="Examples", value="\n".join(examples))
 
-                    await response.send(embed=embed)
+                    await response.send(embed=embed, hidden=True)
 
                     break
             else:
@@ -110,7 +112,7 @@ class HelpCommand(Bloxlink.Module):
             enabled_addons = guild and await get_enabled_addons(guild) or {}
 
             for name, command in commands.items():
-                if (command.addon and str(command.addon) not in enabled_addons) or (command.hidden and CommandArgs.message.author.id != OWNER):
+                if (command.addon and str(command.addon) not in enabled_addons) or (command.hidden and CommandArgs.author.id != OWNER):
                     continue
 
                 category = categories.get(command.category, [])
@@ -136,4 +138,4 @@ class HelpCommand(Bloxlink.Module):
             for i,v in categories.items():
                 embed.add_field(name=i, value="\n".join(v), inline=False)
 
-            await response.send(embed=embed, dm=True)
+            await response.send(embed=embed, dm=True, hidden=True)

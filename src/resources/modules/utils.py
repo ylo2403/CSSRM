@@ -7,6 +7,7 @@ from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error
 from discord.errors import NotFound, Forbidden
 from discord import Embed
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
+from requests.utils import requote_uri
 import asyncio
 import aiohttp
 
@@ -62,9 +63,11 @@ class Utils(Bloxlink.Module):
                     pass
 
 
-    async def fetch(self, url, method="GET", params=None, headers=None, raise_on_failure=True, retry=HTTP_RETRY_LIMIT):
-        params = params or {}
+    async def fetch(self, url, method="GET", params=None, headers=None, json=None, raise_on_failure=True, retrieve_text=True, retry=HTTP_RETRY_LIMIT):
+        params  = params or {}
         headers = headers or {}
+
+        url = requote_uri(url)
 
         if RELEASE == "LOCAL":
             Bloxlink.log(f"Making HTTP request: {url}")
@@ -75,11 +78,14 @@ class Utils(Bloxlink.Module):
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
-                async with session.request(method, url, params=params, headers=headers) as response:
-                    text = await response.text()
+                async with session.request(method, url, json=json, params=params, headers=headers) as response:
+                    text = None
 
-                    if text == "The service is unavailable." or response.status == 503:
-                        raise RobloxDown
+                    if retrieve_text:
+                        text = await response.text()
+
+                        if text == "The service is unavailable." or response.status == 503:
+                            raise RobloxDown
 
                     if raise_on_failure:
                         if response.status >= 500:
@@ -87,7 +93,7 @@ class Utils(Bloxlink.Module):
                                 retry -= 1
                                 await asyncio.sleep(1.0)
 
-                                return await self.fetch(url, raise_on_failure=raise_on_failure, retry=retry)
+                                return await self.fetch(url, raise_on_failure=raise_on_failure, retrieve_text=retrieve_text, retry=retry)
 
                             raise RobloxAPIError
 
@@ -96,7 +102,10 @@ class Utils(Bloxlink.Module):
                         elif response.status == 404:
                             raise RobloxNotFound
 
-                    return text, response
+                    if retrieve_text:
+                        return text, response
+                    else:
+                        return response
 
         except ServerDisconnectedError:
             if retry != 0:

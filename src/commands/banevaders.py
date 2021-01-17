@@ -143,8 +143,8 @@ class BanEvadersCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response   = CommandArgs.response
         action     = CommandArgs.parsed_args["action"]
-        guild      = CommandArgs.message.guild
-        author     = CommandArgs.message.author
+        guild      = CommandArgs.guild
+        author     = CommandArgs.author
         locale     = CommandArgs.locale
         guild_data = CommandArgs.guild_data
         prefix     = CommandArgs.prefix

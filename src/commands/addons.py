@@ -40,7 +40,7 @@ class AddonsCommand(Bloxlink.Module):
 
         response   = CommandArgs.response
         prefix     = CommandArgs.prefix
-        guild      = CommandArgs.message.guild
+        guild      = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Server Add-ons")
         embed.description = f"Use ``{prefix}addon change`` to enable/disable an add-on."
@@ -72,7 +72,7 @@ class AddonsCommand(Bloxlink.Module):
         response = CommandArgs.response
         prefix   = CommandArgs.prefix
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         guild_addons = guild_data.get("addons", {})
 

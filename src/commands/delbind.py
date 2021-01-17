@@ -144,20 +144,22 @@ class UnBindCommand(Bloxlink.Module):
         self.arguments = [{
             "prompt": "Please specify the group ID that this bind resides in. If this is not a group, " \
 			          "specify the bind type found on ``{prefix}viewbinds``(e.g. \"assets\").",
+            "slash_desc": "Please specify the group ID, or bind type. Bind types are found on /viewbinds.",
             "name": "bind_id"
         }]
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
         self.aliases = ["delbind", "delbinds"]
+        self.slash_enabled = True
 
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         trello_board = CommandArgs.trello_board
         prefix = CommandArgs.prefix
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
         role_binds = guild_data.get("roleBinds", {"groups": {}, "assets": {}})
         role_binds_trello, group_ids_trello, trello_binds_list = await get_binds(guild=guild, trello_board=trello_board)

@@ -23,6 +23,7 @@ class DonateCommand(Bloxlink.Module):
     def __init__(self):
         self.aliases = ["premium"]
         self.dm_allowed = True
+        self.slash_enabled = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):

@@ -25,6 +25,7 @@ class SetupCommand(Bloxlink.Module):
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
+        self.slash_enabled = True
 
     @staticmethod
     async def validate_group(message, content):
@@ -90,8 +91,8 @@ class SetupCommand(Bloxlink.Module):
         return validate
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 

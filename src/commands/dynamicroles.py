@@ -15,9 +15,9 @@ class DynamicRolesCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         toggle = not guild_data.get("dynamicRoles", DEFAULTS.get("dynamicRoles"))

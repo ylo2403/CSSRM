@@ -26,6 +26,7 @@ class BindCommand(Bloxlink.Module):
         self.aliases = ["newbind"]
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
+        self.slash_enabled = True
 
     @staticmethod
     def find_range(range_set, ranges):
@@ -55,12 +56,12 @@ class BindCommand(Bloxlink.Module):
         return group
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
         trello_board = CommandArgs.trello_board
         prefix = CommandArgs.prefix
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         locale = CommandArgs.locale
 
         role_binds_trello, group_ids_trello, trello_binds_list = await get_binds(guild=guild, trello_board=trello_board)

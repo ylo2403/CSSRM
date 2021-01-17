@@ -27,6 +27,7 @@ class LogChannelCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.aliases = ["logchannels"]
+        self.slash_enabled = True
 
 
     async def __main__(self, CommandArgs):
@@ -46,8 +47,8 @@ class LogChannelCommand(Bloxlink.Module):
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         log_channels = guild_data.get("logChannels") or {}
 
@@ -124,7 +125,7 @@ class LogChannelCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your log channels"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         log_channels = guild_data.get("logChannels") or {}

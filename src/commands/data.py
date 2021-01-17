@@ -69,8 +69,8 @@ class DataCommand(Bloxlink.Module):
     async def backup(self, CommandArgs):
         """backup your Server Data"""
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         response = CommandArgs.response
 
         author_id = str(author.id)

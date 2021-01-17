@@ -1,12 +1,12 @@
-from resources.structures.Bloxlink import Bloxlink
-from resources.exceptions import UserNotVerified, Message, Error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from resources.exceptions import UserNotVerified, Message, Error # pylint: disable=import-error
 from discord import Embed
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 
 
 class GetinfoCommand(Bloxlink.Module):
-    """retrieve the Roblox information from a member"""
+    """retrieve the Roblox information for a member"""
 
     def __init__(self):
         self.aliases = ["whois"]
@@ -14,7 +14,7 @@ class GetinfoCommand(Bloxlink.Module):
             {
                 "prompt": "Please specify the user.",
                 "type": "user",
-                "name": "target",
+                "name": "user",
                 "optional": True
             }
         ]
@@ -26,16 +26,17 @@ class GetinfoCommand(Bloxlink.Module):
             "@justin --avatar",
             "@justin --avatar --groups"
         ]
-        self.cooldown = 5
-        self.dm_allowed = True
+        self.cooldown      = 5
+        self.dm_allowed    = True
+        self.slash_enabled = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        target = CommandArgs.parsed_args["target"] or CommandArgs.message.author
-        flags = CommandArgs.flags
-        guild = CommandArgs.message.guild
+        target   = CommandArgs.parsed_args["user"] or CommandArgs.author
+        flags    = CommandArgs.flags
+        guild    = CommandArgs.guild
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
+        prefix   = CommandArgs.prefix
 
         if target.bot:
             raise Message("Bots can't have Roblox accounts!", type="silly")

@@ -41,6 +41,7 @@ class ProfileCommand(Bloxlink.Module):
             }
         ]
         self.category = "Account"
+        self.slash_enabled = False
 
 
     @staticmethod
@@ -114,8 +115,8 @@ class ProfileCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
         message = CommandArgs.message
-        author = message.author
-        guild = message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         prefix = CommandArgs.prefix
         user = CommandArgs.parsed_args["user"] or author
 
@@ -129,10 +130,11 @@ class ProfileCommand(Bloxlink.Module):
             roblox_user, _ = await get_user(author=user, guild=guild)
         except UserNotVerified:
             if user == author:
-                message = CommandArgs.message
-                message.content = f"{CommandArgs.prefix}verify"
-
-                return await parse_message(message)
+                if message:
+                    message.content = f"{CommandArgs.prefix}verify"
+                    return await parse_message(message)
+                else:
+                    raise Error(f"You're not linked to Bloxlink! Please run ``{prefix}verify add``.")
             else:
                 raise Error(f"**{user}** is not linked to Bloxlink.")
         else:
@@ -148,10 +150,10 @@ class ProfileCommand(Bloxlink.Module):
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         author_id = str(author.id)
         author_data = await self.r.db("bloxlink").table("users").get(author_id).run() or {"id": author_id}
 

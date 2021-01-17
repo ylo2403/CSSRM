@@ -15,7 +15,7 @@ class SwitchUserCommand(Bloxlink.Module):
 
     def __init__(self):
         self.category = "Account"
-
+        self.slash_enabled = True
 
     @staticmethod
     async def validate_server(message, content):
@@ -38,7 +38,7 @@ class SwitchUserCommand(Bloxlink.Module):
 
 
     async def __main__(self, CommandArgs):
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 

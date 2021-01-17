@@ -16,11 +16,11 @@ class IgnoreChannelCommand(Bloxlink.Module):
         self.aliases = ["ignore"]
 
     async def __main__(self, CommandArgs):
-        channel = CommandArgs.message.channel
+        channel = CommandArgs.channel
         channel_id = str(channel.id)
 
-        guild  = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild  = CommandArgs.guild
+        author = CommandArgs.author
 
         response   = CommandArgs.response
         guild_data = CommandArgs.guild_data

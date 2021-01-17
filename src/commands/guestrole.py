@@ -19,11 +19,13 @@ class GuestRoleCommand(Bloxlink.Module):
         self.arguments = [
             {
                 "prompt": "Please specify the **Group ID** to integrate with. The group ID is the rightmost numbers on your Group URL.",
+                "slash_desc": "Please enter your Group ID.",
                 "name": "groupID",
                 "type": "number",
             },
             {
                 "prompt": "Please specify the **role name** to bind non-group members. A role will be created if it doesn't already exist.",
+                "slash_desc": "Please choose the role to bind to non-group members.",
                 "name": "role",
                 "type": "role"
             },
@@ -31,6 +33,7 @@ class GuestRoleCommand(Bloxlink.Module):
                 "prompt": "Should these members be given a nickname different from the server-wide ``!nickname``? Please specify a nickname, or "
                           "say ``skip`` to skip this option and default to the server-wide nickname ``!nickname`` template.\n\nYou may use these templates:"
                           f"```{NICKNAME_TEMPLATES}```",
+                "slash_desc": "Please enter a nickname to give to these members.  Say skip to skip this option.",
                 "name": "nickname",
                 "type": "string",
                 "max": 100,
@@ -42,10 +45,11 @@ class GuestRoleCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
         self.aliases = ["guestbind"]
+        self.slash_enabled = True
 
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
@@ -55,7 +59,6 @@ class GuestRoleCommand(Bloxlink.Module):
 
         nickname_lower = nickname.lower()
         role_id = str(role.id)
-
 
         try:
             group = await get_group(group_id)

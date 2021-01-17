@@ -14,9 +14,10 @@ class ViewBindsCommand(Bloxlink.Module):
     def __init__(self):
         self.category = "Binds"
         self.aliases = ["binds"]
+        self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         guild_data = CommandArgs.guild_data
         trello_board = CommandArgs.trello_board

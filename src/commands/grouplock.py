@@ -52,8 +52,8 @@ class GroupLockCommand(Bloxlink.Module):
         choice = CommandArgs.parsed_args["choice"]
         guild_data = CommandArgs.guild_data
         groups = CommandArgs.guild_data.get("groupLock", {})
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         prefix = CommandArgs.prefix
         response = CommandArgs.response
 
