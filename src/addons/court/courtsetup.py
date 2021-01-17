@@ -20,7 +20,7 @@ class CourtSetupCommand(Bloxlink.Module):
         my_permissions = guild.me.guild_permissions
 
         if not (my_permissions.manage_channels and my_permissions.manage_roles):
-            raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+            raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
 
         setup_args = await CommandArgs.prompt([
             {
@@ -35,7 +35,7 @@ class CourtSetupCommand(Bloxlink.Module):
                 "embed_title": "Setup Prompt"
             },
             {
-                "prompt": "Which **role(s)** are considered the ``Judge`` roles? Members with these roles will be able to "
+                "prompt": "Which **role(s)** are considered the `Judge` roles? Members with these roles will be able to "
                           "create new cases and use certain judicial administrative commands.",
                 "name": "judge_roles",
                 "type": "role",
@@ -43,14 +43,14 @@ class CourtSetupCommand(Bloxlink.Module):
                 "embed_title": "Setup Prompt"
             },
             {
-                "prompt": "Which ``channel`` would you like to use for logging case events?",
+                "prompt": "Which `channel` would you like to use for logging case events?",
                 "name": "log_channel",
                 "footer": "Say **skip** to skip this step.",
                 "exceptions": ("skip",),
                 "type": "channel",
             },
             {
-                "prompt": "Which ``category`` would you like to use for archiving closed cases? If you skip this, then old cases "
+                "prompt": "Which `category` would you like to use for archiving closed cases? If you skip this, then old cases "
                           "will simply be deleted.",
                 "name": "archive_category",
                 "footer": "Say **skip** to skip this step.",
@@ -59,8 +59,8 @@ class CourtSetupCommand(Bloxlink.Module):
             },
             {
                 "prompt": "Please specify the **groups** to use with your set-up.\n\nA group holds members for each trial. For example, typical groups "
-                          "for a USA style court room include the ``prosecution``, ``defence``, ``jurors``, and ``witnesses``. Please **give a list separated by "
-                          "commas** of your group names.\n\nFor example, you may write: ``prosecution, defense, jurors``\n\nJudges will be able to add people into these groups to fit their trial.\n\n__It's fine if you include groups "
+                          "for a USA style court room include the `prosecution`, `defence`, `jurors`, and `witnesses`. Please **give a list separated by "
+                          "commas** of your group names.\n\nFor example, you may write: `prosecution, defense, jurors`\n\nJudges will be able to add people into these groups to fit their trial.\n\n__It's fine if you include groups "
                           "which aren't used__, groups __can be__ blank. ",
                 "name": "groups",
                 "type": "list",
@@ -88,7 +88,7 @@ class CourtSetupCommand(Bloxlink.Module):
             try:
                 await archive_category.edit(overwrites=overwrites)
             except Forbidden:
-                raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+                raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
 
         if court_data.get("category"):
             category = find(lambda c: c.id == int(court_data["category"]), guild.categories)
@@ -110,7 +110,7 @@ class CourtSetupCommand(Bloxlink.Module):
                            await guild.create_category("Cases", overwrites=overwrites)
 
             except Forbidden:
-                raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+                raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
 
         addon_data["court"] = {
             "judgeRoles": [str(x.id) for x in judge_roles],
@@ -126,15 +126,15 @@ class CourtSetupCommand(Bloxlink.Module):
         }, conflict="update").run()
 
 
-        embed = Embed(title="Additional Information", description=f"- Use ``{prefix}case create`` to make a new case chat.\n"
+        embed = Embed(title="Additional Information", description=f"- Use `{prefix}case create` to make a new case chat.\n"
                                                                   "- Need to change your groups? You will need to run this command again.\n"
-                                                                  f"- It's recommended to give your cases IDs! You'll be able to run ``{prefix}case lookup`` to find its information.\n"
-                                                                  f"- You will need to add case members with ``{prefix}case add`` and assign them to a group. Remove them with ``{prefix}case remove``.\n"
-                                                                  f"- Run ``{prefix}case end`` inside your case chat to archive the case.\n"
-                                                                  f"- If you manually delete case channels, then you will need to run ``{prefix}case cleanup`` to free them from the database; otherwise, they will count against your case limit.\n"
-                                                                  f"- Case members can be easily muted/unmuted with ``{prefix}case mute`` or ``{prefix}case unmute``.")
+                                                                  f"- It's recommended to give your cases IDs! You'll be able to run `{prefix}case lookup` to find its information.\n"
+                                                                  f"- You will need to add case members with `{prefix}case add` and assign them to a group. Remove them with `{prefix}case remove`.\n"
+                                                                  f"- Run `{prefix}case end` inside your case chat to archive the case.\n"
+                                                                  f"- If you manually delete case channels, then you will need to run `{prefix}case cleanup` to free them from the database; otherwise, they will count against your case limit.\n"
+                                                                  f"- Case members can be easily muted/unmuted with `{prefix}case mute` or `{prefix}case unmute`.")
 
         await response.send(embed=embed)
 
         await response.success(f"Successfully saved your **Court add-on!** Now, judges (people with the {', '.join([r.mention for r in judge_roles])} role(s)) will be "
-                               f"able to run ``{prefix}case create`` to create a new case chat.", allowed_mentions=AllowedMentions(roles=False))
+                               f"able to run `{prefix}case create` to create a new case chat.", allowed_mentions=AllowedMentions(roles=False))

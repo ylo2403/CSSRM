@@ -1,22 +1,52 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object
+from discord import Object, Webhook
+from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
 from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
 
+from discord.http import Route # temporary slash command workaround
+
 loop = asyncio.get_event_loop()
 
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
+
+
+class InteractionWebhook(WebhookMessage):
+    def __init__(self, interaction_token, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.interaction_token = interaction_token
+
+    async def edit(self, content=None, embed=None, *args, **kwargs):
+        payload = {
+            "content": content,
+            "embeds": [embed.to_dict()] if embed else None
+        }
+
+        route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+                      application_id=Bloxlink.user.id,
+                      interaction_token=self.interaction_token, message_id=self.id)
+
+        await self._state.http.request(route, json=payload)
+
+
+    async def delete(self):
+        route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+                      application_id=Bloxlink.user.id,
+                      interaction_token=self.interaction_token, message_id=self.id)
+
+        await self._state.http.request(route)
+
 
 class ResponseLoading:
     def __init__(self, response, backup_text):
         self.response = response
         self.original_message = response.message
         self.reaction = None
-        self.channel = response.message.channel
+        self.channel = response.channel
 
         self.reaction_success = False
         self.from_reaction_fail_msg = None
@@ -70,7 +100,8 @@ class ResponseLoading:
             pass
 
     def __enter__(self):
-        loop.create_task(self._send_loading())
+        if not self.response.slash_command:
+            loop.create_task(self._send_loading())
         return self
 
     def __exit__(self, tb_type, tb_value, traceback):
@@ -80,30 +111,34 @@ class ResponseLoading:
             loop.create_task(self._remove_loading(error=True))
 
     async def __aenter__(self):
-        await self._send_loading()
+        if not self.response.slash_command:
+            await self._send_loading()
 
     async def __aexit__(self, tb_type, tb_value, traceback):
-        if tb_type is None:
-            await self._remove_loading(success=True)
-        elif tb_type == Message:
-            await self._remove_loading(success=False, error=False)
-        else:
-            await self._remove_loading(error=True)
+        if not self.response.slash_command:
+            if tb_type is None:
+                await self._remove_loading(success=True)
+            elif tb_type == Message:
+                await self._remove_loading(success=False, error=False)
+            else:
+                await self._remove_loading(error=True)
 
 
 
 class Response(Bloxlink.Module):
-    def __init__(self, CommandArgs):
-        self.message = CommandArgs.message
-        self.guild = CommandArgs.message.guild
-        self.author = CommandArgs.message.author
-        self.channel = CommandArgs.message.channel
-        self.prompt = None # filled in on commands.py
-        self.args = CommandArgs
+    def __init__(self, CommandArgs, author, channel, guild=None, message=None, slash_command=False):
+        self.message = message
+        self.guild   = guild
+        self.author  = author
+        self.channel = channel
+        self.prompt  = None # filled in on commands.py
+        self.args    = CommandArgs
         self.command = CommandArgs.command
 
         self.delete_message_queue = []
         self.bot_responses        = []
+
+        self.slash_command = slash_command
 
         if self.command.addon:
             if hasattr(self.command.addon, "whitelabel"):
@@ -127,17 +162,57 @@ class Response(Bloxlink.Module):
         return ResponseLoading(self, text)
 
     def delete(self, *messages):
-        self.delete_message_queue += messages
+        for message in messages:
+            self.delete_message_queue.append(message.id)
 
-    async def send(self, content=None, embed=None, on_error=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, channel_override=None, allowed_mentions=None):
-        if dm and not IS_DOCKER:
+    async def slash_ack(self):
+        if self.slash_command:
+            route = Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=self.slash_command["id"], interaction_token=self.slash_command["token"])
+
+            payload = {
+                "type": 5
+            }
+
+            await self.channel._state.http.request(route, json=payload)
+
+    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=None, send_as_slash_command=True, hidden=False):
+        msg = None
+
+        if isinstance(dest, Webhook):
+            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions)
+
+        elif self.slash_command and send_as_slash_command:
+            payload = {
+                "content": content,
+                "embeds": [embed.to_dict()] if embed else None,
+                "flags": 1 << 6 if hidden else None
+            }
+
+            route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
+
+            response = await self.guild._state.http.request(route, json=payload)
+
+            msg = InteractionWebhook(interaction_token=self.slash_command["token"], data=response, state=self.channel._state, channel=self.channel)
+
+        else:
+            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions)
+
+
+        self.bot_responses.append(msg.id)
+
+        return msg
+
+    async def send(self, content=None, embed=None, on_error=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=None, hidden=False):
+        if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 
-        actually_dm = not self.guild # used to send the "check your DMs!" messages
-        channel = channel_override or (dm and self.author or self.channel)
-        webhook = None
+        content = str(content) if content else None
 
-        if self.webhook_only and self.guild and hasattr(channel, "webhooks"):
+        channel = channel_override or ((dm and self.author) or self.channel)
+        webhook = None
+        msg = None
+
+        if not dm and not self.slash_command and self.webhook_only and self.guild and hasattr(channel, "webhooks"):
             my_permissions = self.guild.me.guild_permissions
 
             if my_permissions.manage_webhooks:
@@ -161,21 +236,21 @@ class Response(Bloxlink.Module):
 
                             try:
                                 msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                                         "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                                                         "create the webhook! Please give me the `Manage Webhooks` permission.")
                             except (Forbidden, NotFound):
                                 pass
                             else:
-                                self.bot_responses.append(msg)
+                                self.bot_responses.append(msg.id)
             else:
                 self.webhook_only = False
 
                 try:
                     msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                             "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                                             "create the webhook! Please give me the `Manage Webhooks` permission.")
                 except (Forbidden, NotFound):
                     pass
                 else:
-                    self.bot_responses.append(msg)
+                    self.bot_responses.append(msg.id)
 
 
         paginate = False
@@ -193,130 +268,38 @@ class Response(Bloxlink.Module):
 
         if not paginate:
             try:
-                if webhook and not dm:
-                    try:
-                        msg = await webhook.send(embed=embed, content=content,
-                                                 wait=True, username=self.bot_name,
-                                                 avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
-                    except asyncio.TimeoutError:
-                        return None
+                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden)
 
-                    except NotFound:
-                        await cache_pop(f"webhooks:{channel.id}")
-
-                        return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
-                else:
-                    try:
-                        msg = await channel.send(embed=embed, content=content, files=files, allowed_mentions=allowed_mentions)
-
-                    except asyncio.TimeoutError:
-                        return None
-
-                    else:
-                        self.bot_responses.append(msg)
-
-                if dm and not no_dm_post and not actually_dm:
-                    if webhook:
-                        try:
-                            msg_ = await webhook.send(content=self.author.mention + ", **check your DMs!**",
-                                                     username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
-
-                        except asyncio.TimeoutError:
-                            return None
-
-                        except NotFound:
-                            await cache_pop(f"webhooks:{channel.id}")
-
-                            return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
-                        else:
-                            self.bot_responses.append(msg_)
-                    else:
-                        try:
-                            msg_ = await self.channel.send(self.author.mention + ", **check your DMs!**", allowed_mentions=allowed_mentions)
-
-                        except asyncio.TimeoutError:
-                            return None
-
-                        else:
-                            self.bot_responses.append(msg_)
-
-                return msg
+                if dm and not no_dm_post:
+                    await self.send_to(self.channel, "**Please check your DMs!**")
 
             except (Forbidden, NotFound):
                 channel = channel_override or (not strict_post and (dm and self.channel or self.author) or channel) # opposite channel
 
+                if webhook:
+                    await cache_pop(f"webhooks:{channel.id}")
+
                 try:
-                    if webhook and not dm:
-                        try:
-                            msg = await webhook.send(content=on_error or content, embed=embed,
-                                                     wait=True, username=self.bot_name, avatar_url=self.bot_avatar,
-                                                     allowed_mentions=allowed_mentions)
-
-                        except NotFound:
-                            await cache_pop(f"webhooks:{channel.id}")
-
-                            return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
-
-                        else:
-                            self.bot_responses.append(msg)
-
-                            return msg
-
-                    msg = await channel.send(content=on_error or content, embed=embed, files=files, allowed_mentions=allowed_mentions)
-
-                    self.bot_responses.append(msg)
-
-                    return msg
-
+                    msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden)
                 except (Forbidden, NotFound):
-                    try:
-                        if dm:
-                            if webhook:
-                                try:
-                                    msg_ = await webhook.send(f"{self.author.mention}, I was unable to DM you. "
-                                                               "Please check your privacy settings and try again.",
-                                                               username=self.bot_name, avatar_url=self.bot_avatar, allowed_mentions=allowed_mentions)
-
-                                except asyncio.TimeoutError:
-                                    return None
-
-                                except NotFound:
-                                    await cache_pop(f"webhooks:{channel.id}")
-
-                                    return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
-
-                                else:
-                                    self.bot_responses.append(msg_)
-
-                            else:
-                                try:
-                                    msg_ = await self.channel.send(f"{self.author.mention}, I was unable to DM you. "
-                                                                   "Please check your privacy settings and try again.", allowed_mentions=allowed_mentions)
-
-                                except asyncio.TimeoutError:
-                                    return None
-
-                                else:
-                                    self.bot_responses.append(msg_)
+                    if not no_dm_post:
+                        if channel == self.author:
+                            try:
+                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", hidden=True)
+                            except (Forbidden, NotFound):
+                                pass
                         else:
                             try:
-                                await self.author.send(f"You attempted to use command {self.args.command_name} in "
-                                                       f"{self.channel.mention}, but I was unable to post there. "
-                                                        "You may need to grant me the ``Embed Links`` permission.", files=files, allowed_mentions=allowed_mentions)
-                            except asyncio.TimeoutError:
-                                return None
-
-                        return None
-
-                    except (Forbidden, NotFound):
-                        return None
+                                await self.send_to(self.channel, "I was unable to post in the specified channel!", hidden=True)
+                            except (Forbidden, NotFound):
+                                pass
 
             except HTTPException:
                 if not ignore_http_check:
                     if self.webhook_only:
                         self.webhook_only = False
 
-                        return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, no_dm_post=no_dm_post, strict_post=strict_post, files=files, allowed_mentions=allowed_mentions)
+                        return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions)
 
                     else:
                         if embed:
@@ -325,11 +308,12 @@ class Response(Bloxlink.Module):
                         else:
                             raise HTTPException
         if paginate:
-            paginator = Paginate(self.message, channel, embed, self, field_limit=paginate_field_limit, original_channel=self.channel, pages=pages, dm=not actually_dm and dm)
+            paginator = Paginate(self.author, channel, embed, self, field_limit=paginate_field_limit, original_channel=self.channel, send_as_slash_command=send_as_slash_command, hidden=hidden, pages=pages, dm=dm)
 
             return await paginator()
 
-        return None
+
+        return msg
 
     async def error(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
         emoji = self.webhook_only and ":cry:" or "<:BloxlinkError:506622933226225676>"

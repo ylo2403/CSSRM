@@ -223,7 +223,7 @@ class Roblox(Bloxlink.Module):
             guild_find = guild_list.get(guild_id)
 
             if guild_find and not allow_reverify and guild_find != roblox:
-                raise Error("You already selected your account for this server! ``allowReVerify`` must be enabled for you to change your account.")
+                raise Error("You already selected your account for this server! `allowReVerify` must be enabled for you to change your account.")
 
             guild_list[guild_id] = roblox_id
             roblox_accounts["guilds"] = guild_list
@@ -349,7 +349,7 @@ class Roblox(Bloxlink.Module):
         clan_tag = (await response.prompt([{
             "prompt": "Please provide text for your Clan Tag. This will be inserted into "
                       "your nickname.\n**Please keep your clan tag under 10 characters**, "
-                      "or it may not properly show.\nIf you want to skip this, then say ``skip``.",
+                      "or it may not properly show.\nIf you want to skip this, then say `skip`.",
             "name": "clan_tag",
             "max": 32
         }], dm=dm))["clan_tag"]
@@ -543,7 +543,7 @@ class Roblox(Bloxlink.Module):
 
                                     if card_attr in ("group", "groupid", "group id"):
                                         if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Group configuration: ``{card_value}`` is not an integer.")
+                                            raise Error(f"Mess up on Trello bind Group configuration: `{card_value}` is not an integer.")
 
                                         new_bind["group"] = card_value
                                         new_bind["trello_str"]["group"] = card_value
@@ -551,21 +551,21 @@ class Roblox(Bloxlink.Module):
 
                                     elif card_attr in ("asset", "assetid", "asset id"):
                                         if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Asset configuration: ``{card_value}`` is not an integer.")
+                                            raise Error(f"Mess up on Trello bind Asset configuration: `{card_value}` is not an integer.")
 
                                         bind_category = "asset"
                                         new_bind["bind_id"] = card_value
 
                                     elif card_attr in ("badge", "badgeid", "badge id"):
                                         if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Badge configuration: ``{card_value}`` is not an integer.")
+                                            raise Error(f"Mess up on Trello bind Badge configuration: `{card_value}` is not an integer.")
 
                                         bind_category = "badge"
                                         new_bind["bind_id"] = card_value
 
                                     elif card_attr in ("gamepass", "gamepassid", "gamepass id"):
                                         if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind GamePass configuration: ``{card_value}`` is not an integer.")
+                                            raise Error(f"Mess up on Trello bind GamePass configuration: `{card_value}` is not an integer.")
 
                                         bind_category = "gamepass"
                                         new_bind["bind_id"] = card_value
@@ -586,7 +586,7 @@ class Roblox(Bloxlink.Module):
                                             rank = rank.replace(" ", "")
 
                                             if not rank.isdigit() and rank != "guest" and "-" not in rank:
-                                                raise Error(f"Mess up on Trello bind rank configuration: ``{rank}`` is not an integer.")
+                                                raise Error(f"Mess up on Trello bind rank configuration: `{rank}` is not an integer.")
 
                                             new_bind["ranks"].append(rank)
 
@@ -634,9 +634,9 @@ class Roblox(Bloxlink.Module):
 
                                             if len(range_data) == 2:
                                                 if not range_data[0].isdigit() and range_data[0] != "0":
-                                                    raise Error(f"Mess up on Trello bind configuration for range: ``{range_data[0]}`` is not an integer.")
+                                                    raise Error(f"Mess up on Trello bind configuration for range: `{range_data[0]}` is not an integer.")
                                                 elif not range_data[1].isdigit() and range_data[1] != "0":
-                                                    raise Error(f"Mess up on Trello bind configuration for range: ``{range_data[1]}`` is not an integer.")
+                                                    raise Error(f"Mess up on Trello bind configuration for range: `{range_data[1]}` is not an integer.")
 
                                                 is_range = True
                                                 new_range = {
@@ -904,7 +904,7 @@ class Roblox(Bloxlink.Module):
                                         except Forbidden:
                                             pass
                                         else:
-                                            await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been ``kicked``.", RED_COLOR)
+                                            await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
 
                                             raise CancelCommand
 
@@ -924,7 +924,7 @@ class Roblox(Bloxlink.Module):
                                         except (Forbidden, HTTPException):
                                             pass
                                         else:
-                                            await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been ``{action_participle}``.", RED_COLOR)
+                                            await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
 
                                             raise CancelCommand
 
@@ -977,16 +977,16 @@ class Roblox(Bloxlink.Module):
 
         if roblox_user:
             if event:
-                await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as ``{roblox_user.username}``.", GREEN_COLOR)
+                await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
             if age_limit:
                 if age_limit > roblox_user.age:
                     if dm:
                         try:
                             await member.send(f"_Bloxlink Age-Limit_\nYou were kicked from **{guild.name}** for not being at least "
-                                              f"``{age_limit}`` days old on your Roblox account ``{roblox_user.username}`` (days={roblox_user.age}). If this is a mistake, "
-                                              f"then please join {SERVER_INVITE} and link a different account with ``{PREFIX}verify add``. "
-                                              f"Finally, use the ``{PREFIX}switchuser`` command and provide this ID to the command: ``{guild.id}``")
+                                              f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
+                                              f"then please join {SERVER_INVITE} and link a different account with `{PREFIX}verify add`. "
+                                              f"Finally, use the `{PREFIX}switchuser` command and provide this ID to the command: `{guild.id}`")
                         except Forbidden:
                             pass
 
@@ -1010,8 +1010,8 @@ class Roblox(Bloxlink.Module):
                                 try:
                                     await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
                                                       f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                                      f"and link a different account with ``{PREFIX}verify add``. Finally, use the ``{PREFIX}switchuser`` command and "
-                                                      f"provide this ID to the command: ``{guild.id}``.\n\nThese instructions were set by the Server "
+                                                      f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
+                                                      f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
                                                       f"Admins:\n\n{dm_message}")
                                 except Forbidden:
                                     pass
@@ -1045,8 +1045,8 @@ class Roblox(Bloxlink.Module):
                                                    "primary account, then try rejoining this server.")
                             else:
                                 await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                  f"You may link your account by joining {SERVER_INVITE} and running the ``{PREFIX}switchuser`` command "
-                                                  f"and provide this ID to the command: ``{guild.id}``, or run ``{PREFIX}verify add`` and set a primary account for any server.")
+                                                  f"You may link your account by joining {SERVER_INVITE} and running the `{PREFIX}switchuser` command "
+                                                  f"and provide this ID to the command: `{guild.id}`, or run `{PREFIX}verify add` and set a primary account for any server.")
                         except Forbidden:
                             pass
 
@@ -1067,8 +1067,8 @@ class Roblox(Bloxlink.Module):
                                                "primary account, then try rejoining this server.")
                         else:
                             await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                              f"You may link your account by joining {SERVER_INVITE} and running the ``{PREFIX}switchuser`` command "
-                                              f"and provide this ID to the command: ``{guild.id}``, or run ``{PREFIX}verify add`` and set a primary account for any server.")
+                                              f"You may link your account by joining {SERVER_INVITE} and running the `{PREFIX}switchuser` command "
+                                              f"and provide this ID to the command: `{guild.id}`, or run `{PREFIX}verify add` and set a primary account for any server.")
                     except Forbidden:
                         pass
 
@@ -1111,11 +1111,11 @@ class Roblox(Bloxlink.Module):
         if my_permissions:
             if roles and not my_permissions.manage_roles:
                 raise PermissionError("Sorry, I do not have the proper permissions. "
-                                      "Please ensure I have the ``Manage Roles`` permission.")
+                                      "Please ensure I have the `Manage Roles` permission.")
 
             if nickname and not my_permissions.manage_nicknames:
                 raise PermissionError("Sorry, I do not have the proper permissions. "
-                                      "Please ensure I have the ``Manage Nicknames`` permission.")
+                                      "Please ensure I have the `Manage Nicknames` permission.")
 
         add_roles, remove_roles = set(), set()
         possible_nicknames = []
@@ -1182,7 +1182,7 @@ class Roblox(Bloxlink.Module):
                             unverified_role = await guild.create_role(name=unverified_role_name)
                         except Forbidden:
                             raise PermissionError("I was unable to create the Unverified Role. Please "
-                                                  "ensure I have the ``Manage Roles`` permission.")
+                                                  "ensure I have the `Manage Roles` permission.")
                         except HTTPException:
                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
@@ -1221,7 +1221,7 @@ class Roblox(Bloxlink.Module):
                             )
                         except Forbidden:
                             raise PermissionError("Sorry, I wasn't able to create the Verified role. "
-                                                  "Please ensure I have the ``Manage Roles`` permission.")
+                                                  "Please ensure I have the `Manage Roles` permission.")
                         except HTTPException:
                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
@@ -1275,7 +1275,7 @@ class Roblox(Bloxlink.Module):
                                         error_message = vg_errors[0].get("message")
 
                                         if error_message != "The specified user does not exist!": # sent if someone is banned from Roblox
-                                            raise Error(f"Bind error for {category_title} ID {bind_id}: ``{error_message}``")
+                                            raise Error(f"Bind error for {category_title} ID {bind_id}: `{error_message}`")
                                     else:
                                         raise Error(f"Bind error for {category_title} ID {bind_id}")
 
@@ -1292,7 +1292,7 @@ class Roblox(Bloxlink.Module):
                                                     role = await guild.create_role(name=role_id)
                                                 except Forbidden:
                                                     raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                           "Please ensure I have the ``Manage Roles`` permission.")
+                                                                           "Please ensure I have the `Manage Roles` permission.")
                                                 except HTTPException:
                                                     raise Error("Unable to create role: this server has reached the max amount of roles!")
 
@@ -1358,7 +1358,7 @@ class Roblox(Bloxlink.Module):
                                                             role = await guild.create_role(name=role_id)
                                                         except Forbidden:
                                                             raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                   "Please ensure I have the ``Manage Roles`` permission.")
+                                                                                   "Please ensure I have the `Manage Roles` permission.")
                                                         except HTTPException:
                                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
@@ -1397,7 +1397,7 @@ class Roblox(Bloxlink.Module):
                                                                 role = await guild.create_role(name=role_id)
                                                             except Forbidden:
                                                                 raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                       "Please ensure I have the ``Manage Roles`` permission.")
+                                                                                       "Please ensure I have the `Manage Roles` permission.")
 
                                                             except HTTPException:
                                                                 raise Error("Unable to create role: this server has reached the max amount of roles!")
@@ -1446,7 +1446,7 @@ class Roblox(Bloxlink.Module):
                                                             role = await guild.create_role(name=role_id)
                                                         except Forbidden:
                                                             raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                    "Please ensure I have the ``Manage Roles`` permission.")
+                                                                                    "Please ensure I have the `Manage Roles` permission.")
                                                         except HTTPException:
                                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
                                                 if role:
@@ -1491,7 +1491,7 @@ class Roblox(Bloxlink.Module):
                                             group_role = await guild.create_role(name=group.user_rank_name)
                                         except Forbidden:
                                             raise PermissionError(f"Sorry, I wasn't able to create the role {group.user_rank_name}."
-                                                                   "Please ensure I have the ``Manage Roles`` permission.")
+                                                                   "Please ensure I have the `Manage Roles` permission.")
 
                                         except HTTPException:
                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
@@ -1522,7 +1522,7 @@ class Roblox(Bloxlink.Module):
                                 try:
                                     group = await self.get_group(group_id, rolesets=True)
                                 except RobloxNotFound:
-                                    raise Error(f"Error for linked group bind: group ``{group_id}`` not found")
+                                    raise Error(f"Error for linked group bind: group `{group_id}` not found")
 
                                 for roleset in group.rolesets:
                                     group_role = find(lambda r: r.name == roleset["name"] and not r.managed, author.roles)
@@ -1543,7 +1543,7 @@ class Roblox(Bloxlink.Module):
 
             except Forbidden:
                 raise PermissionError("I was unable to sufficiently add roles to the user. Please ensure that "
-                                      "I have the ``Manage Roles`` permission, and drag my role above the other roles. "
+                                      "I have the `Manage Roles` permission, and drag my role above the other roles. "
                                       f"{BIND_ROLE_BUG}")
 
             except NotFound:
@@ -1574,7 +1574,7 @@ class Roblox(Bloxlink.Module):
                     if guild.owner_id == author.id:
                         errors.append("Since you're the Server Owner, I cannot edit your nickname. You may ignore this message; verification will work for normal users.")
                     else:
-                        errors.append(f"I was unable to edit your nickname. Please ensure I have the ``Manage Nickname`` permission, and drag my role above the other roles. See: {BIND_ROLE_BUG}")
+                        errors.append(f"I was unable to edit your nickname. Please ensure I have the `Manage Nickname` permission, and drag my role above the other roles. See: {BIND_ROLE_BUG}")
                 except NotFound:
                     raise CancelCommand
 
@@ -1602,26 +1602,40 @@ class Roblox(Bloxlink.Module):
             return {}
 
     @staticmethod
-    async def get_game(game_id):
-        game_id = str(game_id)
-        game = await cache_get(f"games:{game_id}")
+    async def get_game(game_id=None, game_name=None):
+        if not (game_id or game_name):
+            raise BadUsage("Must supply a game ID or game name to get_game")
+
+        game = await cache_get(f"games:{game_id or game_name}")
 
         if game:
             return game
 
-        text, _ = await fetch(f"{API_URL}/marketplace/productinfo?assetId={game_id}", raise_on_failure=False)
+        if game_id:
+            text, _ = await fetch(f"{API_URL}/marketplace/productinfo?assetId={game_id}", raise_on_failure=False)
 
-        try:
-            json_data = json.loads(text)
-        except json.decoder.JSONDecodeError:
-            raise RobloxAPIError
+            try:
+                json_data = json.loads(text)
+            except json.decoder.JSONDecodeError:
+                raise RobloxAPIError
+            else:
+                if json_data.get("AssetTypeId", 0) == 9:
+                    game = Game(str(game_id), json_data)
+
+                    await cache_set(f"games:{game_id}", game)
+
+                    return game
         else:
-            if json_data.get("AssetTypeId", 0) == 9:
-                game = Game(game_id, json_data)
+            text, _ = await fetch(f"https://games.roblox.com/v1/games/list?model.keyword={game_name}", raise_on_failure=False)
 
-                await cache_set(f"games:{game_id}", game)
-
-                return game
+            try:
+                json_data = json.loads(text)
+            except json.decoder.JSONDecodeError:
+                raise RobloxAPIError
+            else:
+                if json_data.get("games"):
+                    game_data = json_data["games"][0]
+                    game = Game(str(game_data["placeId"]), game_data)
 
 
         raise RobloxNotFound
@@ -1904,7 +1918,7 @@ class Roblox(Bloxlink.Module):
                 chosen_account = guild_accounts.get(str(guild.id))
 
                 if chosen_account and chosen_account != roblox_id:
-                    raise Error("You already selected your account for this server. ``allowReVerify`` must be "
+                    raise Error("You already selected your account for this server. `allowReVerify` must be "
                                 "enabled for you to change it.")
 
             if roblox_id in roblox_accounts.get("accounts", []) or author_data.get("robloxID") == roblox_id:
@@ -1939,8 +1953,8 @@ class Roblox(Bloxlink.Module):
                     args = await response.prompt([
                         {
                             "prompt": f"Welcome, **{username}!** Please select a method of verification:\n"
-                                    "``game`` " + ARROW + " verify by joining a Roblox game\n"
-                                    "``code`` " + ARROW + " verify by putting a code on your Roblox status or description",
+                                    "`game` " + ARROW + " verify by joining a Roblox game\n"
+                                    "`code` " + ARROW + " verify by putting a code on your Roblox status or description",
                             "type": "choice",
                             "choices": ["game", "code"],
                             "name": "verification_choice"
@@ -1956,7 +1970,7 @@ class Roblox(Bloxlink.Module):
                         response.delete(msg1, msg2)
 
                         _ = await response.prompt([{
-                            "prompt": "Then, say ``done`` to continue.",
+                            "prompt": "Then, say `done` to continue.",
                             "name": "verification_next",
                             "type": "choice",
                             "choices": ["done"]
@@ -1977,7 +1991,7 @@ class Roblox(Bloxlink.Module):
 
                             _ = await response.prompt([
                                 {
-                                    "prompt": "Unable to find the code on your profile. Please say ``done`` to search again or ``cancel`` to cancel.",
+                                    "prompt": "Unable to find the code on your profile. Please say `done` to search again or `cancel` to cancel.",
                                     "type": "choice",
                                     "choices": ["done"],
                                     "name": "retry"
@@ -2005,7 +2019,7 @@ class Roblox(Bloxlink.Module):
                         }, conflict="replace").run()
 
                         _ = await response.prompt([{
-                            "prompt": "Please go to this game https://www.roblox.com/games/1271943503/- to complete the verification process. Then, say ``done`` to "
+                            "prompt": "Please go to this game https://www.roblox.com/games/1271943503/- to complete the verification process. Then, say `done` to "
                                     "get your roles.",
                             "name": "verification_next",
                             "type": "choice",
@@ -2026,7 +2040,7 @@ class Roblox(Bloxlink.Module):
                             except UserNotVerified:
                                 _ = await response.prompt([{
                                     "prompt": "It appears that you didn't pass verification via the Roblox game. Please go to "
-                                            "https://www.roblox.com/games/1271943503/- and try again. Then, say ``done``.",
+                                            "https://www.roblox.com/games/1271943503/- and try again. Then, say `done`.",
                                     "name": "verification_next",
                                     "type": "choice",
                                     "choices": ["done"]
@@ -2146,7 +2160,7 @@ class RobloxProfile(Bloxlink.Module):
                     await user.add_roles(inactive_role, reason="Adding inactive role")
                 except Forbidden:
                     raise Error("I was unable to add the inactivity role! Please ensure I have the "
-                                f"``Manage Roles`` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
+                                f"`Manage Roles` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
                 except NotFound:
                     pass
         else:
@@ -2155,7 +2169,7 @@ class RobloxProfile(Bloxlink.Module):
                     await user.remove_roles(inactive_role, reason="Removing inactive role")
                 except Forbidden:
                     raise Error("I was unable to remove the inactivity role! Please ensure I have the "
-                                f"``Manage Roles`` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
+                                f"`Manage Roles` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
                 except NotFound:
                     pass
 
@@ -2180,7 +2194,7 @@ class RobloxProfile(Bloxlink.Module):
             await self.handle_inactive_role(inactive_role, user, False)
 
             if author == user:
-                embed.description = f"You have no profile available! Use ``{prefix}profile change`` to make your profile."
+                embed.description = f"You have no profile available! Use `{prefix}profile change` to make your profile."
             else:
                 embed.description = f"**{user}** has no profile available."
 
@@ -2223,7 +2237,7 @@ class RobloxProfile(Bloxlink.Module):
                 date_str = date.strftime("%b. %d, %Y (%A)")
 
                 if inactivity_reason:
-                    date_formatted = f"This user is currently **away** until **{date_str}** for: ``{inactivity_reason}``"
+                    date_formatted = f"This user is currently **away** until **{date_str}** for: `{inactivity_reason}`"
                 else:
                     date_formatted = f"This user is currently **away** until **{date_str}.**"
 
@@ -2411,13 +2425,29 @@ class RobloxItem:
         self.description = self.description or item_data.get("Description")
         self.owner = self.owner or item_data.get("Creator")
         self.created = self.created or item_data.get("Created")
-        self.url = f"https://www.roblox.com/catalog/{self.item_id}/-"
+        self.url = self.url or f"https://www.roblox.com/catalog/{self.item_id}/-"
 
 
 class Game(RobloxItem):
     def __init__(self, game_id, game_data):
         super().__init__(game_id, game_data)
+
         self.url = f"https://www.roblox.com/games/{self.item_id}/-"
+        self.group_game = False
+        self.creator_name = ""
+        self.up_votes = 0
+        self.down_votes = 0
+        self.player_count = 0
+
+        #self.load_json(game_data)
+    """
+    def load_json(self, data):
+        self.group_game   = data.get("creatorType") == "Group"
+        self.up_votes     = self.up_votes or data.get("totalUpVotes")
+        self.down_votes   = self.down_votes or data.get("totalDownVotes")
+        self.player_count = self.player_count or data.get("playerCount")
+    """
+
 
     def __str__(self):
         return f"Game ({self.name or self.item_id})"
@@ -2521,14 +2551,21 @@ class RobloxUser(Bloxlink.Module):
             return None
 
         if embed:
-            if response and not response.webhook_only:
-                sent_embed = await embed[1].send(embed=embed[0])
+            if response:
+                if not response.webhook_only:
+                    sent_embed = await embed[1].send(embed=embed[0])
 
-                if not sent_embed:
-                    embed = None
+                    if not sent_embed:
+                        embed = None
+                    else:
+                        embed.append(sent_embed)
+
+                        if basic_details or "username" in args:
+                            embed[0].add_field(name="Username", value=username)
+
+                        if basic_details or "id" in args:
+                            embed[0].add_field(name="ID", value=roblox_id)
                 else:
-                    embed.append(sent_embed)
-
                     if basic_details or "username" in args:
                         embed[0].add_field(name="Username", value=username)
 
@@ -2611,11 +2648,13 @@ class RobloxUser(Bloxlink.Module):
                 except json.decoder.JSONDecodeError:
                     raise RobloxAPIError
 
+                """
                 for badge in data.get("RobloxBadges", []):
                     if "Builders Club" in badge["Name"]:
                         premium = True
                     else:
                         badges.add(badge["Name"])
+                """
 
                 roblox_data["badges"] = badges
                 roblox_data["premium"] = premium

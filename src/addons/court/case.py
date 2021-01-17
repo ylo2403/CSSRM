@@ -46,10 +46,10 @@ class CaseCommand(Bloxlink.Module):
         my_permissions = guild.me.guild_permissions
 
         if not (my_permissions.manage_channels and my_permissions.manage_roles):
-            raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+            raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
 
         if not court_data:
-            raise Error(f"You must set-up this add-on before you can use it! Please use ``{prefix}courtsetup`` "
+            raise Error(f"You must set-up this add-on before you can use it! Please use `{prefix}courtsetup` "
                         "to begin the set-up.")
 
         for judge_role_id in court_data.get("judgeRoles", []):
@@ -59,9 +59,9 @@ class CaseCommand(Bloxlink.Module):
             raise Error("You must have a Judge role in order to create cases!")
 
         if len(court_data.get("cases", {})) >= 30:
-            raise Error(f"You cannot have more than 30 active cases! Please complete the cases with ``{prefix}case end`` before creating more. "
-                        f"If you have any lingering cases (cases manually deleted and not called with ``{prefix}case end``), then please run "
-                        f"``{prefix}case cleanup`` to remove them from the database.")
+            raise Error(f"You cannot have more than 30 active cases! Please complete the cases with `{prefix}case end` before creating more. "
+                        f"If you have any lingering cases (cases manually deleted and not called with `{prefix}case end`), then please run "
+                        f"`{prefix}case cleanup` to remove them from the database.")
 
 
         case_args = await CommandArgs.prompt([
@@ -102,7 +102,7 @@ class CaseCommand(Bloxlink.Module):
         try:
             case_channel = await guild.create_text_channel(case_name.replace("_", "").replace(" ", "-"), overwrites=overwrites, category=category)
         except Forbidden:
-            raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+            raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
         else:
             court_data["cases"] = court_data.get("cases", {})
             court_data["cases"][str(case_channel.id)] = court_data["cases"].get(str(case_channel.id)) or {}
@@ -123,11 +123,11 @@ class CaseCommand(Bloxlink.Module):
                                     "additional instructions over DMs; otherwise, I'll post it in this channel.")
 
             embed = Embed(title="Additional Information", description= \
-                                                                  f"- It's recommended to give your cases IDs! You'll be able to run ``{prefix}case lookup`` to find its information.\n"
-                                                                  f"- You will need to add case members with ``{prefix}case add`` and assign them to a group. Remove them with ``{prefix}case remove``.\n"
-                                                                  f"- Run ``{prefix}case end`` inside your case chat to archive the case.\n"
-                                                                  f"- If you manually delete case channels, then you will need to run ``{prefix}case cleanup`` to free them from the database; otherwise, they will count against your case limit.\n"
-                                                                  f"- Case members can be easily muted/unmuted with ``{prefix}case mute`` or ``{prefix}case unmute``.")
+                                                                  f"- It's recommended to give your cases IDs! You'll be able to run `{prefix}case lookup` to find its information.\n"
+                                                                  f"- You will need to add case members with `{prefix}case add` and assign them to a group. Remove them with `{prefix}case remove`.\n"
+                                                                  f"- Run `{prefix}case end` inside your case chat to archive the case.\n"
+                                                                  f"- If you manually delete case channels, then you will need to run `{prefix}case cleanup` to free them from the database; otherwise, they will count against your case limit.\n"
+                                                                  f"- Case members can be easily muted/unmuted with `{prefix}case mute` or `{prefix}case unmute`.")
 
             log_channel_id = court_data.get("logChannel")
 
@@ -174,7 +174,7 @@ class CaseCommand(Bloxlink.Module):
                 "multiple": True
             },
             {
-                "prompt": f"Which group should these members be added to? Available groups: ``{groups}``",
+                "prompt": f"Which group should these members be added to? Available groups: `{groups}`",
                 "name": "group",
                 "type": "choice",
                 "choices": groups,
@@ -199,10 +199,10 @@ class CaseCommand(Bloxlink.Module):
                 await channel.set_permissions(group_member, read_messages=True, send_messages=True)
         except Forbidden:
             raise Error("I've saved your group members, but I was unable to set their permissions for this "
-                        "channel. Please add the group members to this channel, or give me the ``Manage Channel`` "
-                        "and ``Manage Roles`` permissions, then re-run this command.")
+                        "channel. Please add the group members to this channel, or give me the `Manage Channel` "
+                        "and `Manage Roles` permissions, then re-run this command.")
 
-        await response.success(f"Successfully **added** these members to the group ``{group}``!")
+        await response.success(f"Successfully **added** these members to the group `{group}`!")
 
 
     @Bloxlink.subcommand()
@@ -230,7 +230,7 @@ class CaseCommand(Bloxlink.Module):
             raise Error("You must be the presiding judge in order to run this command!")
 
         elif not group_members:
-            raise Message(f"Your case has no group members! You may add them with ``{prefix}case add``", type="silly")
+            raise Message(f"Your case has no group members! You may add them with `{prefix}case add`", type="silly")
 
         parsed_args = await CommandArgs.prompt([
             {
@@ -240,7 +240,7 @@ class CaseCommand(Bloxlink.Module):
                 "multiple": True
             },
             {
-                "prompt": f"Which group should these members be removed from? Available groups: ``{groups}``",
+                "prompt": f"Which group should these members be removed from? Available groups: `{groups}`",
                 "name": "group",
                 "type": "choice",
                 "choices": groups,
@@ -265,10 +265,10 @@ class CaseCommand(Bloxlink.Module):
                 await channel.set_permissions(group_member, overwrite=None)
         except Forbidden:
             raise Error("I've saved your group members, but I was unable to set their permissions for this "
-                        "channel. Please add the group members to this channel, or give me the ``Manage Channel`` "
-                        "and ``Manage Roles`` permissions, then re-run this command.")
+                        "channel. Please add the group members to this channel, or give me the `Manage Channel` "
+                        "and `Manage Roles` permissions, then re-run this command.")
 
-        await response.success(f"Successfully **removed** these members from the group ``{group}``!")
+        await response.success(f"Successfully **removed** these members from the group `{group}`!")
 
 
     @Bloxlink.subcommand()
@@ -301,7 +301,7 @@ class CaseCommand(Bloxlink.Module):
             category = find(lambda c: c.id == int(archive_category), guild.categories)
 
             if not category:
-                raise Error(f"The archive category has been deleted! You must run ``{prefix}courtsetup`` to set another category.")
+                raise Error(f"The archive category has been deleted! You must run `{prefix}courtsetup` to set another category.")
 
             overwrites = {
                 guild.default_role: PermissionOverwrite(read_messages=False)
@@ -310,10 +310,10 @@ class CaseCommand(Bloxlink.Module):
             try:
                 await channel.edit(category=category, overwrites=overwrites)
             except NotFound:
-                raise Error(f"The archive category has been deleted! You must run ``{prefix}courtsetup`` to set another category.")
+                raise Error(f"The archive category has been deleted! You must run `{prefix}courtsetup` to set another category.")
             except Forbidden:
-                raise Error("I was unable to edit this case channel. Please make sure I have both the ``Manage Channels`` and "
-                            "``Manage Roles`` permissions.")
+                raise Error("I was unable to edit this case channel. Please make sure I have both the `Manage Channels` and "
+                            "`Manage Roles` permissions.")
 
             else:
                 await response.success("Successfully **closed** this case channel.")
@@ -321,7 +321,7 @@ class CaseCommand(Bloxlink.Module):
             try:
                 await channel.delete()
             except Forbidden:
-                raise Error("I was unable to delete this channel. Please make sure I have the ``Manage Channels`` permission.")
+                raise Error("I was unable to delete this channel. Please make sure I have the `Manage Channels` permission.")
 
         cases.pop(str(channel.id), None)
         court_data["cases"] = cases
@@ -360,10 +360,10 @@ class CaseCommand(Bloxlink.Module):
 
 
         if not court_data:
-            raise Error(f"You must set-up this add-on before you can use it! Please use ``{prefix}courtsetup`` "
+            raise Error(f"You must set-up this add-on before you can use it! Please use `{prefix}courtsetup` "
                         "to begin the set-up.")
         elif not cases:
-            raise Error(f"This server has no active cases! Cases may be created with ``{prefix}case create``.")
+            raise Error(f"This server has no active cases! Cases may be created with `{prefix}case create`.")
 
 
         for channel_id, case in cases.items():
@@ -412,10 +412,10 @@ class CaseCommand(Bloxlink.Module):
         my_permissions = guild.me.guild_permissions
 
         if not (my_permissions.manage_channels and my_permissions.manage_roles):
-            raise Error("I need both the ``Manage Channels`` and ``Manage Roles`` permissions.")
+            raise Error("I need both the `Manage Channels` and `Manage Roles` permissions.")
 
         elif not court_data:
-            raise Error(f"You must set-up this add-on before you can use it! Please use ``{prefix}courtsetup`` "
+            raise Error(f"You must set-up this add-on before you can use it! Please use `{prefix}courtsetup` "
                         "to begin the set-up.")
 
         elif not cases:
@@ -475,7 +475,7 @@ class CaseCommand(Bloxlink.Module):
 
         parsed_args = await CommandArgs.prompt([
             {
-                "prompt": f"Which group should be muted? Available groups: ``{groups}``",
+                "prompt": f"Which group should be muted? Available groups: `{groups}`",
                 "name": "group",
                 "type": "choice",
                 "choices": groups,
@@ -487,7 +487,7 @@ class CaseCommand(Bloxlink.Module):
         group_members = current_case["groupMembers"].get(group) or []
 
         if not group_members:
-            raise Error(f"This group has no members associated with it! Please add them with ``{prefix}case add``")
+            raise Error(f"This group has no members associated with it! Please add them with `{prefix}case add`")
 
         if not guild.chunked:
             await guild.chunk()
@@ -499,7 +499,7 @@ class CaseCommand(Bloxlink.Module):
                 await channel.set_permissions(member, send_messages=False, read_messages=True)
 
 
-        await response.success(f"Successfully **muted** the members from group ``{group}``!")
+        await response.success(f"Successfully **muted** the members from group `{group}`!")
 
 
     @Bloxlink.subcommand()
@@ -530,7 +530,7 @@ class CaseCommand(Bloxlink.Module):
 
         parsed_args = await CommandArgs.prompt([
             {
-                "prompt": f"Which group should be muted? Available groups: ``{groups}``",
+                "prompt": f"Which group should be muted? Available groups: `{groups}`",
                 "name": "group",
                 "type": "choice",
                 "choices": groups,
@@ -542,7 +542,7 @@ class CaseCommand(Bloxlink.Module):
         group_members = current_case["groupMembers"].get(group) or []
 
         if not group_members:
-            raise Error(f"This group has no members associated with it! Please add them with ``{prefix}case add``")
+            raise Error(f"This group has no members associated with it! Please add them with `{prefix}case add`")
 
         if not guild.chunked:
             await guild.chunk()
@@ -554,4 +554,4 @@ class CaseCommand(Bloxlink.Module):
                 await channel.set_permissions(member, read_messages=True, send_messages=True)
 
 
-        await response.success(f"Successfully **unmuted** the members from group ``{group}``!")
+        await response.success(f"Successfully **unmuted** the members from group `{group}`!")

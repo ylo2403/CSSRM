@@ -15,10 +15,11 @@ class RobloxSearchCommand(Bloxlink.Module):
         self.arguments = [
             {
                 "prompt": "Please specify either a username or Roblox ID. If the person's name is all numbers, "
-                          "then attach a ``--username`` flag to this command. Example: ``!getinfo 1234 --username`` will "
+                          "then attach a `--username` flag to this command. Example: `!getinfo 1234 --username` will "
                           "search for a user with a Roblox username of '1234' instead of a Roblox ID.",
+                "slash_desc": "Please enter a Roblox username or Roblox ID.",
                 "type": "string",
-                "name": "target"
+                "name": "roblox_name"
             }
         ]
         self.examples = [
@@ -28,24 +29,25 @@ class RobloxSearchCommand(Bloxlink.Module):
         ]
         self.cooldown = 5
         self.dm_allowed = True
+        self.slash_enabled = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        target = CommandArgs.parsed_args["target"]
+        target = CommandArgs.parsed_args["roblox_name"]
         flags = CommandArgs.flags
         response = CommandArgs.response
         message = CommandArgs.message
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         prefix = CommandArgs.prefix
 
-        if message.mentions:
+        if message and message.mentions:
             message.content = f"{prefix}getinfo {message.mentions[0].id}"
             return await parse_message(message)
 
         valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned"]
 
         if not all(f in valid_flags for f in flags.keys()):
-            raise Error(f"Invalid flag! Valid flags are: ``{', '.join(valid_flags)}``")
+            raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")
 
         username = ID = False
 

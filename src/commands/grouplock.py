@@ -52,8 +52,8 @@ class GroupLockCommand(Bloxlink.Module):
         choice = CommandArgs.parsed_args["choice"]
         guild_data = CommandArgs.guild_data
         groups = CommandArgs.guild_data.get("groupLock", {})
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         prefix = CommandArgs.prefix
         response = CommandArgs.response
 
@@ -66,7 +66,7 @@ class GroupLockCommand(Bloxlink.Module):
                     "validation": self.validate_group
                 },
                 {
-                    "prompt": "Would you like people who are kicked to receive a custom DM? Please specify either ``yes`` or ``no``.\n\n"
+                    "prompt": "Would you like people who are kicked to receive a custom DM? Please specify either `yes` or `no`.\n\n"
                               "Note that Unverified users will receive a different DM on instructions to linking to Bloxlink.",
                     "name": "dm_enabled",
                     "type": "choice",
@@ -84,7 +84,7 @@ class GroupLockCommand(Bloxlink.Module):
 
             if len(groups) >= 3 and not profile.features.get("premium"):
                 raise Message("If you would like to add more than **3** groups to your group-lock, then you need Bloxlink Premium.\n"
-                              f"Please use ``{prefix}donate`` for instructions on receiving Bloxlink Premium.\n"
+                              f"Please use `{prefix}donate` for instructions on receiving Bloxlink Premium.\n"
                               "Bloxlink Premium members may lock their server with up to **15** groups.", type="silly")
 
             if dm_enabled:
@@ -104,7 +104,7 @@ class GroupLockCommand(Bloxlink.Module):
                 "groupLock": groups
             }, conflict="update").run()
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **added** a group to the ``server-lock``.", BROWN_COLOR)
+            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **added** a group to the `server-lock`.", BROWN_COLOR)
 
             await response.success(f"Successfully added group **{group.name}** to your Server-Lock!")
 
@@ -131,7 +131,7 @@ class GroupLockCommand(Bloxlink.Module):
 
                 await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **deleted** a group from the ``server-lock``.", BROWN_COLOR)
+            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **deleted** a group from the `server-lock`.", BROWN_COLOR)
 
             await response.success("Successfully **deleted** your group from the Server-Lock!")
 

@@ -52,4 +52,4 @@ class MemberUnBanEvent(Bloxlink.Module):
                                             except (Forbidden, HTTPException):
                                                 pass
                                             else:
-                                                await post_event(guild, None, "moderation", f"{ban_entry.user.mention} is an alt of {user.mention} and has been ``unbanned``.", RED_COLOR)
+                                                await post_event(guild, None, "moderation", f"{ban_entry.user.mention} is an alt of {user.mention} and has been `unbanned`.", RED_COLOR)

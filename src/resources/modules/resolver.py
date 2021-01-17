@@ -3,9 +3,9 @@ from discord.errors import Forbidden, NotFound
 from re import compile
 
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..exceptions import PermissionError # pylint: disable=import-error
 
 import string
+
 
 @Bloxlink.module
 class Resolver(Bloxlink.Module):
@@ -13,8 +13,8 @@ class Resolver(Bloxlink.Module):
         self.user_pattern = compile(r"<@!?([0-9]+)>")
         self.role_pattern = compile(r"<@&([0-9]+)>")
 
-    async def string_resolver(self, message, arg, content=None):
-        if not content:
+    async def string_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         min = arg.get("min", 1)
@@ -32,8 +32,8 @@ class Resolver(Bloxlink.Module):
         return str(content), None
 
 
-    async def number_resolver(self, message, arg, content=None):
-        if not content:
+    async def number_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         if content.isdigit():
@@ -52,8 +52,8 @@ class Resolver(Bloxlink.Module):
 
         return False, "You must pass a number"
 
-    async def choice_resolver(self, message, arg, content=None):
-        if not content:
+    async def choice_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         content = content.lower()
@@ -73,30 +73,28 @@ class Resolver(Bloxlink.Module):
         return False, f"Choice must be of either: {str(arg['choices'])}"
 
 
-    async def user_resolver(self, message, arg, content=None):
-        if not content:
+    async def user_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
-
         if not arg.get("multiple"):
-            if message.mentions:
+            if message:
                 for mention in message.mentions:
                     if mention.id != self.client.user.id:
                         return mention, None
 
-            if message.raw_mentions:
-                user_id = self.user_pattern.search(content)
+                if message.raw_mentions:
+                    user_id = self.user_pattern.search(content)
 
-                if user_id:
-                    user_id = int(user_id.group(1))
+                    if user_id:
+                        user_id = int(user_id.group(1))
 
-                    if user_id != self.client.user.id:
-                        try:
-                            user = await self.client.fetch_user(user_id)
-                            return user, None
-                        except NotFound:
-                            return False, "A user with this discord ID does not exist"
+                        if user_id != self.client.user.id:
+                            try:
+                                user = await self.client.fetch_user(user_id)
+                                return user, None
+                            except NotFound:
+                                return False, "A user with this discord ID does not exist"
 
 
             is_int, is_id = None, None
@@ -142,14 +140,15 @@ class Resolver(Bloxlink.Module):
             if max:
                 lookup_strings = lookup_strings[:max]
 
-            for user in message.mentions:
-                if max:
-                    if count >= max:
-                        break
-                    else:
-                        count += 1
+            if message:
+                for user in message.mentions:
+                    if max:
+                        if count >= max:
+                            break
+                        else:
+                            count += 1
 
-                users.append(user)
+                    users.append(user)
 
             for lookup_string in lookup_strings:
                 if lookup_string:
@@ -179,17 +178,16 @@ class Resolver(Bloxlink.Module):
             return users, None
 
 
-    async def channel_resolver(self, message, arg, content=None):
-        if not content:
+    async def channel_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
         channels = []
         create_missing_channel = arg.get("create_missing_channel", True)
         max = arg.get("max")
         multiple = arg.get("multiple")
 
-        if message.channel_mentions:
+        if message and message.channel_mentions:
             for channel in message.channel_mentions:
                 channels.append(channel)
 
@@ -213,7 +211,7 @@ class Resolver(Bloxlink.Module):
                             try:
                                 channel = await guild.create_text_channel(name=lookup_string.replace(" ", "-"))
                             except Forbidden:
-                                return None, "I was unable to create the channel. Please ensure I have the ``Manage Channels`` permission."
+                                return None, "I was unable to create the channel. Please ensure I have the `Manage Channels` permission."
                             else:
                                 channels.append(channel)
                         else:
@@ -234,11 +232,10 @@ class Resolver(Bloxlink.Module):
                 return channels[0], None
 
 
-    async def category_resolver(self, message, arg, content=None):
-        if not content:
+    async def category_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
         categories = []
         create_missing_category = arg.get("create_missing_category", True)
         max = arg.get("max")
@@ -261,7 +258,7 @@ class Resolver(Bloxlink.Module):
                         try:
                             category = await guild.create_category(name=lookup_string)
                         except Forbidden:
-                            return None, "I was unable to create the category. Please ensure I have the ``Manage Channels`` permission."
+                            return None, "I was unable to create the category. Please ensure I have the `Manage Channels` permission."
                         else:
                             categories.append(category)
                     else:
@@ -282,17 +279,16 @@ class Resolver(Bloxlink.Module):
                 return categories[0], None
 
 
-    async def role_resolver(self, message, arg, content=None):
-        if not content:
+    async def role_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
         roles = []
         create_missing_role = arg.get("create_missing_role", True)
         max = arg.get("max")
         multiple = arg.get("multiple")
 
-        if message.role_mentions:
+        if message and message.role_mentions:
             for role in message.role_mentions:
                 roles.append(role)
 
@@ -316,7 +312,7 @@ class Resolver(Bloxlink.Module):
                             try:
                                 role = await guild.create_role(name=lookup_string)
                             except Forbidden:
-                                return None, "I was unable to create the role. Please ensure I have the ``Manage Roles`` permission."
+                                return None, "I was unable to create the role. Please ensure I have the `Manage Roles` permission."
                             else:
                                 roles.append(role)
                         else:
@@ -337,8 +333,8 @@ class Resolver(Bloxlink.Module):
                 return roles[0], None
 
 
-    async def image_resolver(self, message, arg, content=None):
-        if not content:
+    async def image_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         if message and message.attachments:
@@ -353,8 +349,8 @@ class Resolver(Bloxlink.Module):
             return False, "This doesn't appear to be a valid https URL."
 
 
-    async def list_resolver(self, message, arg, content=None):
-        if not content:
+    async def list_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         items = content.split(",")

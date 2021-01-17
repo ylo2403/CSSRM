@@ -40,10 +40,10 @@ class AddonsCommand(Bloxlink.Module):
 
         response   = CommandArgs.response
         prefix     = CommandArgs.prefix
-        guild      = CommandArgs.message.guild
+        guild      = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Server Add-ons")
-        embed.description = f"Use ``{prefix}addon change`` to enable/disable an add-on."
+        embed.description = f"Use `{prefix}addon change` to enable/disable an add-on."
 
         available_addons = set()
         enabled_addons   = set()
@@ -72,7 +72,7 @@ class AddonsCommand(Bloxlink.Module):
         response = CommandArgs.response
         prefix   = CommandArgs.prefix
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         guild_addons = guild_data.get("addons", {})
 
@@ -80,7 +80,7 @@ class AddonsCommand(Bloxlink.Module):
 
         parsed_args = await CommandArgs.prompt([
             {
-                "prompt": f"Please choose the add-on you would like to change: ``{toggleable_addons}``",
+                "prompt": f"Please choose the add-on you would like to change: `{toggleable_addons}`",
                 "name": "addon_choice",
                 "type": "choice",
                 "choices": toggleable_addons,
@@ -102,14 +102,14 @@ class AddonsCommand(Bloxlink.Module):
                 donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
                 if not donator_profile.features.get("premium"):
-                    raise Error(f"You must have premium in order to enable this add-on. Please use ``{prefix}donate`` "
+                    raise Error(f"You must have premium in order to enable this add-on. Please use `{prefix}donate` "
                                 "for instructions on donating.")
 
             await response.success(f"Successfully **{parsed_args['enable']}d** the **{addon_choice.title()}** add-on! You should "
-                                   f"now see additional commands if you run ``{prefix}help``.")
+                                   f"now see additional commands if you run `{prefix}help`.")
         else:
             await response.success(f"Successfully **{parsed_args['enable']}d** the **{addon_choice.title()}** add-on! These "
-                                   f"commands have been removed from your ``{prefix}help`` menu.")
+                                   f"commands have been removed from your `{prefix}help` menu.")
 
         guild_addons[addon_choice] = enable
         guild_data["addons"] = guild_addons

@@ -27,6 +27,7 @@ class LogChannelCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.aliases = ["logchannels"]
+        self.slash_enabled = True
 
 
     async def __main__(self, CommandArgs):
@@ -46,24 +47,24 @@ class LogChannelCommand(Bloxlink.Module):
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         log_channels = guild_data.get("logChannels") or {}
 
         parsed_args = await CommandArgs.prompt([
             {
                 "prompt": "Please select an **event** to add/delete:\n"
-                          "``all`` "              + ARROW + " all events will be sent to your channel\n"
-                          "``verifications`` "    + ARROW + " user verifications will be logged "
+                          "`all` "              + ARROW + " all events will be sent to your channel\n"
+                          "`verifications` "    + ARROW + " user verifications will be logged "
                                                             "to your channel\n"
-                          "``configurations`` "   + ARROW + " any Bloxlink setting alteration will be "
+                          "`configurations` "   + ARROW + " any Bloxlink setting alteration will be "
                                                             "logged to your channel\n"
-                         "``inactivity notices`` _(premium)_ " + ARROW + " user-set inactivity notices "
-                                                                         "from ``" + prefix + "profie`` will "
+                         "`inactivity notices` _(premium)_ " + ARROW + " user-set inactivity notices "
+                                                                         "from `" + prefix + "profie` will "
                                                                          "be logged to your channel\n"
-                        "``binds`` "              + ARROW +   " bind insertions/deletions will be logged to your channel\n"
-                        "``moderation`` "         + ARROW +   " automatic moderation actions by certain features will be "
+                        "`binds` "              + ARROW +   " bind insertions/deletions will be logged to your channel\n"
+                        "`moderation` "         + ARROW +   " automatic moderation actions by certain features will be "
                                                               "logged to your channel",
 
                 "name": "log_type",
@@ -72,7 +73,7 @@ class LogChannelCommand(Bloxlink.Module):
             },
             {
                 "prompt": "Please either **mention a channel**, or say a **channel name.**\n"
-                          "Successful ``{log_type}`` events will be posted to this channel.\n\n"
+                          "Successful `{log_type}` events will be posted to this channel.\n\n"
                           "**Please make sure Bloxlink has permission to send/read messages "
                           "from the channel!**",
                 "name": "log_channel",
@@ -94,8 +95,8 @@ class LogChannelCommand(Bloxlink.Module):
             donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
             if not donator_profile.features.get("premium"):
-                raise Message("Only premium subscribers can subscribe to ``inactivity notices``!\n"
-                              f"Please use ``{prefix}donate`` for instructions on subscribing to premium.", type="silly")
+                raise Message("Only premium subscribers can subscribe to `inactivity notices`!\n"
+                              f"Please use `{prefix}donate` for instructions on subscribing to premium.", type="silly")
 
 
         if log_channel in ("clear", "delete"):
@@ -115,7 +116,7 @@ class LogChannelCommand(Bloxlink.Module):
 
         await set_guild_value(guild, "logChannels", log_channels)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``log channels``.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `log channels`.", BROWN_COLOR)
 
         await response.success(f"Successfully **{action}** your log channel!")
 
@@ -124,7 +125,7 @@ class LogChannelCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your log channels"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         log_channels = guild_data.get("logChannels") or {}
@@ -142,7 +143,7 @@ class LogChannelCommand(Bloxlink.Module):
 
         for log_type, log_channel_id in log_channels.items():
             log_channel = guild.get_channel(int(log_channel_id))
-            description.append(f"``{log_type}`` {ARROW} {log_channel and log_channel.mention or '(Deleted)'}")
+            description.append(f"`{log_type}` {ARROW} {log_channel and log_channel.mention or '(Deleted)'}")
 
         embed.description = "\n".join(description)
 

@@ -69,7 +69,7 @@ class SettingsCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your server settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
@@ -121,7 +121,7 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         message = CommandArgs.message
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
         guild = CommandArgs.message.guild
         guild_data = CommandArgs.guild_data
@@ -129,30 +129,38 @@ class SettingsCommand(Bloxlink.Module):
         parsed_args = await CommandArgs.prompt([{
             "prompt": "What value would you like to change? Note that some settings you can't change "
                       "from this command due to the extra complexity, but I will tell you the "
-                      f"appropriate command to use.\n\nOptions: ``{options_strings}``\n\nPremium-only options: ``{premium_options_strings}``",
+                      f"appropriate command to use.\n\nOptions: `{options_strings}`\n\nPremium-only options: `{premium_options_strings}`",
             "name": "choice",
             "type": "choice",
             "formatting": False,
-            "footer": f"Use ``{prefix}settings help`` to view a description of all choices.",
+            "footer": f"Use `{prefix}settings help` to view a description of all choices.",
             "choices": options_combined
         }])
 
         choice = parsed_args["choice"]
 
         if choice == "trelloID":
-            raise Message(f"You can link your Trello board from ``{prefix}setup``!", type="success")
+            raise Message(f"You can link your Trello board from `{prefix}setup`!", type="success")
         elif choice == "Linked Groups":
-            raise Message(f"You can link your group from ``{prefix}bind``!", type="success")
+            raise Message(f"You can link your group from `{prefix}bind`!", type="success")
         elif choice == "joinDM":
-            message.content = f"{prefix}joindm"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}joindm"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}joindm`!")
         elif choice == "groupShoutChannel":
-            message.content = f"{prefix}shoutproxy"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}shoutproxy"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}shoutproxy`!")
         elif choice == "whiteLabel":
-            message.content = f"{prefix}whitelabel"
-            return await parse_message(message)
-
+            if message:
+                message.content = f"{prefix}whitelabel"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}whitelabel`!")
 
         option_find = OPTIONS.get(choice)
 
@@ -162,7 +170,7 @@ class SettingsCommand(Bloxlink.Module):
 
                 if not profile.features.get("premium"):
                     raise Error("This option is premium-only! The server owner must have premium for it to be changed.\n"
-                                f"Use ``{prefix}donate`` for more instructions on getting premium.")
+                                f"Use `{prefix}donate` for more instructions on getting premium.")
 
             option_type = option_find[1]
             trello_board = CommandArgs.trello_board
@@ -179,7 +187,7 @@ class SettingsCommand(Bloxlink.Module):
 
             if option_type == "boolean":
                 parsed_value = await CommandArgs.prompt([{
-                    "prompt": f"Would you like to **enable** or **disable** ``{choice}``?\n\n"
+                    "prompt": f"Would you like to **enable** or **disable** `{choice}`?\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "choice",
@@ -200,11 +208,11 @@ class SettingsCommand(Bloxlink.Module):
                     choice: parsed_value
                 }, conflict="update").run()
 
-                success_text = f"Successfully **{parsed_bool_choice}d** ``{choice}``!"
+                success_text = f"Successfully **{parsed_bool_choice}d** `{choice}`!"
 
             elif option_type == "string":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a new value for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a new value for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "string",
@@ -225,7 +233,7 @@ class SettingsCommand(Bloxlink.Module):
 
             elif option_type == "role":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a role for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a role for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "role",
                     "type": "role",
@@ -244,11 +252,11 @@ class SettingsCommand(Bloxlink.Module):
                     choice: parsed_value
                 }, conflict="update").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
 
             elif option_type == "number":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a new integer for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a new integer for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "number",
@@ -266,12 +274,12 @@ class SettingsCommand(Bloxlink.Module):
                     choice: parsed_value
                 }, conflict="update").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
 
             elif option_type == "choice":
                 choices = ", ".join(option_find[2])
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please pick a new value for ``{choice}``: ``{choices}``\n\n"
+                    "prompt": f"Please pick a new value for `{choice}`: `{choices}`\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "choice",
@@ -289,7 +297,7 @@ class SettingsCommand(Bloxlink.Module):
                     choice: parsed_value
                 }, conflict="update").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
             else:
                 raise Error("An unknown type was specified.")
         else:
@@ -312,7 +320,7 @@ class SettingsCommand(Bloxlink.Module):
                     await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
 
             except TrelloUnauthorized:
-                await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                      "Trello board.")
 
             except (TrelloNotFound, TrelloBadRequest):
@@ -320,7 +328,7 @@ class SettingsCommand(Bloxlink.Module):
 
         await set_guild_value(guild, choice, parsed_value)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``{choice}`` option.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}` option.", BROWN_COLOR)
 
         raise Message(success_text, type="success")
 
@@ -336,14 +344,14 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
 
         parsed_arg = (await CommandArgs.prompt([{
-            "prompt": f"Which setting would you like to clear? Valid choices: ``{RESET_CHOICES}``",
+            "prompt": f"Which setting would you like to clear? Valid choices: `{RESET_CHOICES}`",
             "name": "choice",
             "type": "choice",
             "formatting": False,
@@ -353,8 +361,8 @@ class SettingsCommand(Bloxlink.Module):
         if parsed_arg == "everything":
             cont = (await CommandArgs.prompt([{
                 "prompt": "**Warning!** This will clear **all of your settings** including binds, "
-                          f"saved group information, etc. You'll need to run ``{prefix}setup`` "
-                           "and set-up the bot again. Continue? ``Y/N``",
+                          f"saved group information, etc. You'll need to run `{prefix}setup` "
+                           "and set-up the bot again. Continue? `Y/N`",
                 "name": "continue",
                 "choices": ("yes", "no"),
                 "embed_title": "Warning!",
@@ -386,7 +394,7 @@ class SettingsCommand(Bloxlink.Module):
                         trello_binds_list.parsed_bind_data = None
 
                 except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                          "Trello board.")
                 except (TrelloNotFound, TrelloBadRequest):
                     pass
@@ -406,7 +414,7 @@ class SettingsCommand(Bloxlink.Module):
 
             cont = (await CommandArgs.prompt([{
                 "prompt": "**Warning!** This will clear **all of your binds**. You'll need to "
-                         f"run ``{prefix}bind`` to set up your binds again. Continue? ``Y/N``",
+                         f"run `{prefix}bind` to set up your binds again. Continue? `Y/N`",
                 "name": "continue",
                 "choices": ("yes", "no"),
                 "type": "choice",
@@ -439,7 +447,7 @@ class SettingsCommand(Bloxlink.Module):
                 if role_ids:
                     delete_roles = (await CommandArgs.prompt([{
                         "prompt": "Would you like me to **delete these roles from your server as well?** If yes, "
-                                  f"then this will delete **{len(role_ids)}** role(s). ``Y/N``",
+                                  f"then this will delete **{len(role_ids)}** role(s). `Y/N`",
                         "name": "delete_roles",
                         "choices": ("yes", "no"),
                         "type": "choice",
@@ -477,7 +485,7 @@ class SettingsCommand(Bloxlink.Module):
                         trello_binds_list.parsed_bind_data = None
 
                 except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                          "Trello board.")
                 except (TrelloNotFound, TrelloBadRequest):
                     pass
@@ -495,7 +503,7 @@ class SettingsCommand(Bloxlink.Module):
     async def help(self, CommandArgs):
         """provides a description of all changeable settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Settings Help")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)

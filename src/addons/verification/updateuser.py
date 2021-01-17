@@ -21,7 +21,7 @@ class UpdateUserCommand(Bloxlink.Module):
         self.aliases = ["update", "updateroles"]
         self.arguments = [
             {
-                "prompt": "Please specify user(s) or role(s) to update. For example: ``@user1 @user2 @user3`` or ``@role``",
+                "prompt": "Please specify user(s) or role(s) to update. For example: `@user1 @user2 @user3` or `@role`",
                 "type": ["user", "role"],
                 "name": "users",
                 "multiple": True,
@@ -29,34 +29,49 @@ class UpdateUserCommand(Bloxlink.Module):
                 "create_missing_role": False
             }
         ]
+        self.slash_args = [
+            {
+                "prompt": "Please select the user to update.",
+                "name": "user",
+                "type": "user",
+                "optional": True
+            },
+            {
+                "prompt": "Please select the role of members to update.",
+                "name": "role",
+                "type": "role",
+                "optional": True
+            }
+        ]
         self.category = "Administration"
         self.cooldown = 2
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
+        self.slash_enabled = True
+        self.slash_ack = False
 
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        users_ = CommandArgs.parsed_args["users"]
+
+        user_slash = CommandArgs.parsed_args.get("user")
+        role_slash = CommandArgs.parsed_args.get("role")
+        users_ = CommandArgs.parsed_args.get("users") or ([user_slash, role_slash] if user_slash or role_slash else None)
         prefix = CommandArgs.prefix
 
         message = CommandArgs.message
-        author = message.author
-        guild = message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         guild_data = CommandArgs.guild_data
 
         users = []
 
-        if not users_:
-            message.content = f"{prefix}getrole"
-            return await parse_message(message)
-
-        if not CommandArgs.has_permission:
-            if users_[0] == author:
+        if not (users_ and CommandArgs.has_permission):
+            if message:
                 message.content = f"{prefix}getrole"
                 return await parse_message(message)
             else:
-                raise PermissionError("You do not have permission to update arbitrary users or roles!")
+                raise Message(f"To update yourself, please run the `{prefix}getrole` command.", hidden=True, type="info")
 
         if isinstance(users_[0], Role):
             if not guild.chunked:
@@ -66,10 +81,11 @@ class UpdateUserCommand(Bloxlink.Module):
                 users += role.members
 
             if not users:
-                raise Error("These role(s) have no members in it!")
+                raise Error("These role(s) have no members in it!", hidden=True)
         else:
             users = users_
 
+        await response.slash_ack()
 
         len_users = len(users)
 
@@ -106,7 +122,7 @@ class UpdateUserCommand(Bloxlink.Module):
             if len_users > 10:
                 if not premium:
                     raise Error("You need premium in order to update more than 10 members at a time! "
-                                f"Use ``{prefix}donate`` for instructions on donating.")
+                                f"Use `{prefix}donate` for instructions on donating.")
 
                 if len_users >= 100:
                     cooldown = math.ceil(((len_users / 1000) * 120) * 60)
@@ -177,11 +193,11 @@ class UpdateUserCommand(Bloxlink.Module):
                         await response.success("This user is all up-to-date; no changes were made.")
 
                 except BloxlinkBypass:
-                    raise Message("Since you have the ``Bloxlink Bypass`` role, I was unable to update your roles/nickname.", type="info")
+                    raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
                 except Blacklisted as b:
                     if str(b):
-                        raise Error(f"{user.mention} has an active restriction for: ``{b}``")
+                        raise Error(f"{user.mention} has an active restriction for: `{b}`")
                     else:
                         raise Error(f"{user.mention} has an active restriction from Bloxlink.")
 

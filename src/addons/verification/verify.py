@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from discord import Embed, Object
+from discord import Embed
 from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
 from resources.constants import (NICKNAME_TEMPLATES, GREEN_COLOR, BROWN_COLOR, ARROW, VERIFY_URL, # pylint: disable=import-error
                                 ACCOUNT_SETTINGS_URL, TRELLO)
@@ -18,8 +18,8 @@ class VerifyCommand(Bloxlink.Module):
         self.examples = ["add", "unlink", "view", "blox_link"]
         self.category = "Account"
         self.cooldown = 5
-        self.aliases = ["getrole", "getroles"]
         self.dm_allowed = True
+        self.slash_enabled = True
 
     @staticmethod
     async def validate_username(message, content):
@@ -34,8 +34,8 @@ class VerifyCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         trello_board = CommandArgs.trello_board
         guild_data = CommandArgs.guild_data
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
@@ -43,8 +43,8 @@ class VerifyCommand(Bloxlink.Module):
             return await self.add(CommandArgs)
 
         if CommandArgs.flags.get("add") or CommandArgs.flags.get("verify") or CommandArgs.flags.get("force"):
-            await CommandArgs.response.error(f"``{CommandArgs.prefix}verify --force`` is deprecated and will be removed in a future version of Bloxlink. "
-                                             f"Please use ``{prefix}verify add`` instead.")
+            await CommandArgs.response.error(f"`{CommandArgs.prefix}verify --force` is deprecated and will be removed in a future version of Bloxlink. "
+                                             f"Please use `{prefix}verify add` instead.")
 
             return await self.add(CommandArgs)
 
@@ -75,11 +75,11 @@ class VerifyCommand(Bloxlink.Module):
             )
 
         except BloxlinkBypass:
-            raise Message("Since you have the ``Bloxlink Bypass`` role, I was unable to update your roles/nickname.", type="info")
+            raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
         except Blacklisted as b:
             if str(b):
-                raise Error(f"{author.mention} has an active restriction for: ``{b}``")
+                raise Error(f"{author.mention} has an active restriction for: `{b}`")
             else:
                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
 
@@ -93,7 +93,7 @@ class VerifyCommand(Bloxlink.Module):
             welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
 
             if embed:
-                await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as ``{roblox_user.username}``.", GREEN_COLOR)
+                await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
             else:
                 embed = Embed(description="This user is all up-to-date; no changes were made.")
 
@@ -104,9 +104,9 @@ class VerifyCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """link a new account to Bloxlink"""
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        if CommandArgs.message.guild:
+        if CommandArgs.guild:
             guild_data = CommandArgs.guild_data
 
             if not guild_data.get("hasBot"):
@@ -132,16 +132,16 @@ class VerifyCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
         response = CommandArgs.response
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         if not guild:
             return await response.send("This sub-command can only be used in a server!")
 
         choice = (await CommandArgs.prompt([{
-            "prompt": "Which option would you like to change?\nOptions: ``(welcomeMessage)``",
+            "prompt": "Which option would you like to change?\nOptions: `(welcomeMessage)`",
             "name": "choice",
             "type": "choice",
             "choices": ("welcomeMessage",)
@@ -160,7 +160,7 @@ class VerifyCommand(Bloxlink.Module):
 
         if choice == "welcomeMessage":
             welcome_message = (await CommandArgs.prompt([{
-                "prompt": f"What would you like your welcome message to be? This will be shown in ``{prefix}verify`` messages.\nYou may "
+                "prompt": f"What would you like your welcome message to be? This will be shown in `{prefix}verify` messages.\nYou may "
                           f"use these templates: ```{NICKNAME_TEMPLATES}```",
                 "name": "welcome_message",
                 "formatting": False,
@@ -181,7 +181,7 @@ class VerifyCommand(Bloxlink.Module):
                     await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
 
                 except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                          "Trello board.")
 
                 except (TrelloNotFound, TrelloBadRequest):
@@ -192,9 +192,9 @@ class VerifyCommand(Bloxlink.Module):
                 "welcomeMessage": welcome_message
             }, conflict="update").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``{choice}``.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}`.", BROWN_COLOR)
 
-        raise Message(f"Successfully saved your new ``{choice}``!", type="success")
+        raise Message(f"Successfully saved your new `{choice}`!", type="success")
 
 
     @staticmethod
@@ -202,7 +202,7 @@ class VerifyCommand(Bloxlink.Module):
     async def view(CommandArgs):
         """view your linked account(s)"""
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         response = CommandArgs.response
 
         try:
@@ -241,14 +241,14 @@ class VerifyCommand(Bloxlink.Module):
             embed.add_field(name="Secondary Accounts", value=parsed_accounts_str or "No secondary account saved")
             embed.set_author(name=author, icon_url=author.avatar_url)
 
-            await response.send(embed=embed, dm=True, strict_post=True)
+            await response.send(embed=embed, dm=True, hidden=False, strict_post=True)
 
     @staticmethod
     @Bloxlink.subcommand()
     async def unlink(CommandArgs):
         """unlink an account from Bloxlink"""
 
-        if CommandArgs.message.guild:
+        if CommandArgs.guild:
             await CommandArgs.response.reply(f"to manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")
         else:
             await CommandArgs.response.send(f"To manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")

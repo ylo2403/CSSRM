@@ -100,18 +100,18 @@ class IPC(Bloxlink.Module):
                     blacklist_text = ""
 
                     if str(b):
-                        blacklist_text = f"You have an active restriction for: ``{b}``"
+                        blacklist_text = f"You have an active restriction for: `{b}`"
                     else:
                         blacklist_text = f"You have an active restriction from Bloxlink."
 
                     try:
-                        await member.send(f"Failed to update you in the server: ``{blacklist_text}``")
+                        await member.send(f"Failed to update you in the server: `{blacklist_text}`")
                     except Forbidden:
                         pass
 
                 except BloxlinkBypass:
                     try:
-                        await member.send(f"You have the ``Bloxlink Bypass`` role, so I am unable to update you in the server.")
+                        await member.send(f"You have the `Bloxlink Bypass` role, so I am unable to update you in the server.")
                     except Forbidden:
                         pass
 
@@ -129,7 +129,7 @@ class IPC(Bloxlink.Module):
 
                 except PermissionError as e:
                     try:
-                        await member.send(f"A permission error occured, so I was unable to update you in the server: ``{e}``")
+                        await member.send(f"A permission error occured, so I was unable to update you in the server: `{e}`")
                     except Forbidden:
                         pass
 
@@ -144,7 +144,7 @@ class IPC(Bloxlink.Module):
 
                     guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {} # FIXME: use cache
 
-                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as ``{roblox_user.username}``.", GREEN_COLOR)
+                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
 
         elif type == "EVAL":
