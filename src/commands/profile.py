@@ -51,7 +51,7 @@ class ProfileCommand(Bloxlink.Module):
         try:
             time_delta = datetime.strptime(content, "%m-%d-%y")
         except ValueError:
-            return None, "Invalid date format, must be in a ``mm-dd-yy`` format."
+            return None, "Invalid date format, must be in a `mm-dd-yy` format."
 
         if time_now > time_delta:
             return None, "Return date cannot be in the past!"
@@ -73,12 +73,12 @@ class ProfileCommand(Bloxlink.Module):
                 game_id = game
 
                 if not game_id.isdigit():
-                    raise Error(f"Unable to resolve ``{game_id}`` into a **Game ID.**")
+                    raise Error(f"Unable to resolve `{game_id}` into a **Game ID.**")
 
                 try:
                     game = await get_game(game_id)
                 except RobloxNotFound:
-                    raise Error(f"Unable to resolve ``{game_id}`` into a **Game ID.**")
+                    raise Error(f"Unable to resolve `{game_id}` into a **Game ID.**")
 
             favorite_games.add(game_id)
 
@@ -99,12 +99,12 @@ class ProfileCommand(Bloxlink.Module):
                 item_id = item
 
                 if not item_id.isdigit():
-                    raise Error(f"Unable to resolve ``{item_id}`` into a **Catalog Item ID.**")
+                    raise Error(f"Unable to resolve `{item_id}` into a **Catalog Item ID.**")
 
                 try:
                     item = await get_catalog_item(item_id)
                 except RobloxNotFound:
-                    raise Error(f"Unable to resolve ``{item_id}`` into a **Catalog Item ID.**")
+                    raise Error(f"Unable to resolve `{item_id}` into a **Catalog Item ID.**")
 
             favorite_items.add(item_id)
 
@@ -134,7 +134,7 @@ class ProfileCommand(Bloxlink.Module):
                     message.content = f"{CommandArgs.prefix}verify"
                     return await parse_message(message)
                 else:
-                    raise Error(f"You're not linked to Bloxlink! Please run ``{prefix}verify add``.")
+                    raise Error(f"You're not linked to Bloxlink! Please run `{prefix}verify add`.")
             else:
                 raise Error(f"**{user}** is not linked to Bloxlink.")
         else:
@@ -161,7 +161,7 @@ class ProfileCommand(Bloxlink.Module):
 
         change_what = (await CommandArgs.prompt([
             {
-                "prompt": f"Please specify the field to change: ``{FIELDS_STR}``.",
+                "prompt": f"Please specify the field to change: `{FIELDS_STR}`.",
                 "name": "change_what",
                 "type": "choice",
                 "choices": FIELDS,
@@ -189,7 +189,7 @@ class ProfileCommand(Bloxlink.Module):
             date_of_return = (await CommandArgs.prompt([
                 {
                     "prompt": "Are you currently away? Please specify your **date of return** in this "
-                              "format: ``MM-DD-YY``. For example: ``06-01-20``.",
+                              "format: `MM-DD-YY`. For example: `06-01-20`.",
                     "name": "date_of_return",
                     "validation": self.validate_date_of_return,
                     "exceptions": ("clear",),
@@ -220,7 +220,7 @@ class ProfileCommand(Bloxlink.Module):
                 }
 
                 if reason.lower() != "skip":
-                    await post_event(guild, guild_data, "inactivity notice", f"{author.mention} ({author.id}) is now **away** for: ``{reason}``.", PURPLE_COLOR)
+                    await post_event(guild, guild_data, "inactivity notice", f"{author.mention} ({author.id}) is now **away** for: `{reason}`.", PURPLE_COLOR)
                 else:
                     await post_event(guild, guild_data, "inactivity notice", f"{author.mention} ({author.id}) is now **away**.", PURPLE_COLOR)
 
@@ -232,8 +232,8 @@ class ProfileCommand(Bloxlink.Module):
                 {
                     "prompt": "Here you can list at most **3 of your favorite Roblox games.** Please "
                               "say your game URLs or IDs in a **list format separated by commas.** For example: "
-                              "``https://www.roblox.com/games/1271943503/Bloxlink-Verification-Game, 920587237, "
-                              "https://www.roblox.com/games/370731277/MeepCity?refPageId=f4af59bc-5981-47d7-8a1a-0550ccc2b21f``",
+                              "`https://www.roblox.com/games/1271943503/Bloxlink-Verification-Game, 920587237, "
+                              "https://www.roblox.com/games/370731277/MeepCity?refPageId=f4af59bc-5981-47d7-8a1a-0550ccc2b21f`",
                     "name": "favorite_games",
                     "validation": self.validate_games,
                     "exceptions": ("clear",),
@@ -261,7 +261,7 @@ class ProfileCommand(Bloxlink.Module):
                 {
                     "prompt": "Here you can list at most **3 of your favorite Roblox catalog items.** Please "
                               "say your catalog URLs or IDs in a **list format separated by commas.** For example: "
-                              "``https://www.roblox.com/catalog/5249294066/Cartoony-Rainbow-Wings, 5231646851`` ",
+                              "`https://www.roblox.com/catalog/5249294066/Cartoony-Rainbow-Wings, 5231646851` ",
                     "name": "favorite_items",
                     "validation": self.validate_items,
                     "exceptions": ("clear",),
@@ -288,7 +288,7 @@ class ProfileCommand(Bloxlink.Module):
             accepting_trades = (await CommandArgs.prompt([
                 {
                     "prompt": "Are you currently **accepting trades?** This will show on your profile "
-                              "so others may send you trades. ``Y/N``",
+                              "so others may send you trades. `Y/N`",
                     "type": "choice",
                     "choices": ["yes", "no"],
                     "name": "accepting_trades",

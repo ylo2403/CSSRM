@@ -51,11 +51,11 @@ class GetRoleCommand(Bloxlink.Module):
             )
 
         except BloxlinkBypass:
-            raise Message("Since you have the ``Bloxlink Bypass`` role, I was unable to update your roles/nickname.", type="info")
+            raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
         except Blacklisted as b:
             if str(b):
-                raise Error(f"{author.mention} has an active restriction for: ``{b}``")
+                raise Error(f"{author.mention} has an active restriction for: `{b}`")
             else:
                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
 
@@ -70,7 +70,7 @@ class GetRoleCommand(Bloxlink.Module):
             welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
 
             if embed:
-                await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as ``{roblox_user.username}``.", GREEN_COLOR)
+                await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
             else:
                 embed = Embed(description="This user is all up-to-date; no changes were made.")
 

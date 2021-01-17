@@ -24,7 +24,7 @@ class BanEvadersCommand(Bloxlink.Module):
         self.arguments = [
             {
                 "prompt": "This command will scan your server members for members with Roblox accounts which correspond to banned members of your server.\n\n"
-                          "Would you like to **ban** ban-evaders, **kick** them, or do **nothing**?\n\nI will provide a list of members if you choose the ``nothing`` option.",
+                          "Would you like to **ban** ban-evaders, **kick** them, or do **nothing**?\n\nI will provide a list of members if you choose the `nothing` option.",
                 "type": "choice",
                 "name": "action",
                 "choices": ("kick", "ban", "nothing")
@@ -44,9 +44,9 @@ class BanEvadersCommand(Bloxlink.Module):
         await response.send(locale("scans.starting"))
 
         if action in ("kick", "ban"):
-            await post_event(guild, guild_data, "moderation", f"{author.mention} ({author.id}) has ran the ``{prefix}banevaders`` command and chose to **{action}** ban-evaders.", RED_COLOR)
+            await post_event(guild, guild_data, "moderation", f"{author.mention} ({author.id}) has ran the `{prefix}banevaders` command and chose to **{action}** ban-evaders.", RED_COLOR)
         else:
-            await post_event(guild, guild_data, "moderation", f"{author.mention} ({author.id}) has ran the ``{prefix}banevaders`` command.", RED_COLOR)
+            await post_event(guild, guild_data, "moderation", f"{author.mention} ({author.id}) has ran the `{prefix}banevaders` command.", RED_COLOR)
 
         try:
             redis_cooldown_key = self.REDIS_COOLDOWN_KEY.format(release=RELEASE, id=guild.id)

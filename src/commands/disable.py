@@ -26,7 +26,7 @@ class DisableCommand(Bloxlink.Module):
             },
             {
                 "prompt": "Should this command be enabled/disabled **globally** or **for a channel?**\n"
-                          "You may either say ``globally`` or mention a ``channel``.",
+                          "You may either say `globally` or mention a `channel`.",
                 "type": ["channel", "choice"],
                 "create_missing_channel": False,
                 "name": "disable_type",
@@ -82,7 +82,7 @@ class DisableCommand(Bloxlink.Module):
 
         await set_guild_value(guild, "disabledCommands", disabled_commands)
 
-        await response.success(f"Successfully **{enable}** command ``{command_name}`` {disable_where} for non-admins.\n"
-                                "If you would like to grant a certain person access to use this command, give them a role called ``Bloxlink Bypass``.")
+        await response.success(f"Successfully **{enable}** command `{command_name}` {disable_where} for non-admins.\n"
+                                "If you would like to grant a certain person access to use this command, give them a role called `Bloxlink Bypass`.")
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{enable}** the command ``{command_name}`` {disable_where}.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{enable}** the command `{command_name}` {disable_where}.", BROWN_COLOR)

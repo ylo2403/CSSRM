@@ -64,14 +64,14 @@ class PrefixCommand(Bloxlink.Module):
                         else:
                             await card.edit(name=f"{prefix_name}:{new_prefix}")
                     except TrelloUnauthorized:
-                        await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                        await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                              "Trello board.")
                     except (TrelloNotFound, TrelloBadRequest):
                         pass
                     else:
                         await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``prefix`` option.", BROWN_COLOR)
+            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `prefix` option.", BROWN_COLOR)
 
             await set_guild_value(guild, prefix_name, new_prefix)
 
@@ -80,5 +80,5 @@ class PrefixCommand(Bloxlink.Module):
         else:
             old_prefix = CommandArgs.prefix
 
-            await response.send(f"Your prefix used for Bloxlink: ``{old_prefix}``.\n"
-                                 "Change it with ``@Bloxlink prefix <new prefix>``.")
+            await response.send(f"Your prefix used for Bloxlink: `{old_prefix}`.\n"
+                                 "Change it with `@Bloxlink prefix <new prefix>`.")

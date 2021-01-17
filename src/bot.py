@@ -59,7 +59,7 @@ def load_sentry():
 
 async def handle_signal(sig):
     """handle the Unix SIGINT and SIGTERM signals.
-       ``SystemExit``s are incorrectly caught, so we have to use
+       `SystemExit`s are incorrectly caught, so we have to use
        os._exit until this is fixed"""
 
     Bloxlink.log(f"Handling signal {sig}")

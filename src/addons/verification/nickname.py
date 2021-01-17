@@ -16,14 +16,14 @@ class NicknameCommand(Bloxlink.Module):
             {
                 "prompt": "Bloxlink supports advanced nicknaming of users. I'll show you "
                           "the different types of nicknames and how to change them.\n\n"
-                          f"``Bind Nickname`` {ARROW} when you link groups, you're given the "
+                          f"`Bind Nickname` {ARROW} when you link groups, you're given the "
                           "option to change nicknames of group members. Bloxlink will choose the "
                           "person's **highest role** which has an available Bind Nickname. Bind "
-                          "Nicknames can be applied from ``{prefix}bind``. If no bind nicknames "
+                          "Nicknames can be applied from `{prefix}bind`. If no bind nicknames "
                           "apply to the user, then the **Global Nickname** is used instead.\n"
-                          f"``Global Nickname`` {ARROW} the default nickname used if someone has **NO** "
+                          f"`Global Nickname` {ARROW} the default nickname used if someone has **NO** "
                           "available Bind Nicknames. This can be applied from this command and "
-                          "``{prefix}settings change`` (look for \"Nickname Template\").",
+                          "`{prefix}settings change` (look for \"Nickname Template\").",
                 "name": "_",
                 "type": "choice",
                 "choices": ("next",),
@@ -31,7 +31,7 @@ class NicknameCommand(Bloxlink.Module):
             },
             {
                 "prompt": "What would you like your Global Nickname to be? Remember, this nickname "
-                          "will be used if someone has no available Bind Nickname from the ``{prefix}bind`` "
+                          "will be used if someone has no available Bind Nickname from the `{prefix}bind` "
                           "command. You may combine templates. Templates: ```" + ESCAPED_NICKNAME_TEMPLATES + "```",
                 "footer": "Say **skip** to leave this as the default nickname.",
                 "name": "global_nickname"
@@ -51,7 +51,7 @@ class NicknameCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``nicknameTemplate`` option.", BROWN_COLOR)
+            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `nicknameTemplate` option.", BROWN_COLOR)
 
             await set_guild_value(guild, "nicknameTemplate", global_nickname)
 

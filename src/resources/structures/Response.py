@@ -236,7 +236,7 @@ class Response(Bloxlink.Module):
 
                             try:
                                 msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                                         "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                                                         "create the webhook! Please give me the `Manage Webhooks` permission.")
                             except (Forbidden, NotFound):
                                 pass
                             else:
@@ -246,7 +246,7 @@ class Response(Bloxlink.Module):
 
                 try:
                     msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                             "create the webhook! Please give me the ``Manage Webhooks`` permission.")
+                                             "create the webhook! Please give me the `Manage Webhooks` permission.")
                 except (Forbidden, NotFound):
                     pass
                 else:

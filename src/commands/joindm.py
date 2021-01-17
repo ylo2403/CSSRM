@@ -74,7 +74,7 @@ class JoinDMCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``joinDM`` option for ``verified`` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")
 
@@ -122,6 +122,6 @@ class JoinDMCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``joinDM`` option for ``unverified`` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `unverified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")

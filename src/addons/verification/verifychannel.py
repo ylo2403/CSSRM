@@ -36,7 +36,7 @@ class VerifyChannelCommand(Bloxlink.Module):
 
             except Forbidden:
                 raise PermissionError("I was unable to create the necessary channels. Please ensure I have the "
-                                    "``Manage Channels`` permission.")
+                                    "`Manage Channels` permission.")
 
             except HTTPException:
                 raise Error("You have too many channels or categories! Please delete some before continuing.")
@@ -45,7 +45,7 @@ class VerifyChannelCommand(Bloxlink.Module):
                 await verify_info.send("This server uses Bloxlink to manage Roblox verification. In "
                                     "order to unlock all the features of this server, you'll need "
                                     "to verify your Roblox account with your Discord account!\n\nTo "
-                                    f"do this, run ``{prefix}verify`` in {verify_channel.mention} and follow the instructions.")
+                                    f"do this, run `{prefix}verify` in {verify_channel.mention} and follow the instructions.")
 
                 await sample_channel.send("This is a sample channel that only Verified users " \
                                         "can read. This channel is not important, you may freely delete it.\n" \
@@ -77,7 +77,7 @@ class VerifyChannelCommand(Bloxlink.Module):
 
             except Forbidden:
                 raise PermissionError("Unable to set permissions to the channels. Please ensure I have the "
-                                    "``Manage Channels`` and ``Manage Roles`` permission.")
+                                    "`Manage Channels` and `Manage Roles` permission.")
 
             except NotFound:
                 raise Error("Please do not delete the created channels while I'm setting them up...")

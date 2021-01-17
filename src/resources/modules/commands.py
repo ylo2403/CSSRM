@@ -48,8 +48,8 @@ class Commands(Bloxlink.Module):
                 donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
                 if not donator_profile.features.get("premium"):
-                    await response.error(f"This add-on requires premium! You may use ``{prefix}donate`` for instructions on donating.\n"
-                                         f"You may also disable this add-on with ``{prefix}addon change``.", hidden=True)
+                    await response.error(f"This add-on requires premium! You may use `{prefix}donate` for instructions on donating.\n"
+                                         f"You may also disable this add-on with `{prefix}addon change`.", hidden=True)
 
                     raise CancelCommand
 
@@ -57,7 +57,7 @@ class Commands(Bloxlink.Module):
             donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
             if not donator_profile.features.get("pro"):
-                await response.error(f"Server not authorized to use Pro. Please use the ``{prefix}donate`` command to see information on "
+                await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
                                      "how to get Bloxlink Pro.", hidden=True)
 
                 raise CancelCommand
@@ -81,7 +81,7 @@ class Commands(Bloxlink.Module):
                     raise CancelCommand
 
                 if command.name in disabled_commands.get("global", []):
-                    await response.send(f"The server admins have **disabled** the command ``{command.name}`` globally.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
+                    await response.send(f"The server admins have **disabled** the command `{command.name}` globally.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
                     if message:
                         try:
@@ -92,7 +92,7 @@ class Commands(Bloxlink.Module):
                     raise CancelCommand
 
                 elif disabled_commands.get("channels", {}).get(channel_id) == command.name:
-                    await response.send(f"The server admins have **disabled** the command ``{command.name}`` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
+                    await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
                     if message:
                         try:
@@ -111,7 +111,7 @@ class Commands(Bloxlink.Module):
         blacklisted_discord = await cache_get(f"blacklist:discord_ids:{author.id}", primitives=True)
 
         if blacklisted_discord is not None:
-            blacklist_text = blacklisted_discord and f"has an active restriction for: ``{blacklisted_discord}``" or "has an active restriction from Bloxlink."
+            blacklist_text = blacklisted_discord and f"has an active restriction for: `{blacklisted_discord}`" or "has an active restriction from Bloxlink."
 
             await response.send(f"{author.mention} {blacklist_text}", hidden=True)
             raise CancelCommand
@@ -132,7 +132,7 @@ class Commands(Bloxlink.Module):
                     embed.description = "This command has a short cooldown since it's relatively expensive for the bot. " \
                                         f"You'll need to wait **{cooldown_time}** more second(s).\n\nDid you know? " \
                                         "**[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** subscribers NEVER " \
-                                        f"see any cooldowns. Find out more information with ``{prefix}donate``."
+                                        f"see any cooldowns. Find out more information with `{prefix}donate`."
 
                     m = await response.send(embed=embed, hidden=True)
 
@@ -306,7 +306,7 @@ class Commands(Bloxlink.Module):
 
             if error_id:
                 await response.error("We've experienced an unexpected error. You may report this "
-                                        f"error with ID ``{error_id}`` in our support server: {SERVER_INVITE}.")
+                                        f"error with ID `{error_id}` in our support server: {SERVER_INVITE}.")
             else:
                 await response.error("An unexpected error occured.")
             """
@@ -627,7 +627,7 @@ class Command:
                 if not prem.attributes["PREMIUM_ANYWHERE"]:
                     raise Message("This command is reserved for Bloxlink Premium subscribers!\n"
                                   "The server owner must have premium for this to work. If you "
-                                  "would like the server owner to have premium instead, please use the ``!transfer`` "
+                                  "would like the server owner to have premium instead, please use the `!transfer` "
                                   "command.\nYou may subscribe to Bloxlink Premium on Patreon: https://patreon.com/bloxlink", type="silly")
 
         try:
@@ -648,26 +648,26 @@ class Command:
                             if author_perms.manage_guild or author_perms.administrator:
                                 pass
                             else:
-                                raise PermissionError("You need the ``Manage Server`` permission to run this command.")
+                                raise PermissionError("You need the `Manage Server` permission to run this command.")
 
                         elif role_name == "Bloxlink Moderator":
                             if author_perms.kick_members or author_perms.ban_members or author_perms.administrator:
                                 pass
                             else:
-                                raise PermissionError("You need the ``Kick`` or ``Ban`` permission to run this command.")
+                                raise PermissionError("You need the `Kick` or `Ban` permission to run this command.")
 
                         elif role_name == "Bloxlink Updater":
                             if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or find(lambda r: r.name == "Bloxlink Updater", author.roles):
                                 pass
                             else:
-                                raise PermissionError("You either need: a role called ``Bloxlink Updater``, the ``Manage Roles`` "
-                                                      "role permission, or the ``Manage Server`` role permission.")
+                                raise PermissionError("You either need: a role called `Bloxlink Updater`, the `Manage Roles` "
+                                                      "role permission, or the `Manage Server` role permission.")
 
                         elif role_name == "Bloxlink Admin":
                             if author_perms.administrator:
                                 pass
                             else:
-                                raise PermissionError("You need the ``Administrator`` role permission to run this command.")
+                                raise PermissionError("You need the `Administrator` role permission to run this command.")
 
                 if permissions.allowed.get("discord_perms"):
                     for perm in permissions.allowed["discord_perms"]:
@@ -675,15 +675,15 @@ class Command:
                             if author_perms.manage_guild or author_perms.administrator:
                                 pass
                             else:
-                                raise PermissionError("You need the ``Manage Server`` permission to run this command.")
+                                raise PermissionError("You need the `Manage Server` permission to run this command.")
                         else:
                             if not getattr(author_perms, perm, False) and not perm.administrator:
-                                raise PermissionError(f"You need the ``{perm}`` permission to run this command.")
+                                raise PermissionError(f"You need the `{perm}` permission to run this command.")
 
 
                 for role in permissions.allowed["roles"]:
                     if not find(lambda r: r.name == role, author.roles):
-                        raise PermissionError(f"Missing role: ``{role}``")
+                        raise PermissionError(f"Missing role: `{role}`")
 
             if permissions.allowed.get("functions"):
                 for function in permissions.allowed["functions"]:

@@ -44,7 +44,7 @@ class GetinfoCommand(Bloxlink.Module):
         valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned"]
 
         if not all(f in valid_flags for f in flags.keys()):
-            raise Error(f"Invalid flag! Valid flags are: ``{', '.join(valid_flags)}``")
+            raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")
 
         #async with response.loading():
         if guild:
@@ -58,5 +58,5 @@ class GetinfoCommand(Bloxlink.Module):
             raise Error(f"**{target}** is not linked to Bloxlink.")
         else:
             if not account:
-                raise Message(f"You have no primary account set! Please use ``{prefix}switchuser`` and set one.", type="silly")
+                raise Message(f"You have no primary account set! Please use `{prefix}switchuser` and set one.", type="silly")
 

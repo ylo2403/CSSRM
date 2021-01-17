@@ -211,7 +211,7 @@ class Resolver(Bloxlink.Module):
                             try:
                                 channel = await guild.create_text_channel(name=lookup_string.replace(" ", "-"))
                             except Forbidden:
-                                return None, "I was unable to create the channel. Please ensure I have the ``Manage Channels`` permission."
+                                return None, "I was unable to create the channel. Please ensure I have the `Manage Channels` permission."
                             else:
                                 channels.append(channel)
                         else:
@@ -258,7 +258,7 @@ class Resolver(Bloxlink.Module):
                         try:
                             category = await guild.create_category(name=lookup_string)
                         except Forbidden:
-                            return None, "I was unable to create the category. Please ensure I have the ``Manage Channels`` permission."
+                            return None, "I was unable to create the category. Please ensure I have the `Manage Channels` permission."
                         else:
                             categories.append(category)
                     else:
@@ -312,7 +312,7 @@ class Resolver(Bloxlink.Module):
                             try:
                                 role = await guild.create_role(name=lookup_string)
                             except Forbidden:
-                                return None, "I was unable to create the role. Please ensure I have the ``Manage Roles`` permission."
+                                return None, "I was unable to create the role. Please ensure I have the `Manage Roles` permission."
                             else:
                                 roles.append(role)
                         else:

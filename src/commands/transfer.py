@@ -49,11 +49,11 @@ class TransferCommand(Bloxlink.Module):
             raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="silly")
 
         if author_premium_data.get("transferTo"):
-            raise Message(f"You are currently transferring your premium to another user! Please disable it with ``{prefix}transfer "
-                           "disable`` first.", type="silly")
+            raise Message(f"You are currently transferring your premium to another user! Please disable it with `{prefix}transfer "
+                           "disable` first.", type="silly")
         elif author_premium_data.get("transferFrom"):
             raise Error("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
-                       f"with ``{prefix}transfer disable``.")
+                       f"with `{prefix}transfer disable`.")
 
         prem_data, _ = await get_features(author, author_data=author_data, cache=False, rec=False, partner_check=False)
 
@@ -64,7 +64,7 @@ class TransferCommand(Bloxlink.Module):
         recipient_data_premium = recipient_data.get("premium", {})
 
         if recipient_data_premium.get("transferFrom"):
-            raise Error(f"Another user is already forwarding their premium to this user. The recipient must run ``{prefix}transfer disable`` "
+            raise Error(f"Another user is already forwarding their premium to this user. The recipient must run `{prefix}transfer disable` "
                         "to revoke the external transfer.")
 
         await transfer_premium(transfer_from=author, transfer_to=transfer_to, guild=guild, apply_cooldown=True)

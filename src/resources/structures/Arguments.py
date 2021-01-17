@@ -284,7 +284,7 @@ class Arguments:
                             if resolved:
                                 resolved = res[0]
                     else:
-                        error_message = f"{self.locale('prompt.errors.invalidArgument', arg='**' + resolver_type + '**')}: ``{error_message}``"
+                        error_message = f"{self.locale('prompt.errors.invalidArgument', arg='**' + resolver_type + '**')}: `{error_message}`"
 
                     if error_message:
                         resolve_errors.append(error_message)

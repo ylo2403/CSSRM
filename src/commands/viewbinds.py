@@ -26,7 +26,7 @@ class ViewBindsCommand(Bloxlink.Module):
         role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
 
         if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) == 0:
-            raise Message(f"You have no bounded roles! Please use ``{CommandArgs.prefix}bind`` "
+            raise Message(f"You have no bounded roles! Please use `{CommandArgs.prefix}bind` "
                            "to make a new role bind.", type="silly")
 
         embed = Embed(title="Bloxlink Role Binds")

@@ -19,7 +19,7 @@ class InviteCommand(Bloxlink.Module):
                             "Support server: https://blox.link/support**"
 
         embed.add_field(name="Frequently Asked Questions", value="1.) I don't see my server when I try to invite the bot!\n" \
-                                                                f"> There are 2 possibilities:\n> a.) you don't have the ``Manage Server`` " \
+                                                                f"> There are 2 possibilities:\n> a.) you don't have the `Manage Server` " \
                                                                 "role permission\n> b.) you aren't logged on the correct account; " \
                                                                 "go to <https://discord.com> and log out.")
 

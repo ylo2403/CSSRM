@@ -166,7 +166,7 @@ class Paginate:
                 try:
                     await self.sent_message.add_reaction(reaction)
                 except Forbidden:
-                    raise Error("I'm missing the ``Add Reactions`` permission.")
+                    raise Error("I'm missing the `Add Reactions` permission.")
 
             while True:
                 try:
@@ -177,7 +177,7 @@ class Paginate:
                         await self.sent_message.clear_reactions()
                         raise CancelCommand
                     except Forbidden:
-                        raise Error("I'm missing the ``Manage Messages`` permission.")
+                        raise Error("I'm missing the `Manage Messages` permission.")
                     except NotFound:
                         raise CancelCommand
 
@@ -193,7 +193,7 @@ class Paginate:
                     try:
                         await self.sent_message.remove_reaction(emoji, user)
                     except Forbidden:
-                        raise Error("I'm missing the ``Manage Messages`` permission.")
+                        raise Error("I'm missing the `Manage Messages` permission.")
                     except NotFound:
                         raise CancelCommand
 

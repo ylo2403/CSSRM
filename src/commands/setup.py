@@ -61,7 +61,7 @@ class SetupCommand(Bloxlink.Module):
             return None, "No Trello board was found with this ID. Please try again."
         except TrelloUnauthorized:
             return None, "I don't have permission to view this Trello board; please make sure " \
-                         "this Trello board is set to **PUBLIC**, or add ``@bloxlink`` to your Trello board."
+                         "this Trello board is set to **PUBLIC**, or add `@bloxlink` to your Trello board."
 
         return board
 
@@ -113,7 +113,7 @@ class SetupCommand(Bloxlink.Module):
             {
                 "prompt": "**Thank you for choosing Bloxlink!** In a few simple prompts, **we'll configure Bloxlink for your server.**\n\n"
                           "**Pre-configuration:**\nBefore continuing, please ensure that Bloxlink has all the proper permissions, "
-                          "such as the ability to ``manage roles, nicknames, channels``, etc. If you do not set these "
+                          "such as the ability to `manage roles, nicknames, channels`, etc. If you do not set these "
                           "permissions, you may encounter issues with using certain commands.",
                 "name": "_",
                 "footer": "Say **next** to continue.",
@@ -130,7 +130,7 @@ class SetupCommand(Bloxlink.Module):
             },
             {
                 "prompt": "Would you like to change the **Verified role** (the role people are given if they're linked to Bloxlink) name to something else?\n"
-                          "Default: ``Verified``",
+                          "Default: `Verified`",
                 "name": "verified_role",
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
@@ -169,10 +169,10 @@ class SetupCommand(Bloxlink.Module):
                 },
                 {
                     "prompt": "Would you like to automatically transfer your Roblox group ranks to Discord roles?\nValid choices:\n"
-                              "``merge`` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
-                              "``replace`` — **This will REMOVE and REPLACE your CURRENT ROLES** with your Roblox group Rolesets. You'll "
+                              "`merge` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
+                              "`replace` — **This will REMOVE and REPLACE your CURRENT ROLES** with your Roblox group Rolesets. You'll "
                               "need to configure permissions and colors yourself.\n"
-                              "``skip`` — nothing will be changed.\n\nValid choices: (merge/replace/skip)",
+                              "`skip` — nothing will be changed.\n\nValid choices: (merge/replace/skip)",
                     "name": "merge_replace",
                     "type": "choice",
                     "choices": ["merge", "replace", "skip", "next"],
@@ -209,8 +209,8 @@ class SetupCommand(Bloxlink.Module):
 
             parsed_args_3 = await CommandArgs.prompt([
                 {
-                    "prompt": "We'll now attempt to verify that you own this Trello board. To begin, please add ``trello@blox.link`` (@bloxlink) "
-                              "to your Trello board. Then, say ``next`` to continue.",
+                    "prompt": "We'll now attempt to verify that you own this Trello board. To begin, please add `trello@blox.link` (@bloxlink) "
+                              "to your Trello board. Then, say `next` to continue.",
                     "name": "trello_continue",
                     "type": "choice",
                     "choices": ["next"],
@@ -272,7 +272,7 @@ class SetupCommand(Bloxlink.Module):
                         try:
                             await guild.create_role(name=roleset_name)
                         except Forbidden:
-                            raise Error("Please ensure I have the ``Manage Roles`` permission; setup aborted.")
+                            raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 
         if verified:
             if verified == "disable":
@@ -312,8 +312,8 @@ class SetupCommand(Bloxlink.Module):
             trello_info_embed = Embed(title="Trello Information")
             trello_info_embed.description = "Now that you've linked your Trello board, you may now modify Bloxlink settings and Role Binds from " \
                                             "the board. **No cards will be created right away;** cards are created **as you use commands**. For " \
-                                            f"example, if you use ``{prefix}settings`` or ``{prefix}bind``, then cards will be created/edited.\n\n" \
+                                            f"example, if you use `{prefix}settings` or `{prefix}bind`, then cards will be created/edited.\n\n" \
                                             "Any pre-existing settings or binds will be simply be **merged** with any Trello settings/binds **unless " \
-                                            f"you switch \"``trelloBindMode``\" to ``replace`` through the ``{prefix}settings`` command.**"
+                                            f"you switch \"`trelloBindMode`\" to `replace` through the `{prefix}settings` command.**"
 
             await response.send(embed=trello_info_embed, dm=True, no_dm_post=True)

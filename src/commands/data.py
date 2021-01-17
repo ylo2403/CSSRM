@@ -165,7 +165,7 @@ class DataCommand(Bloxlink.Module):
         user_backups = user_data.get("backups", [])
 
         if not user_backups:
-            raise Message(f"You don't have any backups created! You may create them with ``{prefix}data backup``.", type="silly")
+            raise Message(f"You don't have any backups created! You may create them with `{prefix}data backup`.", type="silly")
 
         embed = Embed(title="Bloxlink Data Restore", description="Please select the backup you could like to restore with the reactions.")
 
@@ -228,7 +228,7 @@ class DataCommand(Bloxlink.Module):
                                       f"**{chosen_backup['len_role_binds']}** Role Binds\n"
                                       f"**{chosen_backup['prefix']}** prefix\n"
                                       f"**{chosen_backup['nickname_template']}** Nickname Template\n"
-                                      "Continue? ``Y/N``",
+                                      "Continue? `Y/N`",
                             "name": "confirm",
                             "type": "choice",
                             "formatting": False,

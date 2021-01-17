@@ -177,7 +177,7 @@ class BindCommand(Bloxlink.Module):
                                 try:
                                     await card.edit(desc=card.description.replace(trello_group_bind["nickname"], nickname))
                                 except TrelloUnauthorized:
-                                    await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                    await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
                                 except (TrelloNotFound, TrelloBadRequest):
                                     pass
@@ -188,7 +188,7 @@ class BindCommand(Bloxlink.Module):
                                 try:
                                     await trello_binds_list.create_card(name="Bloxlink Group Bind", desc=f"Group: {group_id}\nNickname: {nickname}")
                                 except TrelloUnauthorized:
-                                    await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                    await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
                                 except (TrelloNotFound, TrelloBadRequest):
                                     pass
@@ -198,7 +198,7 @@ class BindCommand(Bloxlink.Module):
 
                         ending_s = group.name.endswith("s") and "'" or "'s"
 
-                        await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **changed** ``{group.name}``{ending_s} nickname template.", BLURPLE_COLOR)
+                        await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **changed** `{group.name}`{ending_s} nickname template.", BLURPLE_COLOR)
 
                         await clear_guild_data(guild)
 
@@ -218,7 +218,7 @@ class BindCommand(Bloxlink.Module):
                             try:
                                 discord_role = await guild.create_role(name=roleset_name)
                             except Forbidden:
-                                raise PermissionError("I was unable to create the Discord role. Please ensure my role has the ``Manage Roles`` permission.")
+                                raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
 
                 # add group to guild_data.groupIDs
                 group_ids[group_id] = {"nickname": nickname not in ("skip", "next") and nickname, "groupName": group.name}
@@ -230,12 +230,12 @@ class BindCommand(Bloxlink.Module):
                     try:
                         await trello_binds_list.create_card(name="Bloxlink Group Bind", desc=f"Group: {group_id}\nNickname: {nickname}")
                     except TrelloUnauthorized:
-                        await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                        await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                              "Trello board.")
                     except (TrelloNotFound, TrelloBadRequest):
                         pass
 
-                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **linked** group ``{group.name}``.", BLURPLE_COLOR)
+                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **linked** group `{group.name}`.", BLURPLE_COLOR)
                 await clear_guild_data(guild)
 
                 raise Message("Success! Your group was successfully linked.", type="success")
@@ -285,11 +285,11 @@ class BindCommand(Bloxlink.Module):
                         {
                             "prompt": f"Please select the rolesets that should receive the role **{discord_role}**. "
                                        "You may specify the roleset name or ID. You may provide them in a list, "
-                                       "or as a range. You may also say ``everyone`` to capture everyone in the group; "
+                                       "or as a range. You may also say `everyone` to capture everyone in the group; "
                                        "and you can negate the number to catch everyone with the rank _and above._\n"
-                                       "You can also say ``guest`` to include **all non-group members**.\n"
-                                       "Example 1: ``1,4,-6,VIP, 10, 50-100, Staff Members, 255``.\nExample 2: ``"
-                                       "-100`` means everyone with rank 100 _and above._\nExample 3: ``everyone`` "
+                                       "You can also say `guest` to include **all non-group members**.\n"
+                                       "Example 1: `1,4,-6,VIP, 10, 50-100, Staff Members, 255`.\nExample 2: `"
+                                       "-100` means everyone with rank 100 _and above._\nExample 3: `everyone` "
                                        "means everyone in the group.\n\n"
                                        "For your convenience, your Rolesets' names and IDs were sent above.",
                             "name": "ranks",
@@ -404,7 +404,7 @@ class BindCommand(Bloxlink.Module):
                                                     try:
                                                         await trello_card.edit(desc=trello_card_desc)
                                                     except TrelloUnauthorized:
-                                                        await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                                        await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                                              "Trello board.")
                                                     except (TrelloNotFound, TrelloBadRequest):
                                                         pass
@@ -429,7 +429,7 @@ class BindCommand(Bloxlink.Module):
                                 try:
                                     card = await trello_binds_list.create_card(name="Bloxlink Bind", desc=trello_card_desc)
                                 except TrelloUnauthorized:
-                                    await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                    await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
                                 except (TrelloNotFound, TrelloBadRequest):
                                     pass
@@ -495,7 +495,7 @@ class BindCommand(Bloxlink.Module):
                                                     try:
                                                         await trello_card.edit(desc=trello_card_desc)
                                                     except TrelloUnauthorized:
-                                                        await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                                        await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                                              "Trello board.")
                                                     except (TrelloNotFound, TrelloBadRequest):
                                                         pass
@@ -518,7 +518,7 @@ class BindCommand(Bloxlink.Module):
                                 try:
                                     card = await trello_binds_list.create_card(name="Bloxlink Range Bind", desc=trello_card_desc)
                                 except TrelloUnauthorized:
-                                    await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                    await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
                                 except (TrelloNotFound, TrelloBadRequest):
                                     pass
@@ -531,7 +531,7 @@ class BindCommand(Bloxlink.Module):
                 "roleBinds": role_binds
             }, conflict="update").run()
 
-            text = ["Successfully **bound** rank ID(s): ``"]
+            text = ["Successfully **bound** rank ID(s): `"]
             if new_ranks["binds"]:
                 text.append(", ".join(new_ranks["binds"]))
 
@@ -543,11 +543,11 @@ class BindCommand(Bloxlink.Module):
 
                 text.append(f"{text2}ranges: {', '.join([r[0] + ' - ' + r[1] for r in new_ranks['ranges']])}")
 
-            text.append(f"`` with Discord role **{discord_role}**.")
+            text.append(f"` with Discord role **{discord_role}**.")
 
             text = "".join(text)
 
-            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** group ``{group.name}``.", BLURPLE_COLOR)
+            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** group `{group.name}`.", BLURPLE_COLOR)
 
             await clear_guild_data(guild)
 
@@ -584,7 +584,7 @@ class BindCommand(Bloxlink.Module):
                 try:
                     text, response_ = await fetch(f"{API_URL}/marketplace/productinfo?assetId={bind_id}")
                 except RobloxNotFound:
-                    raise Error(f"An Asset with ID ``{bind_id}`` does not exist.")
+                    raise Error(f"An Asset with ID `{bind_id}` does not exist.")
 
                 json_data = await response_.json()
 
@@ -594,7 +594,7 @@ class BindCommand(Bloxlink.Module):
                 try:
                     text, response_ = await fetch(f"https://badges.roblox.com/v1/badges/{bind_id}")
                 except RobloxNotFound:
-                    raise Error(f"A Badge with ID ``{bind_id}`` does not exist.")
+                    raise Error(f"A Badge with ID `{bind_id}` does not exist.")
 
                 json_data = await response_.json()
 
@@ -607,12 +607,12 @@ class BindCommand(Bloxlink.Module):
                 try:
                     text, response_ = await fetch(f"http://api.roblox.com/marketplace/game-pass-product-info?gamePassId={bind_id}")
                 except (RobloxNotFound, RobloxAPIError):
-                    raise Error(f"A GamePass with ID ``{bind_id}`` does not exist.")
+                    raise Error(f"A GamePass with ID `{bind_id}` does not exist.")
 
                 json_data = await response_.json()
 
                 if json_data.get("ProductType") != "Game Pass":
-                    raise Error(f"A GamePass with ID ``{bind_id}`` does not exist.")
+                    raise Error(f"A GamePass with ID `{bind_id}` does not exist.")
 
                 display_name = json_data.get("Name")
 
@@ -666,7 +666,7 @@ class BindCommand(Bloxlink.Module):
                                 try:
                                     await trello_card.edit(desc=trello_card_desc)
                                 except TrelloUnauthorized:
-                                    await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                                    await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
                                 except (TrelloNotFound, TrelloBadRequest):
                                     pass
@@ -689,7 +689,7 @@ class BindCommand(Bloxlink.Module):
                     try:
                         card = await trello_binds_list.create_card(name=f"Bloxlink {bind_choice_title} Bind", desc=trello_card_desc)
                     except TrelloUnauthorized:
-                        await response.error("In order for me to edit your Trello binds, please add ``@bloxlink`` to your "
+                        await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                              "Trello board.")
                     except (TrelloNotFound, TrelloBadRequest):
                         pass
@@ -702,8 +702,8 @@ class BindCommand(Bloxlink.Module):
             }, conflict="update").run()
 
 
-            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** {bind_choice_title} ``{display_name}``.", BLURPLE_COLOR)
+            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** {bind_choice_title} `{display_name}`.", BLURPLE_COLOR)
 
             await clear_guild_data(guild)
 
-            await response.success(f"Successfully **bound** {bind_choice_title} ``{display_name}`` ({bind_id}) with Discord role **{discord_role}!**")
+            await response.success(f"Successfully **bound** {bind_choice_title} `{display_name}` ({bind_id}) with Discord role **{discord_role}!**")

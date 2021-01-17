@@ -143,7 +143,7 @@ class UnBindCommand(Bloxlink.Module):
     def __init__(self):
         self.arguments = [{
             "prompt": "Please specify the group ID that this bind resides in. If this is not a group, " \
-			          "specify the bind type found on ``{prefix}viewbinds``(e.g. \"assets\").",
+			          "specify the bind type found on `{prefix}viewbinds`(e.g. \"assets\").",
             "slash_desc": "Please specify the group ID, or bind type. Bind types are found on /viewbinds.",
             "name": "bind_id"
         }]
@@ -170,8 +170,8 @@ class UnBindCommand(Bloxlink.Module):
 
         if count_binds(guild_data, role_binds=role_binds_trello, group_ids=group_ids_trello) == 0:
             additional = (not trello_binds_list and "\nAdditionally, you may use "
-                         f"``{prefix}setup`` to link a Trello board for bind-to-card creation.") or ""
-            raise Message(f"You have no bounded roles! Please use ``{prefix}bind`` "
+                         f"`{prefix}setup` to link a Trello board for bind-to-card creation.") or ""
+            raise Message(f"You have no bounded roles! Please use `{prefix}bind` "
                           f"to make a new role bind. {additional}", type="silly")
 
         bind_category = CommandArgs.parsed_args["bind_id"]
@@ -190,7 +190,7 @@ class UnBindCommand(Bloxlink.Module):
             if found_linked_group_trello:
                 parsed_args = await CommandArgs.prompt([{
                     "prompt": "This group is linked as a Main Group. This means anyone who joins from this group will get their role(s), "
-                             f"and it lists the users' ranks in ``{prefix}getinfo``. Would you like to remove this entry? ``Y/N``",
+                             f"and it lists the users' ranks in `{prefix}getinfo`. Would you like to remove this entry? `Y/N`",
                     "type": "choice",
                     "choices": ["yes", "no"],
                     "name": "main_group_choice"
@@ -217,8 +217,8 @@ class UnBindCommand(Bloxlink.Module):
             if found_group_trello:
                 parsed_args = await CommandArgs.prompt([
                     {
-                        "prompt": f"Please specify the ``rank ID`` (found on {prefix}viewbinds), or say ``everything`` "
-                                  f"to delete all binds for group **{bind_id}**. If this is a _range_, then say the low and high value as: ``low-high``. If this is a guest role, say ``guest``.",
+                        "prompt": f"Please specify the `rank ID` (found on {prefix}viewbinds), or say `everything` "
+                                  f"to delete all binds for group **{bind_id}**. If this is a _range_, then say the low and high value as: `low-high`. If this is a guest role, say `guest`.",
                         "name": "rank_id"
                     }
                 ])
@@ -239,7 +239,7 @@ class UnBindCommand(Bloxlink.Module):
                         low, high = rank_id[0].strip(), rank_id[1].strip()
 
                         if not all(x.isdigit() for x in (high, low)):
-                            raise Error("Ranges must have valid integers! An example would be ``1-100``.")
+                            raise Error("Ranges must have valid integers! An example would be `1-100`.")
 
                         ranges = found_group_trello.get("ranges", [])
 
@@ -281,18 +281,18 @@ class UnBindCommand(Bloxlink.Module):
                             role_binds["groups"].pop(bind_id, None)
 
                     else:
-                        raise Error(f"No matching bind found for group ``{bind_id}`` with rank ``{rank_id}``!")
+                        raise Error(f"No matching bind found for group `{bind_id}` with rank `{rank_id}`!")
 
             else:
                 if not removed_main_group:
-                    raise Error(f"No matching bind found for group ``{bind_id}``!")
+                    raise Error(f"No matching bind found for group `{bind_id}`!")
 
             guild_data["roleBinds"] = role_binds
             guild_data["groupIDs"] = group_ids
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some ``binds``.", BLURPLE_COLOR)
+            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
 
             await clear_guild_data(guild)
 
@@ -346,7 +346,7 @@ class UnBindCommand(Bloxlink.Module):
                     await delete_bind_from_cards(type=bind_category, bind_id=bind_id, trello_binds_list=trello_binds_list, bind_data_trello=found_bind_trello)
 
 
-                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some ``binds``.", BLURPLE_COLOR)
+                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
 
                 await clear_guild_data(guild)
 
