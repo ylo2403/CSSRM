@@ -253,7 +253,7 @@ class Roblox(Bloxlink.Module):
             conflict="update"
         ).run()
 
-        await cache_pop("discord_profiles", author_id)
+        await cache_pop(f"discord_profiles:{author_id}")
 
     async def unverify_member(self, author, roblox):
         author_id = str(author.id)
@@ -331,7 +331,7 @@ class Roblox(Bloxlink.Module):
 
         await self.r.db("bloxlink").table("users").insert(user_data, conflict="replace").run()
 
-        await cache_pop("discord_profiles", author_id)
+        await cache_pop(f"discord_profiles:{author_id}")
 
         return success
 
@@ -1103,7 +1103,7 @@ class Roblox(Bloxlink.Module):
             raise Blacklisted(blacklisted)
 
         if not cache:
-            await cache_pop("discord_profiles", str(author.id))
+            await cache_pop(f"discord_profiles:{author.id}")
 
         me = getattr(guild, "me", None)
         my_permissions = me and me.guild_permissions
@@ -2056,7 +2056,7 @@ class Roblox(Bloxlink.Module):
                         if failed:
                             raise Error(f"{author.mention}, too many failed attempts. Please run this command again and retry.")
         finally:
-            await cache_pop("discord_profiles", author_id)
+            await cache_pop(f"discord_profiles:{author_id}")
 
 
     @staticmethod

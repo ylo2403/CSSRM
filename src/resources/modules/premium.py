@@ -93,10 +93,10 @@ class Premium(Bloxlink.Module):
 
         await self.r.db("bloxlink").table("users").insert(user_data, conflict="update").run()
 
-        await cache_pop("premium_cache", user.id)
+        await cache_pop(f"premium_cache:{user.id}")
 
         if guild:
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{guild.id}")
 
 
     async def has_selly_premium(self, author, author_data):
@@ -151,11 +151,11 @@ class Premium(Bloxlink.Module):
         await self.r.db("bloxlink").table("users").insert(transfer_from_data, conflict="update").run()
         await self.r.db("bloxlink").table("users").insert(transfer_to_data,   conflict="update").run()
 
-        await cache_pop("premium_cache", transfer_to.id)
-        await cache_pop("premium_cache", transfer_from.id)
+        await cache_pop(f"premium_cache:{transfer_to.id}")
+        await cache_pop(f"premium_cache:{transfer_from.id}")
 
         if guild:
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{guild.id}")
 
 
     async def get_features(self, author=None, guild=None, author_data=None, cache=True, cache_as_guild=True, rec=True, partner_check=True):

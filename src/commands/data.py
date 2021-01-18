@@ -36,7 +36,7 @@ class DataCommand(Bloxlink.Module):
 
         await self.r.table("guilds").insert(chosen_backup["data"], conflict="replace").run()
 
-        await cache_pop("trello_boards", guild.id)
+        await cache_pop(f"trello_boards:{guild.id}")
 
     def _reaction_check(self, author):
         def wrapper(reaction, user):

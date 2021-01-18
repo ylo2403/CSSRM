@@ -104,9 +104,9 @@ class TransferCommand(Bloxlink.Module):
             await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
             await self.r.db("bloxlink").table("users").insert(transferee_data, conflict="update").run()
 
-            await cache_pop("premium_cache", author.id)
-            await cache_pop("premium_cache", int(transfer_from))
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{author.id}")
+            await cache_pop(f"premium_cache:{transfer_from}")
+            await cache_pop(f"premium_cache:{guild.id}")
 
             raise Message("Successfully **disabled** the premium transfer!", type="success")
 
@@ -123,8 +123,8 @@ class TransferCommand(Bloxlink.Module):
             await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
             await self.r.db("bloxlink").table("users").insert(recipient_data, conflict="update").run()
 
-            await cache_pop("premium_cache", author.id)
-            await cache_pop("premium_cache", int(transfer_to))
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{author.id}")
+            await cache_pop(f"premium_cache:{transfer_to}")
+            await cache_pop(f"premium_cache:{guild.id}")
 
             await response.success("Successfully **disabled** your premium transfer!")
