@@ -19,7 +19,7 @@ get_prefix, fetch = Bloxlink.get_module("utils", attrs=["get_prefix", "fetch"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
-cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "pop", "get_guild_value"])
+cache_get, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "get_guild_value"])
 
 
 flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")

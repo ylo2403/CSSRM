@@ -7,7 +7,7 @@ import re
 
 
 trello = Bloxlink.get_module("trello", attrs="trello")
-cache_set, cache_pop = Bloxlink.get_module("cache", attrs=["set", "pop"])
+cache_set = Bloxlink.get_module("cache", attrs=["set"])
 
 
 @Bloxlink.module
@@ -57,10 +57,13 @@ class Blacklist(Bloxlink.Module):
 
                 for i, restriction in enumerate(list(restrictions)):
                     if restriction["expiry"] <= time_now:
-                        restrictions.pop(i)
-                        restricted_user["restrictions"] = restrictions
+                        try:
+                            restrictions.pop(i)
+                            restricted_user["restrictions"] = restrictions
 
-                        await self.r.db("bloxlink").table("restrictedUsers").insert(restricted_user, conflict="update").run()
+                            await self.r.db("bloxlink").table("restrictedUsers").insert(restricted_user, conflict="update").run()
+                        except IndexError:
+                            pass
                     else:
                         if restriction["type"] in ("global", "bot"):
                             await cache_set(f"blacklist:discord_ids:{restricted_user['id']}", restriction["reason"])
