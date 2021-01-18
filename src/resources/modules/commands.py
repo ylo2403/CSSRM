@@ -546,7 +546,7 @@ class Commands(Bloxlink.Module):
                 subcommands.append({"id": subcommand_name, "description": subcommand_description})
 
         if CLUSTER_ID == 0:
-            if RELEASE in "MAIN":
+            if RELEASE == "MAIN":
                 await self.r.db("bloxlink").table("commands").delete().run()
                 await self.r.db("bloxlink").table("commands").insert({
                     "id": command.name,
@@ -559,8 +559,7 @@ class Commands(Bloxlink.Module):
                     "slashCompatible": command.slash_enabled
                 }, conflict="replace").run()
 
-
-            if command.slash_enabled:
+            if RELEASE in ("PRO", "LOCAL", "CANARY") and command.slash_enabled:
                 await self.register_slash_command(command)
 
 
