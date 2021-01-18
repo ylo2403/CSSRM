@@ -12,7 +12,7 @@ import asyncio
 import aiohttp
 
 is_patron = Bloxlink.get_module("patreon", attrs="is_patron")
-cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["pop", "get_guild_value"])
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 
 @Bloxlink.module
 class Utils(Bloxlink.Module):
@@ -63,7 +63,7 @@ class Utils(Bloxlink.Module):
                     pass
 
 
-    async def fetch(self, url, method="GET", params=None, headers=None, json=None, raise_on_failure=True, retrieve_text=True, retry=HTTP_RETRY_LIMIT):
+    async def fetch(self, url, method="GET", params=None, headers=None, json=None, text=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT):
         params  = params or {}
         headers = headers or {}
 
@@ -77,35 +77,34 @@ class Utils(Bloxlink.Module):
                 params[k] = "true" if v else "false"
 
         try:
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
-                async with session.request(method, url, json=json, params=params, headers=headers) as response:
-                    text = None
+            async with self.session.request(method, url, json=json, params=params, headers=headers) as response:
+                if text:
+                    text = await response.text()
 
-                    if retrieve_text:
-                        text = await response.text()
+                if text == "The service is unavailable." or response.status == 503:
+                    raise RobloxDown
 
-                        if text == "The service is unavailable." or response.status == 503:
-                            raise RobloxDown
+                if raise_on_failure:
+                    if response.status >= 500:
+                        if retry != 0:
+                            retry -= 1
+                            await asyncio.sleep(1.0)
 
-                    if raise_on_failure:
-                        if response.status >= 500:
-                            if retry != 0:
-                                retry -= 1
-                                await asyncio.sleep(1.0)
+                            return await self.fetch(url, raise_on_failure=raise_on_failure, bytes=bytes, text=text, params=params, headers=headers, retry=retry)
 
-                                return await self.fetch(url, raise_on_failure=raise_on_failure, retrieve_text=retrieve_text, retry=retry)
+                        raise RobloxAPIError
 
-                            raise RobloxAPIError
+                    elif response.status == 400:
+                        raise RobloxAPIError
+                    elif response.status == 404:
+                        raise RobloxNotFound
 
-                        elif response.status == 400:
-                            raise RobloxAPIError
-                        elif response.status == 404:
-                            raise RobloxNotFound
-
-                    if retrieve_text:
-                        return text, response
-                    else:
-                        return response
+                if bytes:
+                    return await response.read(), response
+                elif text:
+                    return text, response
+                else:
+                    return response
 
         except ServerDisconnectedError:
             if retry != 0:

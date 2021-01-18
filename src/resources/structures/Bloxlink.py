@@ -371,7 +371,7 @@ redis, redis_cache = load_redis()
 class Module:
     client = Bloxlink
     r = r
-    #session = aiohttp.ClientSession(loop=loop)
+    session = aiohttp.ClientSession(loop=loop)
     loop = loop
     redis = redis
     cache = redis_cache
