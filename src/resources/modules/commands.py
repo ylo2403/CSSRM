@@ -336,6 +336,13 @@ class Commands(Bloxlink.Module):
                 delete_commands_after = delete_options["deleteCommands"]
                 prompt_delete         = delete_options["promptDelete"]
 
+                # since trello-set options will be strings
+                if delete_commands_after:
+                    try:
+                        delete_commands_after = int(delete_commands_after)
+                    except ValueError:
+                        delete_commands_after = 0
+
                 if prompt_delete and prompt_messages:
                     delete_messages += prompt_messages
 
@@ -345,7 +352,7 @@ class Commands(Bloxlink.Module):
 
                     delete_messages += bot_responses
 
-                    await asyncio.sleep(int(delete_commands_after))
+                    await asyncio.sleep(delete_commands_after)
 
                 try:
                     await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
