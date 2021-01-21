@@ -1,4 +1,4 @@
-from ..structures.Bloxlink import Bloxlink
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
 import asyncio
 
 

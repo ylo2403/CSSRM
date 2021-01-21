@@ -10,7 +10,6 @@ class InviteCommand(Bloxlink.Module):
         self.dm_allowed    = True
         self.slash_enabled = True
 
-    @Bloxlink.flags
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
 
