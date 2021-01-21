@@ -23,7 +23,6 @@ class TransferCommand(Bloxlink.Module):
         self.category = "Premium"
         self.free_to_use = True
 
-    @Bloxlink.flags
     async def __main__(self, CommandArgs):
         author = CommandArgs.author
         guild = CommandArgs.guild
