@@ -130,3 +130,7 @@ src/config.py
 src/resources/constants.py
 src/addons/verification/verifyall.py
 src/commands/precedent.py
+src/commands/set-coins.py
+src/commands/shop.py
+src/resources/modules/potions.py
+src/resources/modules/currency.py
