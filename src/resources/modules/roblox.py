@@ -1666,51 +1666,13 @@ class Roblox(Bloxlink.Module):
         raise RobloxNotFound
 
     @staticmethod
-    async def get_group(group_id, with_shout=False, rolesets=False):
+    async def get_group(group_id, rolesets=False):
         group_id = str(group_id)
         group = await cache_get(f"groups:{group_id}")
-        shout = None
 
         if group and group.rolesets:
-            if with_shout:
-                if group.shout:
-                    return group
-            else:
-                return group
+            return group
 
-
-        text, _ = await fetch(f"{API_URL}/groups/{group_id}", raise_on_failure=False)
-
-        if with_shout:
-            group_api_v1, _ = await fetch(f"https://groups.roblox.com/v1/groups/{group_id}", raise_on_failure=False)
-
-            try:
-                group_api_v1_json = json.loads(group_api_v1)
-            except json.decoder.JSONDecodeError:
-                raise RobloxAPIError
-            else:
-                shout = group_api_v1_json.get("shout")
-
-        try:
-            json_data = json.loads(text)
-        except json.decoder.JSONDecodeError:
-            raise RobloxAPIError
-        else:
-            if json_data.get("Id"):
-                rolesets = json_data.get("Roles")
-                json_data["shout"] = shout
-                json_data["Roles"] = rolesets
-
-                if not group:
-                    group = Group(group_id=group_id, group_data=json_data)
-                else:
-                    group.load_json(json_data)
-
-                await cache_set(f"groups:{group_id}", group)
-
-                return group
-
-        """
         text, _ = await fetch(f"{GROUP_API}/v1/groups/{group_id}", raise_on_failure=False)
 
         try:
@@ -1728,18 +1690,17 @@ class Roblox(Bloxlink.Module):
                         raise RobloxAPIError
 
                     rolesets = json_data_rolesets.get("roles")
+                    json_data["roles"] = rolesets
 
                 if not group:
-                    group = Group(group_id=group_id, group_data=json_data, version=1, rolesets=rolesets)
+                    group = Group(group_id=group_id, group_data=json_data)
                 else:
-                    group.load_json(json_data, version=1)
+                    group.load_json(json_data)
 
-                self.cache["groups"][group_id] = group
+                await cache_set(f"groups:{group_id}", group)
 
                 return group
-        """
 
-        # text, _ = await fetch(f"https://api.roblox.com/groups/{group_id}", raise_on_failure=False)
 
         raise RobloxNotFound
 
@@ -2260,7 +2221,7 @@ class RobloxProfile(Bloxlink.Module):
             for game_id in favorite_games:
                 try:
                     game = await Roblox.get_game(game_id)
-                except RobloxNotFound:
+                except (RobloxNotFound, RobloxAPIError):
                     desc.append(f"**INVALID GAME:** {game_id}")
                 else:
                     desc.append(f"[{game.name}]({game.url})")
@@ -2274,7 +2235,7 @@ class RobloxProfile(Bloxlink.Module):
             for item_id in favorite_items:
                 try:
                     catalog_item = await Roblox.get_catalog_item(item_id)
-                except RobloxNotFound:
+                except (RobloxNotFound, RobloxAPIError):
                     desc.append(f"**INVALID ITEM:** {item_id}")
                 else:
                     desc.append(f"[{catalog_item.name}]({catalog_item.url})")
@@ -2340,7 +2301,7 @@ class DiscordProfile:
 
 class Group(Bloxlink.Module):
     __slots__ = ("name", "group_id", "description", "rolesets", "owner", "member_count",
-                 "embed_url", "url", "user_rank_name", "user_rank_id")
+                 "embed_url", "url", "user_rank_name", "user_rank_id", "shout")
 
     def __init__(self, group_id, group_data, my_roles=None):
         self.group_id = str(group_id)
@@ -2384,7 +2345,7 @@ class Group(Bloxlink.Module):
         self.user_rank_name = self.user_rank_name or (my_roles and my_roles.get("name", "").strip())
         self.user_rank_id = self.user_rank_id or (my_roles and my_roles.get("rank"))
 
-        self.owner = self.owner or group_data.get("Owner")
+        self.owner = self.owner or group_data.get("owner")
 
         if not self.rolesets and (group_data.get("roles") or group_data.get("Roles")):
             self.rolesets = group_data.get("roles") or group_data.get("Roles")
