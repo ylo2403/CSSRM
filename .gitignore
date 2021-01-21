@@ -134,3 +134,4 @@ src/commands/set-coins.py
 src/commands/shop.py
 src/resources/modules/potions.py
 src/resources/modules/currency.py
+slash_creator.py
