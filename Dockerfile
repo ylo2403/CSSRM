@@ -15,8 +15,6 @@ RUN wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemal
 RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 RUN apt install dumb-init
 
-ENV LD_PRELOAD="lib/libjemalloc.so.2"
-#/usr/local/lib
-# lib/libjemalloc.so.2
+ENV LD_PRELOAD="/usr/local/lib/libjemalloc.so.2"
 
 ENTRYPOINT ["dumb-init", "-v", "--", "python3", "src/bot.py"]
