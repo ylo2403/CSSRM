@@ -38,7 +38,7 @@ class DonateCommand(Bloxlink.Module):
                                                                  "You'll be able to disable the transfer whenever you want "
                                                                 f"with `{prefix}transfer disable`.\n"
                                                                  "2.) How do I receive my perks after donating?\n"
-                                                                 "> Link your Discord account to Patreon. After, wait 10-15 "
+                                                                 "> Link your Discord account to Patreon. After, wait 15-20 "
                                                                  "minutes and your perks should be activated. Feel free to ask "
                                                                  "in our support server if you need more help: <https://blox.link/support>.", inline=False)
 
