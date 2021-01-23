@@ -22,7 +22,7 @@ async def on_socket_response(msg):
 
         if command_data.get("options"):
             for arg in command_data["options"]:
-                if arg.get("value"):
+                if arg.get("value") is not None:
                     command_args.append([arg["name"], arg["value"]])
                 else:
                     subcommand = arg["name"]

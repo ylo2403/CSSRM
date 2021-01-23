@@ -6,7 +6,7 @@ from concurrent.futures._base import CancelledError
 from inspect import iscoroutinefunction
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
-from discord import Embed, Object, Member
+from discord import Embed, Object, Member, User
 from discord.http import Route # temporary slash command workaround
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
 from ..structures import Bloxlink, Args, Permissions, Locale, Arguments, Response # pylint: disable=import-error
@@ -65,6 +65,12 @@ class Commands(Bloxlink.Module):
         if guild:
             ignored_channels = guild_data.get("ignoredChannels", {})
             disabled_commands = guild_data.get("disabledCommands", {})
+
+            if isinstance(author, User):
+                try:
+                    author = await guild.fetch_member(author.id)
+                except NotFound:
+                    raise CancelCommand
 
             author_perms = author.guild_permissions
 
@@ -192,7 +198,7 @@ class Commands(Bloxlink.Module):
         if command:
             subcommand_attrs = {}
 
-            if subcommand:
+            if subcommand and command.subcommands.get(subcommand):
                 fn = command.subcommands[subcommand]
                 subcommand_attrs = getattr(fn, "__subcommandattrs__", None)
             else:
