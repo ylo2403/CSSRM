@@ -61,7 +61,7 @@ class GuestRoleCommand(Bloxlink.Module):
         role_id = str(role.id)
 
         try:
-            group = await get_group(group_id)
+            group = await get_group(group_id, full_group=False)
         except RobloxNotFound:
             raise Error(f"A group with ID `{group_id}` does not exist. Please try again.")
 

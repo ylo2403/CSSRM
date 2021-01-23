@@ -118,7 +118,7 @@ class ViewBindsCommand(Bloxlink.Module):
                             text = "\n".join(text)
 
                             try:
-                                group_name = group_data.get("groupName") or (await get_group(group_id)).name
+                                group_name = group_data.get("groupName") or (await get_group(group_id, full_group=True)).name
                             except RobloxNotFound:
                                 # TODO: remove group
                                 pass

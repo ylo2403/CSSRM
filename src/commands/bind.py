@@ -49,7 +49,7 @@ class BindCommand(Bloxlink.Module):
             group_id = content
 
         try:
-            group = await get_group(group_id, rolesets=True)
+            group = await get_group(group_id, full_group=True)
         except RobloxNotFound:
             return None, "No group was found with this ID. Please try again."
 
@@ -300,7 +300,9 @@ class BindCommand(Bloxlink.Module):
 
                     pending_roleset_names = []
 
-                    for rank in selected_ranks["ranks"].replace(" ", "").split(","):
+                    for rank in selected_ranks["ranks"].split(","):
+                        rank = rank.strip()
+
                         if rank.isdigit():
                             new_ranks["binds"].append(str(rank))
                         elif rank in ("all", "everyone"):
@@ -336,7 +338,7 @@ class BindCommand(Bloxlink.Module):
                                 found = True
 
                         if not found:
-                            await response.error("Could not find a matching Roleset name. Please try again.")
+                            response.delete(await response.error("Could not find a matching Roleset name. Please try again."))
                             failures += 1
 
                             continue

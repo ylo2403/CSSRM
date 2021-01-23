@@ -40,7 +40,7 @@ class SetupCommand(Bloxlink.Module):
             group_id = content
 
         try:
-            group = await get_group(group_id, rolesets=True)
+            group = await get_group(group_id, full_group=True)
         except RobloxNotFound:
             return None, "No group was found with this ID. Please try again."
 

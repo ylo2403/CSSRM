@@ -56,7 +56,7 @@ class TimedActions(Bloxlink.Module):
 
                 if channel:
                     try:
-                        group = await get_group(shout_data["group"], with_shout=True)
+                        group = await get_group(shout_data["group"], full_group=True)
                     except RobloxNotFound:
                         continue
 

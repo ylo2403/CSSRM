@@ -714,7 +714,7 @@ class Roblox(Bloxlink.Module):
 
                             elif is_main_group:
                                 try:
-                                    group = await self.get_group(new_bind["group"])
+                                    group = await self.get_group(new_bind["group"], full_group=True)
                                 except RobloxNotFound:
                                     group_name = f"Invalid Group: {new_bind['group']}"
                                 else:
@@ -1520,7 +1520,7 @@ class Roblox(Bloxlink.Module):
                                             possible_nicknames.append([group_role, resolved_nickname])
                             else:
                                 try:
-                                    group = await self.get_group(group_id, rolesets=True)
+                                    group = await self.get_group(group_id, full_group=False)
                                 except RobloxNotFound:
                                     raise Error(f"Error for linked group bind: group `{group_id}` not found")
 
@@ -1665,32 +1665,37 @@ class Roblox(Bloxlink.Module):
 
         raise RobloxNotFound
 
+
     @staticmethod
-    async def get_group(group_id, rolesets=False):
+    async def get_group(group_id, full_group=False):
         group_id = str(group_id)
         group = await cache_get(f"groups:{group_id}")
 
-        if group and group.rolesets:
-            return group
+        if group:
+            if full_group:
+                if group.name:
+                    return group
+            else:
+                return group
 
-        text, _ = await fetch(f"{GROUP_API}/v1/groups/{group_id}", raise_on_failure=False)
+        roleset_data, roleset_response = await fetch(f"{GROUP_API}/v1/groups/{group_id}/roles", raise_on_failure=False)
 
         try:
-            json_data = json.loads(text)
+            json_data = json.loads(roleset_data)
         except json.decoder.JSONDecodeError:
             raise RobloxAPIError
         else:
-            if json_data.get("id"):
-                if rolesets:
-                    text_rolesets, _ = await fetch(f"{GROUP_API}/v1/groups/{group_id}/roles", raise_on_failure=False)
+            if roleset_response.status == 200:
+                if full_group:
+                    group_data, group_data_response = await fetch(f"{GROUP_API}/v1/groups/{group_id}", raise_on_failure=False)
 
-                    try:
-                        json_data_rolesets = json.loads(text_rolesets)
-                    except json.decoder.JSONDecodeError:
-                        raise RobloxAPIError
+                    if group_data_response.status == 200:
+                        try:
+                            group_data = json.loads(group_data)
+                        except json.decoder.JSONDecodeError:
+                            raise RobloxAPIError
 
-                    rolesets = json_data_rolesets.get("roles")
-                    json_data["roles"] = rolesets
+                        json_data.update(group_data)
 
                 if not group:
                     group = Group(group_id=group_id, group_data=json_data)
@@ -1703,6 +1708,7 @@ class Roblox(Bloxlink.Module):
 
 
         raise RobloxNotFound
+
 
     @on_exception(expo, RateLimitException, max_tries=8)
     @limits(calls=30, period=30)
