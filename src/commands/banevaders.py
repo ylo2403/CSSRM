@@ -32,7 +32,7 @@ class BanEvadersCommand(Bloxlink.Module):
         ]
         self.category = "Premium"
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
-        self.aliases = ["bansearch"]
+        self.aliases = ["bansearch", "ban-search", "ban-evaders"]
 
     async def process_guild(self, guild_data, guild, author, action, response, locale, prefix):
         if not guild.chunked:

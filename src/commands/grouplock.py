@@ -46,6 +46,7 @@ class GroupLockCommand(Bloxlink.Module):
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
+        self.aliases = ["group-lock", "serverlock", "server-lock"]
 
 
     async def __main__(self, CommandArgs):

@@ -26,7 +26,7 @@ class LogChannelCommand(Bloxlink.Module):
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
-        self.aliases = ["logchannels"]
+        self.aliases = ["logchannels", "log-channel", "log-channels"]
         self.slash_enabled = True
 
 

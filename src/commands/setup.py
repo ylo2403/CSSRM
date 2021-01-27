@@ -25,6 +25,7 @@ class SetupCommand(Bloxlink.Module):
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
+        self.aliases = ["set-up"]
         self.slash_enabled = True
 
     @staticmethod

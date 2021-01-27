@@ -44,7 +44,7 @@ class GuestRoleCommand(Bloxlink.Module):
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
-        self.aliases = ["guestbind"]
+        self.aliases = ["guestbind", "guest-role", "guest-bind"]
         self.slash_enabled = True
 
 

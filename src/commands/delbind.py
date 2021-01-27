@@ -150,7 +150,7 @@ class UnBindCommand(Bloxlink.Module):
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
-        self.aliases = ["delbind", "delbinds"]
+        self.aliases = ["delbind", "delbinds", "un-bind", "del-bind"]
         self.slash_enabled = True
 
 

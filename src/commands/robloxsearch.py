@@ -29,6 +29,7 @@ class RobloxSearchCommand(Bloxlink.Module):
         ]
         self.cooldown = 5
         self.dm_allowed = True
+        self.aliases = ["roblox-search"]
         self.slash_enabled = True
 
     @Bloxlink.flags

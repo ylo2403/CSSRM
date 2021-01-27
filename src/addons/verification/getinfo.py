@@ -9,7 +9,7 @@ class GetinfoCommand(Bloxlink.Module):
     """retrieve the Roblox information for a member"""
 
     def __init__(self):
-        self.aliases = ["whois"]
+        self.aliases = ["whois", "get-info"]
         self.arguments = [
             {
                 "prompt": "Please specify the user.",

@@ -44,6 +44,7 @@ class UpdateUserCommand(Bloxlink.Module):
             }
         ]
         self.category = "Administration"
+        self.aliases = ["update-user"]
         self.cooldown = 2
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
         self.slash_enabled = True

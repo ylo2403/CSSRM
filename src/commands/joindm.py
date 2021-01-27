@@ -22,6 +22,7 @@ class JoinDMCommand(Bloxlink.Module):
             "name": "subcommand"
         }]
         self.hidden = True
+        self.aliases = ["join-dm"]
 
     async def __main__(self, CommandArgs):
         subcommand = CommandArgs.parsed_args["subcommand"]

@@ -15,6 +15,7 @@ class SwitchUserCommand(Bloxlink.Module):
 
     def __init__(self):
         self.category = "Account"
+        self.aliases = ["switch-user"]
         self.slash_enabled = True
 
     @staticmethod

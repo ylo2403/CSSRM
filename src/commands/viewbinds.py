@@ -13,7 +13,7 @@ class ViewBindsCommand(Bloxlink.Module):
 
     def __init__(self):
         self.category = "Binds"
-        self.aliases = ["binds"]
+        self.aliases = ["binds", "view-binds"]
         self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
