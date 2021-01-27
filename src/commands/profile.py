@@ -114,11 +114,11 @@ class ProfileCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        message = CommandArgs.message
-        author = CommandArgs.author
-        guild = CommandArgs.guild
-        prefix = CommandArgs.prefix
-        user = CommandArgs.parsed_args["user"] or author
+        message  = CommandArgs.message
+        author   = CommandArgs.author
+        guild    = CommandArgs.guild
+        prefix   = CommandArgs.prefix
+        user     = CommandArgs.parsed_args["user"] or author
 
         trello_board = CommandArgs.trello_board
         guild_data = CommandArgs.guild_data

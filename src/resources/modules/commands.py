@@ -7,7 +7,6 @@ from inspect import iscoroutinefunction
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
 from discord import Embed, Object, Member, User
-from discord.http import Route # temporary slash command workaround
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
 from ..structures import Bloxlink, Args, Permissions, Locale, Arguments, Response # pylint: disable=import-error
 from ..constants import MAGIC_ROLES, OWNER, DEFAULTS, RELEASE, CLUSTER_ID # pylint: disable=import-error
