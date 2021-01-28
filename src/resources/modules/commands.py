@@ -571,7 +571,7 @@ class Commands(Bloxlink.Module):
                     "slashCompatible": command.slash_enabled
                 }, conflict="replace").run()
 
-            if RELEASE in ("PRO", "LOCAL", "CANARY") and command.slash_enabled:
+            if command.slash_enabled:
                 await self.register_slash_command(command)
 
 
