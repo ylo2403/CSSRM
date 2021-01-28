@@ -11,7 +11,7 @@ class RobloxSearchCommand(Bloxlink.Module):
     """retrieve the Roblox information of a user"""
 
     def __init__(self):
-        self.aliases = ["rs", "search"]
+        self.aliases = ["rs", "search", "roblox-search"]
         self.arguments = [
             {
                 "prompt": "Please specify either a username or Roblox ID. If the person's name is all numbers, "
@@ -29,7 +29,6 @@ class RobloxSearchCommand(Bloxlink.Module):
         ]
         self.cooldown = 5
         self.dm_allowed = True
-        self.aliases = ["roblox-search"]
         self.slash_enabled = True
 
     @Bloxlink.flags

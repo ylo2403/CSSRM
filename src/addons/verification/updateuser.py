@@ -18,7 +18,7 @@ class UpdateUserCommand(Bloxlink.Module):
         permissions.allow_bypass = True
 
         self.permissions = permissions
-        self.aliases = ["update", "updateroles"]
+        self.aliases = ["update", "updateroles", "update-user"]
         self.arguments = [
             {
                 "prompt": "Please specify user(s) or role(s) to update. For example: `@user1 @user2 @user3` or `@role`",
@@ -44,7 +44,6 @@ class UpdateUserCommand(Bloxlink.Module):
             }
         ]
         self.category = "Administration"
-        self.aliases = ["update-user"]
         self.cooldown = 2
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
         self.slash_enabled = True

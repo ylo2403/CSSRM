@@ -10,7 +10,7 @@ class VerifyChannelCommand(Bloxlink.Module):
 
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
-        self.aliases = ["verificationchannel"]
+        self.aliases = ["verificationchannel", "verification-channel"]
         self.category = "Administration"
         self.slash_enabled = True
 
