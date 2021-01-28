@@ -2330,15 +2330,15 @@ class Group(Bloxlink.Module):
         if self.rolesets:
             return
 
-        text, _ = await fetch(f"https://api.roblox.com/groups/{self.group_id}")
+        roleset_data, roleset_response = await fetch(f"{GROUP_API}/v1/groups/{self.group_id}/roles")
 
-        try:
-            group_data = json.loads(text)
-        except json.JSONDecodeError:
-            pass
-        else:
-            self.load_json(group_data)
-
+        if roleset_response.status == 200:
+            try:
+                group_data = json.loads(roleset_data)
+            except json.JSONDecodeError:
+                pass
+            else:
+                self.load_json(group_data)
 
     def load_json(self, group_data, my_roles=None):
         self.shout = group_data.get("shout") or self.shout
