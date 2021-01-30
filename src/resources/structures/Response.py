@@ -206,9 +206,12 @@ class Response(Bloxlink.Module):
         if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 
+        if dm:
+            send_as_slash_command = False
+
         content = str(content) if content else None
 
-        channel = channel_override or ((dm and self.author) or self.channel)
+        channel = channel_override or (dm and self.author) or self.channel
         webhook = None
         msg = None
 

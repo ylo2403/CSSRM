@@ -22,7 +22,6 @@ class HelpCommand(Bloxlink.Module):
         ]
         self.dm_allowed = True
         self.slash_enabled = True
-        self.slash_ack = False
 
     async def __main__(self, CommandArgs):
         command_name = CommandArgs.parsed_args.get("command_name")
@@ -99,7 +98,7 @@ class HelpCommand(Bloxlink.Module):
 
                         embed.add_field(name="Examples", value="\n".join(examples))
 
-                    await response.send(embed=embed, hidden=True)
+                    await response.send(embed=embed)
 
                     break
             else:
@@ -138,4 +137,4 @@ class HelpCommand(Bloxlink.Module):
             for i,v in categories.items():
                 embed.add_field(name=i, value="\n".join(v), inline=False)
 
-            await response.send(embed=embed, dm=True, hidden=True)
+            await response.send(embed=embed, dm=True)
