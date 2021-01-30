@@ -15,7 +15,7 @@ class GetRoleCommand(Bloxlink.Module):
     def __init__(self):
         self.category = "Account"
         self.cooldown = 5
-        self.aliases = ["getroles", "get-roles"]
+        self.aliases = ["getroles", "get-roles", "get-role"]
         self.slash_enabled = True
 
     @Bloxlink.flags
@@ -54,7 +54,7 @@ class GetRoleCommand(Bloxlink.Module):
             raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
         except Blacklisted as b:
-            if str(b):
+            if isinstance(b.message, str):
                 raise Error(f"{author.mention} has an active restriction for: `{b}`")
             else:
                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
@@ -64,7 +64,7 @@ class GetRoleCommand(Bloxlink.Module):
                                 f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=hq496NmQ9GU>", hidden=True)
 
         except PermissionError as e:
-            raise Error(e)
+            raise Error(e.message)
 
         else:
             welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)

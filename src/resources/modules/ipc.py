@@ -99,7 +99,7 @@ class IPC(Bloxlink.Module):
                 except Blacklisted as b:
                     blacklist_text = ""
 
-                    if str(b):
+                    if isinstance(b.message, str):
                         blacklist_text = f"You have an active restriction for: `{b}`"
                     else:
                         blacklist_text = f"You have an active restriction from Bloxlink."
@@ -148,6 +148,7 @@ class IPC(Bloxlink.Module):
 
 
         elif type == "EVAL":
+            """
             res = (await eval(data, codeblock=False)).description
 
             data = json.dumps({
@@ -160,6 +161,8 @@ class IPC(Bloxlink.Module):
             })
 
             await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+            """
+            pass
 
         elif type == "CLIENT_RESULT":
             task = self.pending_tasks.get(nonce)

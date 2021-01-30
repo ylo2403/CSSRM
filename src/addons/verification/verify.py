@@ -78,7 +78,7 @@ class VerifyCommand(Bloxlink.Module):
             raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
         except Blacklisted as b:
-            if str(b):
+            if isinstance(b.message, str):
                 raise Error(f"{author.mention} has an active restriction for: `{b}`")
             else:
                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
@@ -87,7 +87,7 @@ class VerifyCommand(Bloxlink.Module):
             await self.add(CommandArgs)
 
         except PermissionError as e:
-            raise Error(e)
+            raise Error(e.message)
 
         else:
             welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
@@ -241,7 +241,7 @@ class VerifyCommand(Bloxlink.Module):
             embed.add_field(name="Secondary Accounts", value=parsed_accounts_str or "No secondary account saved")
             embed.set_author(name=author, icon_url=author.avatar_url)
 
-            await response.send(embed=embed, dm=True, hidden=False, strict_post=True)
+            await response.send(embed=embed, dm=True, strict_post=True)
 
     @staticmethod
     @Bloxlink.subcommand()

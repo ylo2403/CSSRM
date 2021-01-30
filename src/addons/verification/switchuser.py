@@ -158,7 +158,7 @@ class SwitchUserCommand(Bloxlink.Module):
                             return
 
                         except Blacklisted as b:
-                            if str(b):
+                            if isinstance(b.message, str):
                                 raise Error(f"{author.mention} has an active restriction for: `{b}`.")
                             else:
                                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")

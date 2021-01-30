@@ -157,7 +157,7 @@ class UpdateUserCommand(Bloxlink.Module):
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['ERROR']} {user.mention} is **not linked to Bloxlink**")
                         except PermissionError as e:
-                            raise Error(e)
+                            raise Error(e.message)
                         except Blacklisted as b:
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['ERROR']} {user.mention} has an active restriction.")
@@ -196,7 +196,7 @@ class UpdateUserCommand(Bloxlink.Module):
                     raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
                 except Blacklisted as b:
-                    if str(b):
+                    if isinstance(b.message, str):
                         raise Error(f"{user.mention} has an active restriction for: `{b}`")
                     else:
                         raise Error(f"{user.mention} has an active restriction from Bloxlink.")
@@ -208,7 +208,7 @@ class UpdateUserCommand(Bloxlink.Module):
                     raise Error("This user is not linked to Bloxlink.")
 
                 except PermissionError as e:
-                    raise Error(e)
+                    raise Error(e.message)
 
             if cooldown:
                 await self.redis.set(redis_cooldown_key, 3, ex=cooldown)
