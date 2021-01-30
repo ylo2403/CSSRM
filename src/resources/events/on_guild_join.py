@@ -7,6 +7,7 @@ get_prefix = Bloxlink.get_module("utils", attrs=["get_prefix"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_board = Bloxlink.get_module("trello", attrs=["get_board"])
 post_stats = Bloxlink.get_module("site_services", name_override="DBL", attrs="post_stats")
+get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
               "servers with premium from Patreon.com. If you are indeed subscribed " \
@@ -35,6 +36,13 @@ class GuildJoinEvent(Bloxlink.Module):
 
         @Bloxlink.event
         async def on_guild_join(guild):
+            guild_restriction = await get_restriction("guilds", guild.id)
+
+            if guild_restriction:
+                await guild.leave()
+
+                return
+
             guild_id = str(guild.id)
             chosen_channel = None
             sorted_channels = sorted(guild.text_channels, key=lambda c: c.position, reverse=False)

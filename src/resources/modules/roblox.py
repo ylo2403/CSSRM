@@ -35,6 +35,7 @@ is_booster = Bloxlink.get_module("nitro_boosters", attrs=["is_booster"], name_ov
 is_partner = Bloxlink.get_module("partners", attrs=["is_partner"])
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
+get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 
 API_URL = "https://api.roblox.com"
@@ -264,16 +265,10 @@ class Roblox(Bloxlink.Module):
         else:
             roblox_id = str(roblox)
 
-        blacklisted_discord = await cache_get(f"blacklist:discord_ids:{author.id}", primitives=True)
+        restriction = await get_restriction("discord_ids", author.id) or await get_restriction("roblox_ids", roblox_id)
 
-        if blacklisted_discord is not None:
-            raise Blacklisted(blacklisted_discord)
-
-        blacklisted_roblox = await cache_get(f"blacklist:roblox_ids:{roblox_id}", primitives=True)
-
-        if blacklisted_roblox is not None:
-            raise Blacklisted(blacklisted_roblox)
-
+        if restriction:
+            raise Blacklisted(restriction)
 
         user_data = await self.r.db("bloxlink").table("users").get(author_id).run()
         roblox_accounts = user_data.get("robloxAccounts", {})
@@ -945,30 +940,30 @@ class Roblox(Bloxlink.Module):
 
         except NotFound as e:
             if "NotFound" in exceptions:
-                raise NotFound from e
+                raise e from None
         except RobloxAPIError as e:
             if "RobloxAPIError" in exceptions:
-                raise RobloxAPIError(e) from e
+                raise e from None
         except Error as e:
             if "Error" in exceptions:
-                raise Error(e) from e
+                raise e from None
         except CancelCommand as e:
             if "CancelCommand" in exceptions:
-                raise CancelCommand(e) from e
+                raise e from None
         except RobloxDown as e:
             if "RobloxDown" in exceptions:
-                raise RobloxDown(e) from e
+                raise e from None
             else:
                 raise CancelCommand
         except Blacklisted as e:
             if "Blacklisted" in exceptions:
-                raise Blacklisted(e) from e
+                raise e from None
         except BloxlinkBypass as e:
             if "BloxlinkBypass" in exceptions:
-                raise BloxlinkBypass(e) from e
+                raise e from None
         except PermissionError as e:
             if "PermissionError" in exceptions:
-                raise PermissionError(e) from e
+                raise e from None
 
         except (UserNotVerified, HTTPException):
             pass
@@ -1097,10 +1092,10 @@ class Roblox(Bloxlink.Module):
 
 
     async def update_member(self, author, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, author_data=None, binds=None, guild_data=None, trello_board=None, given_trello_options=False, response=None, dm=False, cache=True):
-        blacklisted = await cache_get(f"blacklist:discord_ids:{author.id}", primitives=True)
+        restriction = await get_restriction("discord_ids", author.id)
 
-        if blacklisted is not None:
-            raise Blacklisted(blacklisted)
+        if restriction:
+            raise Blacklisted(restriction)
 
         if not cache:
             await cache_pop(f"discord_profiles:{author.id}")
@@ -1200,10 +1195,10 @@ class Roblox(Bloxlink.Module):
             unverified = True
 
         else:
-            blacklisted = await cache_get(f"blacklist:roblox_ids:{roblox_user.id}", primitives=True)
+            restriction = await get_restriction("roblox_ids", roblox_user.id)
 
-            if blacklisted is not None:
-                raise Blacklisted(blacklisted)
+            if restriction:
+                raise Blacklisted(restriction)
 
             if roles:
                 if unverify_role:
@@ -1903,10 +1898,7 @@ class Roblox(Bloxlink.Module):
                             cache       = cache,
                             response    = response)
 
-                    except BloxlinkBypass:
-                        pass
-
-                    except Blacklisted:
+                    except (BloxlinkBypass, Blacklisted):
                         pass
 
                 return username

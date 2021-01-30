@@ -18,7 +18,8 @@ get_prefix, fetch = Bloxlink.get_module("utils", attrs=["get_prefix", "fetch"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
-cache_get, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "get_guild_value"])
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 
 flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")
@@ -113,12 +114,12 @@ class Commands(Bloxlink.Module):
                 except NotFound:
                     raise CancelCommand
 
-        blacklisted_discord = await cache_get(f"blacklist:discord_ids:{author.id}", primitives=True)
+        restriction = await get_restriction("discord_ids", author.id)
 
-        if blacklisted_discord is not None:
-            blacklist_text = blacklisted_discord and f"has an active restriction for: `{blacklisted_discord}`" or "has an active restriction from Bloxlink."
+        if restriction:
+            restrction_text = isinstance(restriction, str) and f"has an active restriction for: `{restriction}`" or "has an active restriction from Bloxlink."
 
-            await response.send(f"{author.mention} {blacklist_text}", hidden=True)
+            await response.send(f"{author.mention} {restrction_text}", hidden=True)
             raise CancelCommand
 
         if command.cooldown and self.cache:
@@ -176,7 +177,7 @@ class Commands(Bloxlink.Module):
             message_type = "send" if e.type == "info" else e.type
             response_fn = getattr(response, message_type, response.send)
 
-            if e.args:
+            if e.message:
                 await response_fn(e, hidden=True)
 
             if subcommand_attrs.get("allow_bypass"):
@@ -193,6 +194,12 @@ class Commands(Bloxlink.Module):
     async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, member, interaction_id, interaction_token, subcommand):
         command = commands.get(command_name)
         guild_id = str(guild.id)
+
+        guild_restriction = await get_restriction("guilds", guild.id)
+
+        if guild_restriction:
+            await guild.leave()
+            raise CancelCommand
 
         if command:
             subcommand_attrs = {}
@@ -251,12 +258,12 @@ class Commands(Bloxlink.Module):
 
             await fn(CommandArgs)
         except PermissionError as e:
-            if e.args:
+            if e.message:
                 await response.error(e)
             else:
                 await response.error(locale("permissions.genericError"))
         except Forbidden as e:
-            if e.args:
+            if e.message:
                 await response.error(e)
             else:
                 await response.error(locale("permissions.genericError"))
@@ -280,7 +287,7 @@ class Commands(Bloxlink.Module):
                     except (Forbidden, NotFound):
                         pass
             else:
-                if e.args:
+                if e.message:
                     await response.send(f"**{locale('prompt.cancelledPrompt')}:** {e}", dm=e.dm, no_dm_post=True)
                 else:
                     await response.send(f"**{locale('prompt.cancelledPrompt')}.**", dm=e.dm, no_dm_post=True)
@@ -289,17 +296,17 @@ class Commands(Bloxlink.Module):
             message_type = "send" if e.type == "send" else e.type
             response_fn = getattr(response, message_type, response.send)
 
-            if e.args:
+            if e.message:
                 await response_fn(e, hidden=e.hidden)
             else:
                 await response_fn("This command closed unexpectedly.")
         except Error as e:
-            if e.args:
+            if e.message:
                 await response.error(e, hidden=e.hidden)
             else:
                 await response.error("This command has unexpectedly errored.")
         except CancelCommand as e:
-            if e.args:
+            if e.message:
                 await response.send(e)
         except NotImplementedError:
             await response.error("The option you specified is currently not implemented, but will be coming soon!")
@@ -370,6 +377,13 @@ class Commands(Bloxlink.Module):
         content = message.content
         author = message.author
         channel = message.channel
+
+        if guild:
+            guild_restriction = await get_restriction("guilds", guild.id)
+
+            if guild_restriction:
+                await guild.leave()
+                raise CancelCommand
 
         guild_permissions = guild and guild.me.guild_permissions
 
@@ -712,8 +726,8 @@ class Command:
                             raise PermissionError(data[0][1])
 
         except PermissionError as e:
-            if e.args:
-                raise PermissionError(e)
+            if e.message:
+                raise e from None
 
             raise PermissionError("You do not meet the required permissions for this command.")
 
