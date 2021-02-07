@@ -77,7 +77,7 @@ class SwitchUserCommand(Bloxlink.Module):
                                     "Please select an account to switch into:```" + parsed_accounts_str + "```",
                             "name": "account",
                             "type": "choice",
-                            "choices": parsed_accounts.keys()
+                            "choices": list(parsed_accounts.keys())
                         },
                         {
                             "prompt": "Would you like to make this your __primary__ account? Please say **yes** or **no**.",
