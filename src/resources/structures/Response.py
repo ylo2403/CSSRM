@@ -202,7 +202,7 @@ class Response(Bloxlink.Module):
 
         return msg
 
-    async def send(self, content=None, embed=None, on_error=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=None, hidden=False):
+    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=None, hidden=False, ignore_errors=False):
         if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 
@@ -282,6 +282,21 @@ class Response(Bloxlink.Module):
                 if webhook:
                     await cache_pop(f"webhooks:{channel.id}")
 
+                if strict_post:
+                    if not ignore_errors:
+                        if dm:
+                            try:
+                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.")
+                            except (Forbidden, NotFound):
+                                pass
+                        else:
+                            try:
+                                await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please double check my permissions and try again.")
+                            except (Forbidden, NotFound):
+                                pass
+
+                    return
+
                 try:
                     msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden)
                 except (Forbidden, NotFound):
@@ -302,7 +317,7 @@ class Response(Bloxlink.Module):
                     if self.webhook_only:
                         self.webhook_only = False
 
-                        return await self.send(content=content, embed=embed, on_error=on_error, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions)
+                        return await self.send(content=content, embed=embed, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions, ignore_errors=ignore_errors)
 
                     else:
                         if embed:

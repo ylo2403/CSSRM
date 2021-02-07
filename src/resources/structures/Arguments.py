@@ -119,7 +119,7 @@ class Arguments:
             if is_prompt:
                 text = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-            return await self.response.send(text, dm=dm, no_dm_post=True)
+            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True)
 
         description = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}"
 
@@ -139,13 +139,13 @@ class Arguments:
 
         new_embed.set_footer(text=self.locale("prompt.timeoutWarning", timeout=PROMPT["PROMPT_TIMEOUT"]))
 
-        msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True)
+        msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True, strict_post=True, ignore_errors=True)
 
         if not msg:
             if is_prompt:
                 text = f"{text}\n\n{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-            return await self.response.send(text, dm=dm, no_dm_post=True)
+            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True)
 
         if msg and not dm:
             self.messages.append(msg.id)
@@ -178,7 +178,7 @@ class Arguments:
                         pass
 
                     if not no_dm_post:
-                        self.dm_post = await self.response.send(f"{self.author.mention}, **please check your DMs to continue.**")
+                        self.dm_post = await self.response.send(f"{self.author.mention}, **please check your DMs to continue.**", ignore_errors=True, strict_post=True)
             else:
                 dm = False
 
