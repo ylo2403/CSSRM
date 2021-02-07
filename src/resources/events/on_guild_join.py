@@ -71,7 +71,10 @@ class GuildJoinEvent(Bloxlink.Module):
                         except (NotFound, Forbidden):
                             pass
 
-                    await guild.leave()
+                    try:
+                        await guild.leave()
+                    except NotFound:
+                        pass
 
                     return
 

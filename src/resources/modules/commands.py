@@ -240,7 +240,10 @@ class Commands(Bloxlink.Module):
 
             if command.slash_ack:
                 # ACK the message
-                await response.slash_ack()
+                try:
+                    await response.slash_ack()
+                except NotFound:
+                    raise CancelCommand
 
             arguments = Arguments(CommandArgs, member, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments or True)
 
