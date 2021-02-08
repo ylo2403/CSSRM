@@ -283,17 +283,17 @@ class Commands(Bloxlink.Module):
                 trello_options, _ = await get_options(trello_board)
                 guild_data.update(trello_options)
 
+            if e.message:
+                response.delete(await response.send(f"**{locale('prompt.cancelledPrompt')}:** {e}", dm=e.dm, no_dm_post=True))
+            else:
+                response.delete(await response.send(f"**{locale('prompt.cancelledPrompt')}.**", dm=e.dm, no_dm_post=True))
+
             if (e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete")):
                 if message:
                     try:
                         await message.delete()
                     except (Forbidden, NotFound):
                         pass
-            else:
-                if e.message:
-                    await response.send(f"**{locale('prompt.cancelledPrompt')}:** {e}", dm=e.dm, no_dm_post=True)
-                else:
-                    await response.send(f"**{locale('prompt.cancelledPrompt')}.**", dm=e.dm, no_dm_post=True)
 
         except Message as e:
             message_type = "send" if e.type == "send" else e.type
