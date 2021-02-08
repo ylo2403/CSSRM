@@ -109,6 +109,7 @@ class SetupCommand(Bloxlink.Module):
 
         nickname = None
 
+        await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=True, no_dm_post=True)
 
         parsed_args_1 = await CommandArgs.prompt([
             {

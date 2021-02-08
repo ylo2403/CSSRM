@@ -25,6 +25,8 @@ WELCOME_MESSAGE = "\n\n".join([
                     ":gear: If you're looking to change specific settings, use the `{prefix}settings` command.",
                     ":woman_office_worker: if you're looking to link Roblox groups, use the `{prefix}bind` command.",
                     "<:BloxlinkSale:506622933184020490> Interested in supercharging your Bloxlink experience? Run the `{prefix}donate` command and help support Bloxlink development!",
+                    "<:BloxlinkSearch:506622933012054028> **Learn how to set-up Bloxlink:** https://blox.link/tutorial/setup/",
+                    "<:BloxlinkSearch:506622933012054028> **More Bloxlink tutorials:** https://blox.link/tutorials/",
                     f"<:BloxlinkSearch:506622933012054028> **Need support?** Join our community server: {SERVER_INVITE}"])
 
 @Bloxlink.module
