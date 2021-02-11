@@ -35,6 +35,9 @@ async def on_socket_response(msg):
 
         user_data = d.get("member") or d.get("user")
 
+        if not guild_id:
+            return
+
         guild   = guild_id and Bloxlink.get_guild(guild_id)
         user    = None
         channel = None
