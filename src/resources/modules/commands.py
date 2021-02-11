@@ -33,36 +33,36 @@ class Commands(Bloxlink.Module):
         pass
 
     async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
-        channel_id      = str(channel.id)
+        channel_id      = str(channel.id) if channel else None
         donator_profile = None
         dm = not bool(guild)
         subcommand_attrs = subcommand_attrs or {}
 
-        if command.addon:
-            enabled_addons = guild and await get_enabled_addons(guild) or {}
+        if guild:
+            if command.addon:
+                enabled_addons = guild and await get_enabled_addons(guild) or {}
 
-            if str(command.addon) not in enabled_addons:
-                raise CancelCommand
+                if str(command.addon) not in enabled_addons:
+                    raise CancelCommand
 
-            if getattr(command.addon, "premium", False):
+                if getattr(command.addon, "premium", False):
+                    donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+
+                    if not donator_profile.features.get("premium"):
+                        await response.error(f"This add-on requires premium! You may use `{prefix}donate` for instructions on donating.\n"
+                                            f"You may also disable this add-on with `{prefix}addon change`.", hidden=True)
+
+                        raise CancelCommand
+
+            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix"):
                 donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
-                if not donator_profile.features.get("premium"):
-                    await response.error(f"This add-on requires premium! You may use `{prefix}donate` for instructions on donating.\n"
-                                         f"You may also disable this add-on with `{prefix}addon change`.", hidden=True)
+                if not donator_profile.features.get("pro"):
+                    await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
+                                        "how to get Bloxlink Pro.", hidden=True)
 
                     raise CancelCommand
 
-        if guild and RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix"):
-            donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
-
-            if not donator_profile.features.get("pro"):
-                await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
-                                     "how to get Bloxlink Pro.", hidden=True)
-
-                raise CancelCommand
-
-        if guild:
             ignored_channels = guild_data.get("ignoredChannels", {})
             disabled_commands = guild_data.get("disabledCommands", {})
 
@@ -191,18 +191,21 @@ class Commands(Bloxlink.Module):
             CommandArgs.has_permission = True
 
 
-    async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, member, interaction_id, interaction_token, subcommand):
+    async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, user, interaction_id, interaction_token, subcommand):
         command = commands.get(command_name)
-        guild_id = str(guild.id)
+        guild_id = guild and str(guild.id)
 
-        guild_restriction = await get_restriction("guilds", guild.id)
+        if guild:
+            guild_restriction = await get_restriction("guilds", guild.id)
 
-        if guild_restriction:
-            await guild.leave()
-            raise CancelCommand
+            if guild_restriction:
+                await guild.leave()
+                raise CancelCommand
 
         if command:
             subcommand_attrs = {}
+            trello_board = None
+            guild_data = {}
 
             if subcommand and command.subcommands.get(subcommand):
                 fn = command.subcommands[subcommand]
@@ -210,8 +213,9 @@ class Commands(Bloxlink.Module):
             else:
                 fn = command.fn
 
-            guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
-            trello_board = guild and await get_board(guild)
+            if guild:
+                guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
+                trello_board = guild and await get_board(guild)
 
             CommandArgs = Args(
                 command_name = command_name,
@@ -224,7 +228,7 @@ class Commands(Bloxlink.Module):
                 command = command,
                 guild = guild,
                 channel = channel,
-                author = member,
+                author = user,
                 interaction_id = interaction_id,
                 interaction_token = interaction_token
             )
@@ -232,11 +236,11 @@ class Commands(Bloxlink.Module):
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
 
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, member, channel, guild, None, slash_command={"id": interaction_id, "token": interaction_token})
+            response = Response(CommandArgs, user, channel, guild, None, slash_command={"id": interaction_id, "token": interaction_token})
 
             CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
 
-            await self.command_checks(command, "/", response, guild_data, member, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
+            await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
 
             if command.slash_ack:
                 # ACK the message
@@ -245,9 +249,9 @@ class Commands(Bloxlink.Module):
                 except NotFound:
                     raise CancelCommand
 
-            arguments = Arguments(CommandArgs, member, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments or True)
+            arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments or True)
 
-            await self.execute_command(command, fn, response, CommandArgs, member, channel, arguments, locale, guild_data, guild, slash_command=command_id)
+            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=command_id)
 
 
     async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, trello_board=None, after_text=None, slash_command=False):
@@ -266,7 +270,7 @@ class Commands(Bloxlink.Module):
             else:
                 await response.error(locale("permissions.genericError"))
         except Forbidden as e:
-            if e.message:
+            if e.args:
                 await response.error(e)
             else:
                 await response.error(locale("permissions.genericError"))

@@ -1,7 +1,7 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from ..exceptions import CancelCommand # pylint: disable=import-error
 from discord.utils import find
-from discord import Member
+from discord import Member, User, DMChannel
 
 
 
@@ -31,21 +31,26 @@ async def on_socket_response(msg):
         interaction_token = d["token"]
 
         channel_id = int(d["channel_id"])
-        guild_id   = int(d["guild_id"])
+        guild_id   = int(d["guild_id"]) if d.get("guild_id") else None
 
-        member_data = d["member"]
+        user_data = d.get("member") or d.get("user")
 
-        guild = Bloxlink.get_guild(guild_id)
-        channel = guild and find(lambda c: c.id == channel_id, guild.text_channels)
+        guild   = guild_id and Bloxlink.get_guild(guild_id)
+        user    = None
+        channel = None
 
-        if guild and channel:
-            member = Member(state=guild._state, data=member_data, guild=guild)
+        if guild:
+            user = Member(state=guild._state, data=user_data, guild=guild)
+            channel = find(lambda c: c.id == channel_id, guild.text_channels)
+        else:
+            user = User(state=Bloxlink._connection, data=user_data)
+            channel = DMChannel(me=Bloxlink.user, state=Bloxlink._connection, data={"id": channel_id, "recipients": [user_data]})
 
-            try:
-                await handle_slash_command(command_name, guild=guild, channel=channel,
-                                           member=member, interaction_id=interaction_id,
-                                           interaction_token=interaction_token,
-                                           command_id=command_id, subcommand=subcommand,
-                                           arguments=command_args)
-            except CancelCommand:
-                pass
+        try:
+            await handle_slash_command(command_name, guild=guild, channel=channel,
+                                        user=user, interaction_id=interaction_id,
+                                        interaction_token=interaction_token,
+                                        command_id=command_id, subcommand=subcommand,
+                                        arguments=command_args)
+        except CancelCommand:
+            pass

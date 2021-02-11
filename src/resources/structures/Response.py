@@ -190,7 +190,7 @@ class Response(Bloxlink.Module):
 
             route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
 
-            response = await self.guild._state.http.request(route, json=payload)
+            response = await self.channel._state.http.request(route, json=payload)
 
             msg = InteractionWebhook(interaction_token=self.slash_command["token"], data=response, state=self.channel._state, channel=self.channel)
 
