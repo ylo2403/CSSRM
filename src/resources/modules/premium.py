@@ -36,7 +36,7 @@ class Premium(Bloxlink.Module):
 
             if staff_role:
                 for member in staff_role.members:
-                    await cache_set(f"bloxlink_staff:{member.id}", "true")
+                    await cache_set(f"bloxlink_staff:{member.id}", "true", expire=43800) # 1 month
 
 
     async def is_staff(self, author):
@@ -221,36 +221,34 @@ class Premium(Bloxlink.Module):
             profile.add_features("premium", "pro")
         """
 
-        data_patreon = await self.has_patreon_premium(author, author_data)
-
-        if data_patreon:
-            profile.load_patreon(data_patreon)
+        if await self.is_staff(author):
             profile.add_features("premium", "pro")
+            profile.days = 0
+            profile.add_note("This user can use premium in _any_ server.")
+            profile.attributes["PREMIUM_ANYWHERE"] = True
         else:
-            data_selly = await self.has_selly_premium(author, author_data)
+            data_patreon = await self.has_patreon_premium(author, author_data)
 
-            if data_selly["premium"]:
-                profile.add_features("premium")
-                profile.load_selly(days=data_selly["days"])
+            if data_patreon:
+                profile.load_patreon(data_patreon)
+                profile.add_features("premium", "pro")
+            else:
+                data_selly = await self.has_selly_premium(author, author_data)
 
-            if data_selly["pro_access"]:
-                profile.add_features("pro")
+                if data_selly["premium"]:
+                    profile.add_features("premium")
+                    profile.load_selly(days=data_selly["days"])
 
-            if not profile.features.get("pro"):
-                if await self.is_staff(author):
-                    profile.add_features("premium", "pro")
+                if data_selly["pro_access"]:
+                    profile.add_features("pro")
+
+            if guild and partner_check:
+                partners_cache = await cache_get(f"partners:guilds:{guild.id}")
+
+                if partners_cache:
+                    profile.add_features("premium")
                     profile.days = 0
-                    profile.add_note("This user is a Bloxlink Staff member.")
-                    profile.add_note("This user can use premium in _any_ server.")
-                    profile.attributes["PREMIUM_ANYWHERE"] = True
-
-        if guild and partner_check:
-            partners_cache = await cache_get(f"partners:guilds:{guild.id}")
-
-            if partners_cache:
-                profile.add_features("premium")
-                profile.days = 0
-                profile.add_note("This server has free premium from a partnership.")
+                    profile.add_note("This server has free premium from a partnership.")
 
         if cache:
             if guild and cache_as_guild:
