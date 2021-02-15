@@ -29,7 +29,7 @@ class Paginate:
         len_fields = len(fields)
 
         while True:
-            remaining = 5000
+            remaining = 4000
             field = fields[i]
             current_page = []
 
@@ -42,7 +42,7 @@ class Paginate:
                 len_field_name = len(field.name)
                 if remaining > len_field_name + 1:
                     # get first 1024 characters with respect to remaining
-                    chars = field.value[0:min(1000, remaining - len_field_name)]
+                    chars = field.value[0:min(500, remaining - len_field_name)]
                     len_chars = len(chars)
                     current_page.append({"name": field.name, "value": chars})
                     remaining -= len_chars
@@ -149,8 +149,7 @@ class Paginate:
             if self.dm:
                 await send_to.send(self.author.mention + ", I was unable to DM you! Please check your privacy settings and try again.")
             else:
-                await send_to.send(self.author.mention + ", an unknown error occured while sending the message. Please report this to the Bloxlink "
-                                                         f"support server here: {SERVER_INVITE}")
+                await send_to.send(self.author.mention + "I was unable to send the message. Please make sure I have the `Embed Links` permission.")
 
             raise CancelCommand
 

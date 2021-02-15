@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Error, RobloxNotFound, RobloxAPIError # pylint: disable=import-error
+from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message # pylint: disable=import-error
 from discord.errors import NotFound
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
@@ -76,7 +76,11 @@ class RobloxSearchCommand(Bloxlink.Module):
                 except NotFound:
                     raise Error("This Roblox account doesn't exist.")
                 else:
-                    message.content = f"{prefix}getinfo {target}"
-                    return await parse_message(message)
+                    if message:
+                        message.content = f"{prefix}getinfo {target}"
+                        return await parse_message(message)
+                    else:
+                        raise Message(f"To search with Discord IDs, please use the `{prefix}getinfo` command.\n"
+                                      "This command only searches by Roblox username or ID.", hidden=True, type="info")
             else:
                 raise Error("This Roblox account doesn't exist.")

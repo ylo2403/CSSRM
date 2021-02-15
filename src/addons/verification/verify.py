@@ -61,7 +61,7 @@ class VerifyCommand(Bloxlink.Module):
             old_nickname = author.display_name
 
             added, removed, nickname, errors, roblox_user = await guild_obligations(
-                CommandArgs.message.author,
+                CommandArgs.author,
                 guild                = guild,
                 guild_data           = guild_data,
                 roles                = True,
