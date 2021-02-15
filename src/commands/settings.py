@@ -80,8 +80,9 @@ class SettingsCommand(Bloxlink.Module):
         options_trello_data = {}
 
         donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+        premium = donator_profile.features.get("premium")
 
-        if donator_profile.features.get("premium"):
+        if premium:
             text_buffer.append("**This is a [Premium Server](https://www.patreon.com/join/bloxlink?)**\n")
             embed.colour = GOLD_COLOR
 
@@ -99,6 +100,9 @@ class SettingsCommand(Bloxlink.Module):
                     value = str(guild_data.get(option_name, DEFAULTS.get(option_name, "False")))
                 except KeyError:
                     value = str(guild_data.get(option_name, DEFAULTS.get(option_name, "False")))
+
+            if option_data[3] and not premium:
+                value = str(DEFAULTS.get(option_name, "False"))
 
             value = value.replace("{prefix}", prefix)
             text_buffer.append(f"**{option_name}** {ARROW} {value}")
