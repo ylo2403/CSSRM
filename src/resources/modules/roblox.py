@@ -2519,18 +2519,11 @@ class RobloxUser(Bloxlink.Module):
                     else:
                         embed.append(sent_embed)
 
-                        if basic_details or "username" in args:
-                            embed[0].add_field(name="Username", value=f"[{username}]({roblox_data['profile_link']})")
+                if basic_details or "username" in args:
+                    embed[0].add_field(name="Username", value=f"[{username}]({roblox_data['profile_link']})")
 
-                        if basic_details or "id" in args:
-                            embed[0].add_field(name="ID", value=roblox_id)
-                else:
-                    if basic_details or "username" in args:
-                        embed[0].add_field(name="Username", value=username)
-
-                    if basic_details or "id" in args:
-                        embed[0].add_field(name="ID", value=roblox_id)
-
+                if basic_details or "id" in args:
+                    embed[0].add_field(name="ID", value=roblox_id)
 
         if roblox_user:
             roblox_user.username = username
@@ -2747,7 +2740,7 @@ class RobloxUser(Bloxlink.Module):
                         embed[0].description = "This user is not banned."
 
                 if description and (everything or "description" in args):
-                    embed[0].add_field(name="Description", value=description[0:1000], inline=False)
+                    embed[0].add_field(name="Description", value=description[0:1000].replace("\n\n\n", "\n\n"), inline=False)
 
 
             if roblox_user:
