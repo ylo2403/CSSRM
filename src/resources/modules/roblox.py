@@ -2520,7 +2520,7 @@ class RobloxUser(Bloxlink.Module):
                         embed.append(sent_embed)
 
                         if basic_details or "username" in args:
-                            embed[0].add_field(name="Username", value=username)
+                            embed[0].add_field(name="Username", value=f"[{username}]({roblox_data['profile_link']})")
 
                         if basic_details or "id" in args:
                             embed[0].add_field(name="ID", value=roblox_id)
@@ -2557,7 +2557,9 @@ class RobloxUser(Bloxlink.Module):
 
             if embed:
                 embed[0].set_thumbnail(url=avatar_url)
-                embed[0].set_author(name=author and str(author) or roblox_data["username"], icon_url=author and author.avatar_url or avatar_url, url=roblox_data.get("profile_link")) # unsure what this does with icon_url if there's no author
+
+                if author:
+                    embed[0].set_author(name=str(author), icon_url=author.avatar_url, url=roblox_data.get("profile_link"))
 
         async def presence():
             if roblox_data["presence"] is not None:
@@ -2637,9 +2639,7 @@ class RobloxUser(Bloxlink.Module):
                 groups = roblox_data["groups"]
             else:
                 groups = {}
-                #group_json, _ = await fetch(f"{API_URL}/users/{roblox_data['id']}/groups")
                 group_json, _ = await fetch(f"{GROUP_API}/v2/users/{roblox_data['id']}/groups/roles")
-                # https://groups.roblox.com/v2/users/1/groups/roles
 
                 try:
                     group_json = json.loads(group_json)
@@ -2737,7 +2737,10 @@ class RobloxUser(Bloxlink.Module):
 
                     for i, field in enumerate(embed[0].fields):
                         if field.name == "Username":
-                           embed[0].set_field_at(i, name="Username", value=f"~~{field.value}~~")
+                            if guild and guild.default_role.permissions.external_emojis:
+                                embed[0].set_field_at(i, name="Username", value=f"{REACTIONS['BANNED']} ~~{field.value}~~")
+                            else:
+                                embed[0].set_field_at(i, name="Username", value=f":skull: ~~{field.value}~~")
 
                 else:
                     if "banned" in args:
