@@ -190,7 +190,6 @@ class Commands(Bloxlink.Module):
         else:
             CommandArgs.has_permission = True
 
-
     async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, user, interaction_id, interaction_token, subcommand):
         command = commands.get(command_name)
         guild_id = guild and str(guild.id)
@@ -592,8 +591,8 @@ class Commands(Bloxlink.Module):
                     "slashCompatible": command.slash_enabled
                 }, conflict="replace").run()
 
-            if command.slash_enabled:
-                await self.register_slash_command(command)
+            #if command.slash_enabled:
+            #    await self.register_slash_command(command)
 
 
 class Command:
@@ -661,7 +660,6 @@ class Command:
                                   "The server owner must have premium for this to work. If you "
                                   "would like the server owner to have premium instead, please use the `!transfer` "
                                   "command.\nYou may subscribe to Bloxlink Premium on Patreon: https://patreon.com/bloxlink", type="silly")
-
         try:
             if not dm:
                 author_perms = author.guild_permissions
