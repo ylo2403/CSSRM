@@ -28,9 +28,10 @@ class Partners(Bloxlink.Module):
             if match:
                 group_name = match.group(1)
                 group_id = match.group(2)
+                servers = [(lambda x: x.isdigit() and int(x))(y.strip()) for y in card.desc.split(",")]
 
-                await cache_set(f"partners:guilds:{card.desc.isdigit() and int(card.desc) or group_id}", (directory, group_id, group_name, card.desc.isdigit() and int(card.desc)))
-
+                for server_id in servers:
+                    await cache_set(f"partners:guilds:{server_id}", (directory, group_id, group_name))
 
     async def load_data(self):
         try:
