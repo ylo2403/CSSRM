@@ -850,8 +850,6 @@ class Roblox(Bloxlink.Module):
             else:
                 raise CancelCommand
 
-            return added, removed, chosen_nickname, errored, roblox_user
-
         if not roblox_user:
             unverified = True
 
@@ -1020,7 +1018,10 @@ class Roblox(Bloxlink.Module):
                         return added, removed, chosen_nickname, errored, roblox_user
 
             if dm and verified_dm:
-                verified_dm = await self.get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False)
+                if verified_dm != DEFAULTS.get("welcomeMessage"):
+                    verified_dm = f"This message was set by the Server Admins:\n{verified_dm}"
+
+                verified_dm = (await self.get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
 
                 try:
                     await member.send(verified_dm)
@@ -2554,39 +2555,6 @@ class RobloxUser(Bloxlink.Module):
                 if author:
                     embed[0].set_author(name=str(author), icon_url=author.avatar_url, url=roblox_data.get("profile_link"))
 
-        async def presence():
-            if roblox_data["presence"] is not None:
-                presence = roblox_data["presence"]
-            else:
-                presence, _ = await fetch(f"{API_URL}/users/{roblox_data['id']}/onlinestatus")
-
-                try:
-                    presence = json.loads(presence)
-                except json.decoder.JSONDecodeError:
-                    raise RobloxAPIError
-                else:
-                    presence_type = presence.get("UserPresenceType")
-
-                    if presence_type == 0:
-                        presence = "offline"
-                    elif presence_type == 1:
-                        presence = "browsing the website"
-                    elif presence_type == 2:
-                        if presence.get("PlaceID") is not None:
-                            presence = f"playing [{presence.get('LastLocation')}](https://www.roblox.com/games/{presence.get('PlaceId')}/-"
-                        else:
-                            presence = "in game"
-                    elif presence_type == 3:
-                        presence = "creating"
-
-                if roblox_user:
-                    roblox_user.presence = presence
-
-                roblox_data["presence"] = presence
-
-            if embed:
-                embed[0].add_field(name="Presence", value=presence)
-
         async def membership_and_badges():
             if roblox_data["premium"] is not None and roblox_data["badges"] is not None:
                 premium = roblox_data["premium"]
@@ -2674,7 +2642,7 @@ class RobloxUser(Bloxlink.Module):
                 description = roblox_data["description"]
                 age = roblox_data["age"]
                 join_date = roblox_data["join_date"]
-                banned = roblox_data["banned"] # <:ban:476838302092230672>
+                banned = roblox_data["banned"]
                 created = roblox_data["created"]
             else:
                 banned = None
@@ -2734,13 +2702,12 @@ class RobloxUser(Bloxlink.Module):
                                 embed[0].set_field_at(i, name="Username", value=f"{REACTIONS['BANNED']} ~~{field.value}~~")
                             else:
                                 embed[0].set_field_at(i, name="Username", value=f":skull: ~~{field.value}~~")
-
                 else:
                     if "banned" in args:
                         embed[0].description = "This user is not banned."
 
                 if description and (everything or "description" in args):
-                    embed[0].add_field(name="Description", value=description[0:1000].replace("\n\n\n", "\n\n"), inline=False)
+                    embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
 
 
             if roblox_user:
@@ -2753,9 +2720,6 @@ class RobloxUser(Bloxlink.Module):
 
         if basic_details or "avatar" in args:
             await avatar()
-
-        #if basic_details or "presence" in args:
-        #    await presence()
 
         if basic_details or "groups" in args:
             await groups()

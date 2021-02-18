@@ -5,7 +5,7 @@ import asyncio
 from discord import Status, Game, Streaming
 from discord.errors import NotFound, Forbidden
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT # pylint: disable=import-error
+from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT, DEFAULTS # pylint: disable=import-error
 from ..exceptions import (BloxlinkBypass, Blacklisted, Blacklisted, PermissionError, # pylint: disable=import-error
                          RobloxAPIError, CancelCommand, RobloxDown) # pylint: disable=import-error
 from config import PREFIX # pylint: disable=import-error, no-name-in-module
@@ -16,7 +16,8 @@ import async_timeout
 
 eval = Bloxlink.get_module("evalm", attrs="__call__")
 post_event = Bloxlink.get_module("utils", attrs="post_event")
-guild_obligations, get_user = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user"])
+guild_obligations, get_user, get_nickname = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname"])
+get_guild_value = Bloxlink.get_module("cache", attrs="get_guild_value")
 
 
 @Bloxlink.module
@@ -137,12 +138,18 @@ class IPC(Bloxlink.Module):
                     pass
 
                 else:
+                    verified_dm, guild_data = await get_guild_value(guild, ["joinDM", ""], return_guild_data=True)
+                    server_message = ""
+
+                    if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
+                        server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
+                        server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500] or ""
+
                     try:
-                        await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**")
+                        await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"
+                                          f"{server_message}")
                     except Forbidden:
                         pass
-
-                    guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {} # FIXME: use cache
 
                     await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
