@@ -188,7 +188,6 @@ class SettingsCommand(Bloxlink.Module):
                 if options_trello_find:
                     card = options_trello_find[1]
 
-
             if option_type == "boolean":
                 parsed_value = await CommandArgs.prompt([{
                     "prompt": f"Would you like to **enable** or **disable** `{choice}`?\n\n"
@@ -203,14 +202,12 @@ class SettingsCommand(Bloxlink.Module):
                 parsed_bool_choice = parsed_value["choice"]
 
                 if parsed_bool_choice == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
                 else:
                     parsed_value = parsed_bool_choice == "enable"
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully **{parsed_bool_choice}d** `{choice}`!"
 
@@ -226,12 +223,11 @@ class SettingsCommand(Bloxlink.Module):
                 }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully saved your new {choice}!"
 
@@ -247,14 +243,12 @@ class SettingsCommand(Bloxlink.Module):
                 }], last=True))["role"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
                 else:
                     parsed_value = str(parsed_value.id)
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully saved your new `{choice}`!"
 
@@ -271,12 +265,11 @@ class SettingsCommand(Bloxlink.Module):
                 }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully saved your new `{choice}`!"
 
@@ -294,12 +287,11 @@ class SettingsCommand(Bloxlink.Module):
                 }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully saved your new `{choice}`!"
             else:
