@@ -96,7 +96,7 @@ class StatsCommand(Bloxlink.Module):
             await self.r.table("miscellaneous").insert({
                 "id": "stats",
                 "stats": {
-                    "guilds": total_guilds
+                    "guilds": total_guilds,
                     "memory": total_mem,
                     "uptime": uptime,
                     "clusters": clusters
