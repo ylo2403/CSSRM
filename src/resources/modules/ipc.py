@@ -143,7 +143,7 @@ class IPC(Bloxlink.Module):
 
                     if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
                         server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
-                        server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500] or ""
+                        server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500]
 
                     try:
                         await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"

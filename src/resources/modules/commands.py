@@ -549,7 +549,6 @@ class Commands(Bloxlink.Module):
                 print(response.status, text, flush=True)
 
 
-
     def new_command(self, command_structure, addon=None):
         c = command_structure()
         command = Command(c)
