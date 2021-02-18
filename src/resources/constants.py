@@ -4,8 +4,6 @@ from re import search
 from discord import Game
 from discord.utils import find
 
-VERSION = "v3.16"
-
 RELEASE = env.get("RELEASE", "LOCAL")
 IS_DOCKER = bool(env.get("RELEASE"))
 

@@ -1,6 +1,6 @@
 import math
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import VERSION, SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error
+from resources.constants import SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error
 from discord import Embed
 from time import time
 from psutil import Process
@@ -96,8 +96,7 @@ class StatsCommand(Bloxlink.Module):
             await self.r.table("miscellaneous").insert({
                 "id": "stats",
                 "stats": {
-                    "guilds": total_guilds,
-                    "version": VERSION,
+                    "guilds": total_guilds
                     "memory": total_mem,
                     "uptime": uptime,
                     "clusters": clusters
