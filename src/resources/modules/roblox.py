@@ -2054,13 +2054,21 @@ class Roblox(Bloxlink.Module):
             if groups:
                 partners = await cache_get("partners:guilds") or {}
                 notable_groups = set()
+                all_notable_groups = []
 
                 for partner_server_id, partner_group in partners.items():
                     if partner_group[0] == "notable_group":
                         partner = roblox_user.groups.get(partner_group[1])
 
                         if partner:
-                            notable_groups.add(f"[{partner.name}]({partner.url}) {ARROW} {partner.user_rank_name}")
+                            all_notable_groups.append(partner)
+
+                if all_notable_groups:
+                    all_notable_groups.sort(key=lambda g: g.user_rank_id, reverse=True)
+                    all_notable_groups = all_notable_groups[:4]
+
+                    for notable_group in all_notable_groups:
+                        notable_groups.add(f"[{notable_group.name}]({notable_group.url}) {ARROW} {notable_group.user_rank_name}")
 
         if guild and embed:
             cache_partner = await cache_get(f"partners:guilds:{guild.id}")
@@ -2699,9 +2707,11 @@ class RobloxUser(Bloxlink.Module):
                     for i, field in enumerate(embed[0].fields):
                         if field.name == "Username":
                             if guild and guild.default_role.permissions.external_emojis:
-                                embed[0].set_field_at(i, name="Username", value=f"{REACTIONS['BANNED']} ~~{field.value}~~")
+                                embed[0].set_field_at(i, name="Username", value=f"{REACTIONS['BANNED']} ~~{roblox_data['username']}~~")
                             else:
-                                embed[0].set_field_at(i, name="Username", value=f":skull: ~~{field.value}~~")
+                                embed[0].set_field_at(i, name="Username", value=f":skull: ~~{roblox_data['username']}~~")
+
+                            break
                 else:
                     if "banned" in args:
                         embed[0].description = "This user is not banned."
