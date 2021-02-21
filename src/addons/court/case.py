@@ -431,10 +431,9 @@ class CaseCommand(Bloxlink.Module):
         for channel_id, case in dict(cases).items():
             case_channel = guild.get_channel(int(channel_id))
 
-            if not case_channel or (case_channel and case_channel.category and case_channel.category.id != case["archiveCategory"]):
+            if not case_channel or (case_channel and case_channel.category and case_channel.category.id == case.get("archiveCategory")):
                 cases.pop(channel_id)
                 removed += 1
-
 
         court_data["cases"] = cases
         addon_data["court"] = court_data
