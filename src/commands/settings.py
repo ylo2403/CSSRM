@@ -439,7 +439,6 @@ class SettingsCommand(Bloxlink.Module):
                             for role_id in range_data["roles"]:
                                 role_ids.add(int(role_id))
 
-
                 if role_ids:
                     delete_roles = (await CommandArgs.prompt([{
                         "prompt": "Would you like me to **delete these roles from your server as well?** If yes, "
@@ -457,7 +456,7 @@ class SettingsCommand(Bloxlink.Module):
                         for role_id in role_ids:
                             role = guild.get_role(role_id)
 
-                            if role:
+                            if role and not role.managed:
                                 try:
                                     await role.delete(reason=f"{author} chose to delete bound roles through {prefix}settings")
                                 except Forbidden:

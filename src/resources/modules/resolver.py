@@ -224,7 +224,7 @@ class Resolver(Bloxlink.Module):
             return None, "Invalid channel(s)"
 
         if max:
-            return channels[:max]
+            return channels[:max], None
         else:
             if multiple:
                 return channels, None
@@ -271,7 +271,7 @@ class Resolver(Bloxlink.Module):
             return None, "Invalid category"
 
         if max:
-            return categories[:max]
+            return categories[:max], None
         else:
             if multiple:
                 return categories, None
@@ -295,7 +295,7 @@ class Resolver(Bloxlink.Module):
                 if not multiple:
                     break
         else:
-            lookup_strings = content.split(",")
+            lookup_strings = multiple and content.split(",") or [content]
 
             for lookup_string in lookup_strings:
                 if lookup_string:
@@ -325,7 +325,7 @@ class Resolver(Bloxlink.Module):
             return None, "Invalid role(s)"
 
         if max:
-            return roles[:max]
+            return roles[:max], None
         else:
             if multiple:
                 return roles, None
