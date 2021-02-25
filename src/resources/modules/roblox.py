@@ -12,7 +12,7 @@ from config import REACTIONS, PREFIX # pylint: disable=no-name-in-module
 from ..constants import (RELEASE, DEFAULTS, STAFF_COLOR, DEV_COLOR, COMMUNITY_MANAGER_COLOR, # pylint: disable=no-name-in-module, import-error
                          VIP_MEMBER_COLOR, ORANGE_COLOR, PARTNERED_SERVER, ARROW,
                          SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR,
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS)
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS)
 import json
 import random
 import re
@@ -1135,9 +1135,7 @@ class Roblox(Bloxlink.Module):
         if find(lambda r: r.name == "Bloxlink Bypass", author.roles):
             raise BloxlinkBypass
 
-
         guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
-
 
         if not trello_board:
             trello_board = await get_board(guild=guild, guild_data=guild_data)
@@ -1360,7 +1358,6 @@ class Roblox(Bloxlink.Module):
 
                                                         else:
                                                             add_roles.add(role)
-
                                                 else:
                                                     add_roles.add(role)
 
@@ -1379,7 +1376,6 @@ class Roblox(Bloxlink.Module):
 
                                                 if not allow_old_roles and role and role in author.roles:
                                                     remove_roles.add(role)
-
                                     else:
                                         if bind_id == "0":
                                             if bound_roles:
@@ -2026,30 +2022,38 @@ class Roblox(Bloxlink.Module):
 
         user_tags = []
         notable_groups = []
+        username_emotes_ = set()
+        username_emotes = ""
 
         if roblox_user:
-            bloxlink_group = roblox_user.groups.get("3587262")
+            if tags:
+                for special_title, special_group in EMBED_PERKS["GROUPS"].items():
+                    group = roblox_user.groups.get(special_group[0])
 
-            if bloxlink_group and tags:
-                bloxlink_user_rank = bloxlink_group.user_rank_name
+                    if group:
+                        if special_group[1] and ((special_group[1] < 0 and group.user_rank_id < special_group[1]) or (special_group[1] > 0 and group.user_rank_id != special_group[1])):
+                            continue
 
-                if bloxlink_user_rank in ("Bot Developer", "Bloxlink", "Web Developer"):
-                    user_tags.append("Bloxlink Developer")
-                    user_tags.append("Bloxlink Staff")
-                    embed.colour = DEV_COLOR
+                        user_tags.append(special_title)
 
-                elif bloxlink_user_rank in ("Helpers", "Mods"):
-                    user_tags.append("Bloxlink Staff")
-                    embed.colour = STAFF_COLOR
+                        if special_group[2]:
+                            if guild:
+                                if guild.default_role.permissions.external_emojis:
+                                    username_emotes_.add(special_group[2])
+                                else:
+                                    if special_group[3]:
+                                        username_emotes_.add(special_group[3])
+                            else:
+                                username_emotes_.add(special_group[2])
 
-                elif bloxlink_user_rank == "Community Manager":
-                    user_tags.append("Bloxlink Community Manager")
-                    user_tags.append("Bloxlink Staff")
-                    embed.colour = COMMUNITY_MANAGER_COLOR
+            username_emotes = "".join(username_emotes_)
 
-                elif bloxlink_user_rank == "VIP Members":
-                    user_tags.append("Bloxlink VIP Member")
-                    embed.colour = VIP_MEMBER_COLOR
+            if username_emotes:
+                for i, field in enumerate(embed.fields):
+                    if field.name == "Username":
+                        embed.set_field_at(i, name="Username", value=f"{username_emotes} {field.value}")
+
+                        break
 
             if groups:
                 partners = await cache_get("partners:guilds") or {}
@@ -2058,17 +2062,17 @@ class Roblox(Bloxlink.Module):
 
                 for partner_server_id, partner_group in partners.items():
                     if partner_group[0] == "notable_group":
-                        partner = roblox_user.groups.get(partner_group[1])
+                        group = roblox_user.groups.get(partner_group[1])
 
-                        if partner:
-                            all_notable_groups.append(partner)
+                        if group:
+                            all_notable_groups.append((group, partner_group[2]))
 
                 if all_notable_groups:
-                    all_notable_groups.sort(key=lambda g: g.user_rank_id, reverse=True)
+                    all_notable_groups.sort(key=lambda g: g[0].user_rank_id, reverse=True)
                     all_notable_groups = all_notable_groups[:4]
 
                     for notable_group in all_notable_groups:
-                        notable_groups.add(f"[{notable_group.name}]({notable_group.url}) {ARROW} {notable_group.user_rank_name}")
+                        notable_groups.add(f"[{notable_group[1]}]({notable_group[0].url}) {ARROW} {notable_group[0].user_rank_name}")
 
         if guild and embed:
             cache_partner = await cache_get(f"partners:guilds:{guild.id}")
