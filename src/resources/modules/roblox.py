@@ -2031,7 +2031,7 @@ class Roblox(Bloxlink.Module):
                     group = roblox_user.groups.get(special_group[0])
 
                     if group:
-                        if special_group[1] and ((special_group[1] < 0 and group.user_rank_id < special_group[1]) or (special_group[1] > 0 and group.user_rank_id != special_group[1])):
+                        if special_group[1] and ((special_group[1] < 0 and group.user_rank_id < abs(special_group[1])) or (special_group[1] > 0 and group.user_rank_id != special_group[1])):
                             continue
 
                         user_tags.append(special_title)
@@ -2057,22 +2057,14 @@ class Roblox(Bloxlink.Module):
 
             if groups:
                 partners = await cache_get("partners:guilds") or {}
-                notable_groups = set()
-                all_notable_groups = []
+                notable_groups = {}
 
                 for partner_server_id, partner_group in partners.items():
                     if partner_group[0] == "notable_group":
                         group = roblox_user.groups.get(partner_group[1])
 
                         if group:
-                            all_notable_groups.append((group, partner_group[2]))
-
-                if all_notable_groups:
-                    all_notable_groups.sort(key=lambda g: g[0].user_rank_id, reverse=True)
-                    all_notable_groups = all_notable_groups[:4]
-
-                    for notable_group in all_notable_groups:
-                        notable_groups.add(f"[{notable_group[1]}]({notable_group[0].url}) {ARROW} {notable_group[0].user_rank_name}")
+                            notable_groups[group.group_id] = (group, partner_group[2])
 
         if guild and embed:
             cache_partner = await cache_get(f"partners:guilds:{guild.id}")
@@ -2092,6 +2084,7 @@ class Roblox(Bloxlink.Module):
                 embed.colour = PARTNERS_COLOR
 
         return user_tags, notable_groups
+
 
 @Bloxlink.module
 class RobloxProfile(Bloxlink.Module):
@@ -2629,22 +2622,34 @@ class RobloxUser(Bloxlink.Module):
 
             if embed and (everything or "groups" in args):
                 group_ranks = set()
+                _, notable_groups = await Roblox.apply_perks(roblox_user, groups=True, author=author, embed=embed and embed[0])
+                notable_groups_str = []
 
                 if group_ids and groups:
                     for group_id in group_ids:
                         group = groups.get(group_id)
 
                         if group:
+                            if group.group_id in notable_groups:
+                                notable_groups.pop(group.group_id)
+
                             group_ranks.add(f"[{group.name}]({group.url}) {ARROW} {group.user_rank_name}")
 
                     if group_ranks:
                         embed[0].add_field(name="Group Ranks", value=("\n".join(group_ranks)[:1000]), inline=False)
 
-                _, notable_groups = await Roblox.apply_perks(roblox_user, groups=True, author=author, embed=embed and embed[0])
-                notable_groups = notable_groups.difference(group_ranks)
-
                 if notable_groups:
-                    embed[0].add_field(name="Notable Groups", value="\n".join(notable_groups), inline=False)
+                    all_notable_groups = list(notable_groups.values())
+
+                    if all_notable_groups:
+                        all_notable_groups.sort(key=lambda g: g[0].user_rank_id, reverse=True)
+                        all_notable_groups = all_notable_groups[:4]
+
+                        for notable_group in all_notable_groups:
+                            notable_groups_str.append(f"[{notable_group[1]}]({notable_group[0].url}) {ARROW} {notable_group[0].user_rank_name}")
+
+                    notable_groups_str = "\n".join(notable_groups_str)
+                    embed[0].add_field(name="Notable Groups", value=notable_groups_str, inline=False)
 
 
         async def profile():
@@ -2752,7 +2757,6 @@ class RobloxUser(Bloxlink.Module):
 
                 if user_tags:
                     embed[0].add_field(name="User Tags", value="\n".join(user_tags))
-
 
             if response:
                 if response.webhook_only:
