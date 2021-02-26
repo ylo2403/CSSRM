@@ -44,7 +44,7 @@ class RobloxSearchCommand(Bloxlink.Module):
             message.content = f"{prefix}getinfo {message.mentions[0].id}"
             return await parse_message(message)
 
-        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned"]
+        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
 
         if not all(f in valid_flags for f in flags.keys()):
             raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")

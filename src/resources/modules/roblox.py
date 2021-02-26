@@ -1818,7 +1818,7 @@ class Roblox(Bloxlink.Module):
                     roblox_user = RobloxUser(roblox_id=roblox_id)
 
                     if cache:
-                        await cache_set(f"roblox_users:{roblox_account}", roblox_user)
+                        await cache_set(f"roblox_users:{roblox_id}", roblox_user)
 
                 await roblox_user.sync(*args, author=author, group_ids=group_ids, response=response, embed=embed, guild=guild, everything=everything, basic_details=basic_details)
                 return roblox_user, []
@@ -2424,7 +2424,7 @@ class Game(RobloxItem):
 class RobloxUser(Bloxlink.Module):
     __slots__ = ("username", "id", "discord_id", "verified", "complete", "more_details", "groups",
                  "avatar", "premium", "presence", "badges", "description", "banned", "age", "created",
-                 "join_date", "profile_link", "session", "embed")
+                 "join_date", "profile_link", "session", "embed", "dev_forum")
 
     def __init__(self, *, username=None, roblox_id=None, discord_id=None, **kwargs):
         self.username = username
@@ -2444,6 +2444,7 @@ class RobloxUser(Bloxlink.Module):
         self.description = kwargs.get("description", "")
         self.banned = kwargs.get("banned", False)
         self.created =  kwargs.get("created", None)
+        self.dev_forum =  kwargs.get("dev_forum", None)
 
         self.embed = None
 
@@ -2469,7 +2470,8 @@ class RobloxUser(Bloxlink.Module):
             "description": None,
             "age": None,
             "join_date": None,
-            "created": None
+            "created": None,
+            "dev_forum": None
         }
 
 
@@ -2501,6 +2503,7 @@ class RobloxUser(Bloxlink.Module):
             roblox_data["description"] = roblox_user_from_cache.description
             roblox_data["age"] = roblox_user_from_cache.age
             roblox_data["created"] = roblox_user_from_cache.created
+            roblox_data["dev_forum"] = roblox_user_from_cache.dev_forum
 
         if roblox_id and not username:
             roblox_id, username = await Roblox.get_roblox_username(roblox_id)
@@ -2534,7 +2537,6 @@ class RobloxUser(Bloxlink.Module):
         if roblox_user:
             roblox_user.username = username
             roblox_user.id = roblox_id
-
 
         async def avatar():
             if roblox_data["avatar"] is not None:
@@ -2728,13 +2730,54 @@ class RobloxUser(Bloxlink.Module):
                 if description and (everything or "description" in args):
                     embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
 
-
             if roblox_user:
                 roblox_user.description = description
                 roblox_user.age = age
                 roblox_user.join_date = join_date
                 roblox_user.created = created
                 roblox_user.banned = banned
+
+        async def dev_forum():
+            dev_forum_profile = None
+            trust_levels = {
+                0: "No Access",
+                1: "Member",
+                2: "Regular",
+                3: "Editor",
+                4: "Leader"
+            }
+
+            if roblox_data["dev_forum"] is not None:
+                dev_forum_profile = roblox_data["dev_forum"]
+            else:
+                data, response = await fetch(f"https://devforum.roblox.com/u/by-external/{roblox_data['id']}.json", raise_on_failure=False)
+
+                if response.status == 200:
+                    try:
+                        dev_forum_profile_ = json.loads(data)
+                    except json.decoder.JSONDecodeError:
+                        raise RobloxAPIError
+                    else:
+                        dev_forum_profile = dev_forum_profile_.get("user")
+
+                        roblox_data["dev_forum"] = dev_forum_profile
+
+                        if roblox_user:
+                            roblox_user.dev_forum = roblox_data["dev_forum"]
+
+            if embed and (everything or "dev_forum" in args or "devforum" in args):
+                if dev_forum_profile and dev_forum_profile.get("trust_level"):
+                    dev_forum_desc = (f"[Profile Link](https://devforum.roblox.com/u/{dev_forum_profile['username']})\n"
+                                     f"Trust Level: {trust_levels.get(dev_forum_profile['trust_level'], 'No Access')}\n"
+                                     f"""{dev_forum_profile.get('title') and f'Title: {dev_forum_profile["title"]}' or ''}""")
+                else:
+                    dev_forum_desc = "This user isn't in the DevForums."
+
+                if not args:
+                    if dev_forum_profile and dev_forum_profile.get("trust_level"):
+                        embed[0].add_field(name="DevForum", value=dev_forum_desc)
+                else:
+                    embed[0].description = dev_forum_desc
 
 
         if basic_details or "avatar" in args:
@@ -2748,6 +2791,9 @@ class RobloxUser(Bloxlink.Module):
 
         if everything or "premium" in args or "badges" in args:
             await membership_and_badges()
+
+        if everything or "dev_forum" in args or "devforum" in args:
+            await dev_forum()
 
         if embed:
             embed[0].title = username
