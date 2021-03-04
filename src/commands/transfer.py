@@ -1,8 +1,8 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import Message, Error # pylint: disable=import-error
+from resources.constants import BROWN_COLOR # pylint: disable=import-error
 import time
 import math
-from discord import Embed, Object
 
 
 transfer_premium, get_features = Bloxlink.get_module("premium", attrs=["transfer_premium", "get_features"])
@@ -65,6 +65,17 @@ class TransferCommand(Bloxlink.Module):
         if recipient_data_premium.get("transferFrom"):
             raise Error(f"Another user is already forwarding their premium to this user. The recipient must run `{prefix}transfer disable` "
                         "to revoke the external transfer.")
+
+        await CommandArgs.prompt([{
+            "prompt": f"Are you sure you want to transfer your premium to **{transfer_to}**?\n"
+                      "You will not be able transfer again for **5** days! We also do __not__ "
+                      "remove cool-downs for __any reason at all.__\n\nYou will be "
+                      f"able to cancel the transfer at anytime with `{prefix}transfer disable`.",
+            "footer": "Please say **yes** to complete the transfer.",
+            "embed_title": "Premium Transfer Confirmation",
+            "embed_color": BROWN_COLOR,
+            "formatting": False
+        }])
 
         await transfer_premium(transfer_from=author, transfer_to=transfer_to, guild=guild, apply_cooldown=True)
 
