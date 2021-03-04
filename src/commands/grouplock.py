@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error
-from resources.exceptions import PermissionError, Error, RobloxNotFound, Message  # pylint: disable=import-error
+from resources.exceptions import RobloxNotFound, Message  # pylint: disable=import-error
 from resources.constants import BROWN_COLOR # pylint: disable=import-error
 from discord import Embed, Object
 import re

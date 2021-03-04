@@ -149,7 +149,7 @@ class Paginate:
             if self.dm:
                 await send_to.send(self.author.mention + ", I was unable to DM you! Please check your privacy settings and try again.")
             else:
-                await send_to.send(self.author.mention + "I was unable to send the message. Please make sure I have the `Embed Links` permission.")
+                await send_to.send(self.author.mention + ", I was unable to send the message. Please make sure I have the `Embed Links` permission.")
 
             raise CancelCommand
 

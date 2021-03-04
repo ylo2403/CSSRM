@@ -47,9 +47,7 @@ class ReverseSearchCommand(Bloxlink.Module):
             raise Error("This Roblox account doesn't exist.")
         else:
             roblox_id = account.id
-
             discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs")
-
             results = []
 
             if discord_ids:
@@ -61,10 +59,8 @@ class ReverseSearchCommand(Bloxlink.Module):
                     else:
                         results.append(f"{user.mention} ({user.id})")
 
-
             embed = Embed(title=f"Reverse Search for {account.username}")
             embed.set_thumbnail(url=account.avatar)
-
 
             if results:
                 embed.description = "\n".join(results)
