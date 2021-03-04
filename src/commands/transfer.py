@@ -72,6 +72,9 @@ class TransferCommand(Bloxlink.Module):
                       "remove cool-downs for __any reason at all.__\n\nYou will be "
                       f"able to cancel the transfer at anytime with `{prefix}transfer disable`.",
             "footer": "Please say **yes** to complete the transfer.",
+            "type": "choice",
+            "choices": ("yes",),
+            "name": "_",
             "embed_title": "Premium Transfer Confirmation",
             "embed_color": BROWN_COLOR,
             "formatting": False
