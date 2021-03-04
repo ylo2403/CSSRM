@@ -579,16 +579,17 @@ class Commands(Bloxlink.Module):
         if CLUSTER_ID == 0:
             if RELEASE == "MAIN":
                 await self.r.db("bloxlink").table("commands").delete().run()
-                await self.r.db("bloxlink").table("commands").insert({
-                    "id": command.name,
-                    "description": command.description,
-                    #"usage": command.usage,
-                    "category": command.category,
-                    "addon": command.addon and str(command.addon),
-                    "hidden": command.hidden,
-                    "subcommands": subcommands,
-                    "slashCompatible": command.slash_enabled
-                }, conflict="replace").run()
+                if not command.addon:
+                    await self.r.db("bloxlink").table("commands").insert({
+                        "id": command.name,
+                        "description": command.description,
+                        #"usage": command.usage,
+                        "category": command.category,
+                        "addon": command.addon and str(command.addon),
+                        "hidden": command.hidden,
+                        "subcommands": subcommands,
+                        "slashCompatible": command.slash_enabled
+                    }, conflict="replace").run()
 
             #if command.slash_enabled:
             #    await self.register_slash_command(command)
