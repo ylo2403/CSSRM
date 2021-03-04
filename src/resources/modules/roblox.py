@@ -41,6 +41,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 API_URL = "https://api.roblox.com"
 BASE_URL = "https://www.roblox.com"
 GROUP_API = "https://groups.roblox.com"
+THUMBNAIL_API = "https://thumbnails.roblox.com"
 
 BIND_ROLE_BUG = "https://cdn.discordapp.com/attachments/385984496723427328/386636215404855297/bloxrolebug.gif"
 
@@ -1689,6 +1690,20 @@ class Roblox(Bloxlink.Module):
 
                         json_data.update(group_data)
 
+                    emblem_data, emblem_data_response = await fetch(f"{THUMBNAIL_API}/v1/groups/icons?groupIds={group_id}&size=150x150&format=Png&isCircular=false", raise_on_failure=False)
+
+                    if emblem_data_response.status == 200:
+                        try:
+                            emblem_data = json.loads(emblem_data)
+                        except json.decoder.JSONDecodeError:
+                            raise RobloxAPIError
+                        else:
+                            emblem_data = emblem_data.get("data")
+
+                            if emblem_data:
+                                emblem_data = emblem_data[0]
+                                json_data.update({"imageUrl": emblem_data.get("imageUrl")})
+
                 if not group:
                     group = Group(group_id=group_id, group_data=json_data)
                 else:
@@ -2305,7 +2320,7 @@ class DiscordProfile:
 
 class Group(Bloxlink.Module):
     __slots__ = ("name", "group_id", "description", "rolesets", "owner", "member_count",
-                 "embed_url", "url", "user_rank_name", "user_rank_id", "shout")
+                 "emblem_url", "url", "user_rank_name", "user_rank_id", "shout")
 
     def __init__(self, group_id, group_data, my_roles=None):
         self.group_id = str(group_id)
@@ -2340,7 +2355,7 @@ class Group(Bloxlink.Module):
 
     def load_json(self, group_data, my_roles=None):
         self.shout = group_data.get("shout") or self.shout
-        self.emblem_url = self.emblem_url or group_data.get("EmblemUrl")
+        self.emblem_url = self.emblem_url or group_data.get("imageUrl")
 
         self.name = self.name or group_data.get("name") or group_data.get("Name", "")
         self.member_count = self.member_count or group_data.get("memberCount", 0)
