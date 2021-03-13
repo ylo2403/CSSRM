@@ -193,7 +193,7 @@ class UpdateUserCommand(Bloxlink.Module):
                         await response.success("This user is all up-to-date; no changes were made.")
 
                 except BloxlinkBypass:
-                    raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
+                    raise Message("Since this user has the Bloxlink Bypass role, I was unable to update their roles/nickname.", type="info")
 
                 except Blacklisted as b:
                     if isinstance(b.message, str):
