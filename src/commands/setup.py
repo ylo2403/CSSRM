@@ -154,6 +154,7 @@ class SetupCommand(Bloxlink.Module):
 
         group = parsed_args_1["group"]
         verified = parsed_args_1["verified_role"]
+        verified_lower = verified.lower()
 
         trello_board = parsed_args_1["trello_board"]
 
@@ -277,9 +278,9 @@ class SetupCommand(Bloxlink.Module):
                             raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 
         if verified:
-            if verified == "disable":
+            if verified_lower == "disable":
                 guild_data["verifiedRoleEnabled"] = False
-            elif verified not in ("next", "skip"):
+            elif verified_lower not in ("next", "skip"):
                 guild_data["verifiedRoleName"] = verified
                 guild_data["verifiedRoleEnabled"] = True
 
