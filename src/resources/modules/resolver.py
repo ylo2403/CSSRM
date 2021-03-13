@@ -353,10 +353,15 @@ class Resolver(Bloxlink.Module):
         if message and not content:
             content = message.content
 
+        max = arg.get("max")
+
         items = content.split(",")
         items = [x.strip() for x in items]
 
-        return items, None
+        if max:
+            return items[:max], None
+        else:
+            return items, None
 
 
     def get_resolver(self, name):
