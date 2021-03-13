@@ -96,11 +96,22 @@ class BindCommand(Bloxlink.Module):
                 "type": "string",
                 "footer": locale("commands.bind.prompts.nicknamePrompt.footer"),
                 "formatting": False
+            },
+            {
+                "prompt": "Should any roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.",
+                "name": "remove_roles",
+                "multiple": True,
+                "type": "role",
+                "max": 10,
+                "exceptions": "skip",
+                "footer": "Say **skip** to skip this option."
             }
         ])
 
         bind_choice = parsed_args["bind_choice"].lower()
         nickname = parsed_args["nickname"]
+        remove_roles = [str(r.id) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []
+        remove_roles_trello = [str(r) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []
 
         if trello_board:
             trello_binds_list = await trello_board.get_list(lambda l: l.name.lower() == "bloxlink binds")
@@ -160,8 +171,8 @@ class BindCommand(Bloxlink.Module):
 
             if parsed_args_group["type"] == locale("commands.bind.entireGroup"):
                 if found_group:
-                    if nickname and found_group["nickname"] != nickname:
-                        group_ids[group_id] = {"nickname": nickname, "groupName": group.name}
+                    if (nickname and found_group["nickname"] != nickname) or (sorted(remove_roles) != sorted(found_group.get("removeRoles", []))):
+                        group_ids[group_id] = {"nickname": nickname, "groupName": group.name, "removeRoles": remove_roles}
                         guild_data["groupIDs"] = group_ids
 
                         await self.r.table("guilds").insert(guild_data, conflict="update").run()
@@ -185,8 +196,16 @@ class BindCommand(Bloxlink.Module):
                                 make_trello_card = False
 
                             if make_trello_card:
+                                card_bind_data = [
+                                    f"Group: {group_id}",
+                                    f"Nickname: {nickname}"
+                                ]
+
+                                if remove_roles:
+                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
+
                                 try:
-                                    await trello_binds_list.create_card(name="Bloxlink Group Bind", desc=f"Group: {group_id}\nNickname: {nickname}")
+                                    await trello_binds_list.create_card(name="Bloxlink Group Bind", desc="\n".join(card_bind_data))
                                 except TrelloUnauthorized:
                                     await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")
@@ -221,14 +240,22 @@ class BindCommand(Bloxlink.Module):
                                 raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
 
                 # add group to guild_data.groupIDs
-                group_ids[group_id] = {"nickname": nickname not in ("skip", "next") and nickname, "groupName": group.name}
+                group_ids[group_id] = {"nickname": nickname not in ("skip", "next") and nickname, "groupName": group.name, "removeRoles": remove_roles}
                 guild_data["groupIDs"] = group_ids
 
                 await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
                 if trello_binds_list:
+                    card_bind_data = [
+                        f"Group: {group_id}",
+                        f"Nickname: {nickname}"
+                    ]
+
+                    if remove_roles:
+                        card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
+
                     try:
-                        await trello_binds_list.create_card(name="Bloxlink Group Bind", desc=f"Group: {group_id}\nNickname: {nickname}")
+                        await trello_binds_list.create_card(name="Bloxlink Group Bind", desc="\n".join(card_bind_data))
                     except TrelloUnauthorized:
                         await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                              "Trello board.")
@@ -269,6 +296,7 @@ class BindCommand(Bloxlink.Module):
                 role_binds["groups"][group_id]["binds"] = role_binds["groups"][group_id].get("binds") or {}
                 role_binds["groups"][group_id]["ranges"] = role_binds["groups"][group_id].get("ranges") or {}
                 role_binds["groups"][group_id]["groupName"] = group.name
+                role_binds["groups"][group_id]["removeRoles"] = remove_roles
 
                 rolesets_embed = Embed(title=f"{group.name} Rolesets", description="\n".join(f"**{x.get('name')}** {ARROW} {x.get('rank')}" for x in group.rolesets if x.get('rank')))
 
@@ -288,7 +316,7 @@ class BindCommand(Bloxlink.Module):
                                        "You may specify the roleset name or ID. You may provide them in a list, "
                                        "or as a range. You may also say `everyone` to capture everyone in the group; "
                                        "and you can negate the number to catch everyone with the rank _and above._\n"
-                                       "You can also say `guest` to include **all non-group members**.\n"
+                                       "You can also say `guest` to include **all non-group members**.\n\n"
                                        "Example 1: `1,4,-6,VIP, 10, 50-100, Staff Members, 255`.\nExample 2: `"
                                        "-100` means everyone with rank 100 _and above._\nExample 3: `everyone` "
                                        "means everyone in the group.\n\n"
@@ -351,7 +379,7 @@ class BindCommand(Bloxlink.Module):
                         rank = role_binds["groups"][group_id].get("binds", {}).get(x, {})
 
                         if not isinstance(rank, dict):
-                            rank = {"nickname": nickname_lower, "roles": [str(rank)]}
+                            rank = {"nickname": nickname_lower, "roles": [str(rank)], "removeRoles": remove_roles}
 
                             for discord_role in discord_roles:
                                 role_id = str(discord_role.id)
@@ -366,11 +394,13 @@ class BindCommand(Bloxlink.Module):
                                     rank["roles"] = rank.get("roles") or []
                                     rank["roles"].append(role_id)
 
-                                    if nickname_lower:
-                                        rank["nickname"] = nickname
-                                    else:
-                                        if not rank.get("nickname"):
-                                            rank["nickname"] = None
+                            if nickname_lower:
+                                rank["nickname"] = nickname
+                            else:
+                                if not rank.get("nickname"):
+                                    rank["nickname"] = None
+
+                            rank["removeRoles"] = remove_roles
 
                         role_binds["groups"][group_id]["binds"][x] = rank
                         # trello binds:
@@ -399,6 +429,9 @@ class BindCommand(Bloxlink.Module):
                                                     f"Group: {group_id}",
                                                     f"Nickname: {(nickname != 'skip' and nickname) or rank.get('nickname') or card_data_.get('nickname') or 'None'}",
                                                 ]
+
+                                                if remove_roles:
+                                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                                                 for discord_role in discord_roles:
                                                     trello_bind_roles.add(discord_role.name)
@@ -431,6 +464,9 @@ class BindCommand(Bloxlink.Module):
                                     f"Roles: {', '.join([r.name for r in discord_roles])}",
                                 ]
 
+                                if remove_roles:
+                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
+
                                 if x != "all":
                                     card_bind_data.append(f"Ranks: {x}")
 
@@ -460,11 +496,13 @@ class BindCommand(Bloxlink.Module):
                                 range_["roles"] = range_.get("roles") or []
                                 range_["roles"].append(role_id)
 
-                                if nickname_lower:
-                                    range_["nickname"] = nickname
-                                else:
-                                    if not range_.get("nickname"):
-                                        range_["nickname"] = None
+                        if nickname_lower:
+                            range_["nickname"] = nickname
+                        else:
+                            if not range_.get("nickname"):
+                                range_["nickname"] = None
+
+                        range_["removeRoles"] = remove_roles
 
                         if found:
                             role_binds["groups"][group_id]["ranges"][num] = range_
@@ -494,6 +532,9 @@ class BindCommand(Bloxlink.Module):
                                                     f"Group: {group_id}",
                                                     f"Nickname: {(nickname != 'skip' and nickname) or trello_range.get('nickname') or 'None'}",
                                                 ]
+
+                                                if remove_roles:
+                                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                                                 for discord_role in discord_roles:
                                                     trello_bind_roles.add(discord_role.name)
@@ -526,6 +567,9 @@ class BindCommand(Bloxlink.Module):
                                     f"Roles: {', '.join([r.name for r in discord_roles])}",
                                     f"Ranks: {range_['low']}-{range_['high']}"
                                 ]
+
+                                if remove_roles:
+                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                                 trello_card_desc = "\n".join(card_bind_data)
 
@@ -641,7 +685,7 @@ class BindCommand(Bloxlink.Module):
 
             role_binds[bind_choice_plural][bind_id]["nickname"] = nickname
             role_binds[bind_choice_plural][bind_id]["displayName"] = display_name
-
+            role_binds[bind_choice_plural][bind_id]["removeRoles"] = remove_roles
             role_binds[bind_choice_plural][bind_id]["roles"] = role_binds[bind_choice_plural][bind_id].get("roles", [])
 
             roles = role_binds[bind_choice_plural][bind_id]["roles"]
@@ -702,6 +746,9 @@ class BindCommand(Bloxlink.Module):
                         f"Nickname: {nickname != 'skip' and nickname or 'None'}",
                         f"Roles: {', '.join([d.name for d in discord_roles])}",
                     ]
+
+                    if remove_roles:
+                        card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                     trello_card_desc = "\n".join(card_bind_data)
 

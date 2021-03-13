@@ -526,7 +526,7 @@ class Roblox(Bloxlink.Module):
                         is_main_group = False
                         treat_as_bind = False
                         bind_category = None
-                        new_bind = {"trello_str": {}, "nickname": None, "trello": True, "card": card}
+                        new_bind = {"trello_str": {}, "nickname": None, "removeRoles": [], "trello": True, "card": card}
 
                         for card_bind_data in card.description.split("\n"):
                             card_bind_data_search = trello_card_bind_regex.search(card_bind_data)
@@ -589,19 +589,16 @@ class Roblox(Bloxlink.Module):
                                         new_bind["trello_str"]["ranks"] = card_value
 
                                     elif card_attr == "roles":
-                                        roles = set()
-
-                                        for role in card_value.split(","):
-                                            role = role.strip()
-                                            roles.add(role)
-
-                                        new_bind["roles"] = roles
+                                        new_bind["roles"] = set([r.strip() for r in card_value.split(",")])
                                         new_bind["trello_str"]["roles"] = card_value
 
                                     elif card_attr == "display name":
                                         new_bind["displayName"] = card_value
                                         new_bind["trello_str"]["vg_name"] = card_value
 
+                                    elif card_attr == "remove roles":
+                                        new_bind["removeRoles"] = set([r.strip() for r in card_value.split(",")])
+                                        new_bind["trello_str"]["remove_roles"] = card_value
 
                         bind_nickname = new_bind.get("nickname")
                         bound_roles = new_bind.get("roles", set())
@@ -639,6 +636,7 @@ class Roblox(Bloxlink.Module):
                                                     "low": int(range_data[0].strip()),
                                                     "high": int(range_data[1].strip()),
                                                     "nickname": bind_nickname,
+                                                    "removeRoles": new_bind.get("removeRoles"),
                                                     "roles": bound_roles,
                                                     "trello": {
                                                         "cards": [{
@@ -687,6 +685,7 @@ class Roblox(Bloxlink.Module):
                                     new_rank = {
                                         "nickname": bind_nickname,
                                         "roles": bound_roles,
+                                        "removeRoles": new_bind.get("removeRoles"),
                                         "trello": {
                                             "cards": [{
                                                 "card": card,
@@ -719,6 +718,7 @@ class Roblox(Bloxlink.Module):
                                 new_rank = {
                                     "nickname": bind_nickname,
                                     "groupName": group_name,
+                                    "removeRoles": new_bind.get("removeRoles"),
                                     "roles": bound_roles, # set(),
                                     "trello": {
                                         "cards": [{
@@ -746,6 +746,7 @@ class Roblox(Bloxlink.Module):
                             new_rank = {
                                 "nickname": bind_nickname,
                                 "displayName": new_bind.get("displayName"),
+                                "removeRoles": new_bind.get("removeRoles"),
                                 "roles": bound_roles,
                                 "trello": {
                                     "cards": [{
@@ -1223,7 +1224,6 @@ class Roblox(Bloxlink.Module):
 
                     add_roles.add(verified_role)
 
-
                 if inactive_role:
                     inactive = await RobloxProfile.is_inactive(author, inactive_role)
 
@@ -1255,6 +1255,7 @@ class Roblox(Bloxlink.Module):
                             for bind_id, bind_data in all_binds.items():
                                 bind_nickname = bind_data.get("nickname")
                                 bound_roles = bind_data.get("roles")
+                                bind_remove_roles = bind_data.get("removeRoles") or []
 
                                 text, response_ = await fetch(f"https://inventory.roblox.com/v1/users/{roblox_user.id}/items/{category_title}/{bind_id}", raise_on_failure=False)
 
@@ -1305,6 +1306,13 @@ class Roblox(Bloxlink.Module):
 
                                             if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                 possible_nicknames.append([role, resolved_nickname])
+
+                                    for role_id in bind_remove_roles:
+                                        int_role_id = role_id.isdigit() and int(role_id)
+                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                                        if role:
+                                            remove_roles.add(role)
                                 else:
                                     for role_id in bound_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
@@ -1321,6 +1329,7 @@ class Roblox(Bloxlink.Module):
                                     rank = None
                                     bind_nickname = bind_data.get("nickname")
                                     bound_roles = bind_data.get("roles")
+                                    bind_remove_roles = bind_data.get("removeRoles") or []
 
                                     try:
                                         rank = int(bind_id)
@@ -1370,6 +1379,14 @@ class Roblox(Bloxlink.Module):
 
                                                     if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                         possible_nicknames.append([role, resolved_nickname])
+
+                                            for role_id in bind_remove_roles:
+                                                int_role_id = role_id.isdigit() and int(role_id)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                                                if role:
+                                                    remove_roles.add(role)
+
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
@@ -1409,6 +1426,13 @@ class Roblox(Bloxlink.Module):
 
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
+
+                                            for role_id in bind_remove_roles:
+                                                int_role_id = role_id.isdigit() and int(role_id)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                                                if role:
+                                                    remove_roles.add(role)
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
@@ -1417,10 +1441,10 @@ class Roblox(Bloxlink.Module):
                                                 if not allow_old_roles and role and role in author.roles:
                                                     remove_roles.add(role)
 
-
                                 for bind_range in data.get("ranges", []):
                                     bind_nickname = bind_range.get("nickname")
                                     bound_roles = bind_range.get("roles", set())
+                                    bind_remove_roles = bind_range.get("removeRoles") or []
 
                                     if group:
                                         user_rank = group.user_rank_id
@@ -1454,6 +1478,13 @@ class Roblox(Bloxlink.Module):
 
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
+
+                                            for role_id in bind_remove_roles:
+                                                int_role_id = role_id.isdigit() and int(role_id)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                                                if role:
+                                                    remove_roles.add(role)
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
@@ -1471,6 +1502,9 @@ class Roblox(Bloxlink.Module):
 
                 if group_roles and group_ids:
                     for group_id, group_data in group_ids.items():
+                        group_nickname = group_data.get("nickname")
+                        bind_remove_roles = group_data.get("removeRoles") or []
+
                         if group_id != "0":
                             group = roblox_user.groups.get(str(group_id))
 
@@ -1500,7 +1534,12 @@ class Roblox(Bloxlink.Module):
                                 if group_role:
                                     add_roles.add(group_role)
 
-                                group_nickname = group_data.get("nickname")
+                                    for role_id in bind_remove_roles:
+                                        int_role_id = role_id.isdigit() and int(role_id)
+                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                                        if role:
+                                            remove_roles.add(role)
 
                                 if nickname and group_nickname and group_role:
                                     if author.top_role == group_role and group_nickname:
