@@ -262,18 +262,14 @@ class SetupCommand(Bloxlink.Module):
                                     pass
                                 except HTTPException:
                                     pass
+
                         except AttributeError: # guild.me is None -- bot kicked out
                             raise CancelCommand
 
-                sorted_rolesets = sorted(group.rolesets, key=lambda r: r.get("rank"), reverse=True)
-
-                for roleset in sorted_rolesets:
-                    roleset_name = roleset.get("name")
-                    # roleset_rank = roleset.get("rank")
-
-                    if not find(lambda r: r.name == roleset_name, guild.roles):
+                for _, roleset_data in group.rolesets.items():
+                    if not find(lambda r: r.name == roleset_data[0], guild.roles):
                         try:
-                            await guild.create_role(name=roleset_name)
+                            await guild.create_role(name=roleset_data[0])
                         except Forbidden:
                             raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 

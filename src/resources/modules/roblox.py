@@ -996,20 +996,66 @@ class Roblox(Bloxlink.Module):
 
             if required_groups:
                 for group_id, group_data in required_groups.items():
-                    if not roblox_user.groups.get(group_id):
+                    group = roblox_user.groups.get(group_id)
+
+                    if group:
+                        if group_data.get("roleSets"):
+                            for allowed_roleset in group_data["roleSets"]:
+                                if isinstance(allowed_roleset, list):
+                                    if allowed_roleset[0] <= group.user_rank_id <= allowed_roleset[1]:
+                                        break
+                                else:
+                                    if (group.user_rank_id == allowed_roleset) or (allowed_roleset < 0 and abs(allowed_roleset) <= group.user_rank_id):
+                                        break
+                            else:
+                                if dm:
+                                    dm_message = group_data.get("dmMessage")
+                                    group_url = f"https://www.roblox.com/groups/{group_id}/-"
+
+                                    if dm_message:
+                                        text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not having an  "
+                                                f"allowed roleset in the group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
+                                                f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
+                                                f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
+                                                f"Admins:\n\n{dm_message}")
+                                    else:
+                                        text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not having an  "
+                                                f"allowed roleset in the group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
+                                                f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
+                                                f"provide this ID to the command: `{guild.id}`.")
+                                    try:
+                                        await member.send(text)
+                                    except Forbidden:
+                                        pass
+                                try:
+                                    await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
+                                except Forbidden:
+                                    pass
+                                else:
+                                    raise CancelCommand
+
+                                return added, removed, chosen_nickname, errored, roblox_user
+                    else:
                         if dm:
                             dm_message = group_data.get("dmMessage")
                             group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
                             if dm_message:
-                                try:
-                                    await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
-                                                      f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                                      f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
-                                                      f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
-                                                      f"Admins:\n\n{dm_message}")
-                                except Forbidden:
-                                    pass
+                                text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
+                                        f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
+                                        f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
+                                        f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
+                                        f"Admins:\n\n{dm_message}")
+                            else:
+                                text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
+                                        f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
+                                        f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
+                                        f"provide this ID to the command: `{guild.id}`.")
+
+                            try:
+                                await member.send(text)
+                            except Forbidden:
+                                pass
                         try:
                             await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
                         except Forbidden:
@@ -1523,12 +1569,11 @@ class Roblox(Bloxlink.Module):
                                         except HTTPException:
                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
-                                for roleset in group.rolesets:
-                                    roleset_name = roleset["name"]
-                                    has_role = find(lambda r: r.name == roleset_name and not r.managed, author.roles)
+                                for _, roleset_data in group.rolesets.items():
+                                    has_role = find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
 
                                     if has_role:
-                                        if not allow_old_roles and group.user_rank_name != roleset_name:
+                                        if not allow_old_roles and group.user_rank_name != roleset_data[0]:
                                             remove_roles.add(has_role)
 
                                 if group_role:
@@ -1556,8 +1601,8 @@ class Roblox(Bloxlink.Module):
                                 except RobloxNotFound:
                                     raise Error(f"Error for linked group bind: group `{group_id}` not found")
 
-                                for roleset in group.rolesets:
-                                    group_role = find(lambda r: r.name == roleset["name"] and not r.managed, author.roles)
+                                for _, roleset_data in group.rolesets.items():
+                                    group_role = find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
 
                                     if not allow_old_roles and group_role:
                                         remove_roles.add(group_role)
@@ -2369,7 +2414,7 @@ class Group(Bloxlink.Module):
         self.owner = None
         self.member_count = None
         self.emblem_url = None
-        self.rolesets = []
+        self.rolesets = {}
         self.url = f"https://www.roblox.com/groups/{self.group_id}"
         self.shout = None
 
@@ -2406,19 +2451,14 @@ class Group(Bloxlink.Module):
         self.owner = self.owner or group_data.get("owner")
 
         if not self.rolesets and (group_data.get("roles") or group_data.get("Roles")):
-            self.rolesets = group_data.get("roles") or group_data.get("Roles")
+            rolesets = group_data.get("roles") or group_data.get("Roles")
 
-            for roleset in self.rolesets:
-                if roleset.get("name"):
-                    roleset["name"] = roleset["name"].strip()
+            for roleset in reversed(rolesets):
+                roleset_id = roleset.get("rank") or roleset.get("Rank")
+                roleset_name = roleset.get("name").strip()
 
-                elif roleset.get("Name"):
-                    roleset["name"] = roleset["Name"].strip()
-                    roleset["rank"] = roleset["Rank"]
-
-                    roleset.pop("Name", None)
-                    roleset.pop("Rank", None)
-
+                if roleset_id:
+                    self.rolesets[roleset_name.lower()] = [roleset_name, int(roleset_id)]
 
     def __str__(self):
         return f"Group ({self.name or self.group_id})"

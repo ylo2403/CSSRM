@@ -1,6 +1,7 @@
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error
 from resources.exceptions import RobloxNotFound, Message  # pylint: disable=import-error
 from resources.constants import BROWN_COLOR # pylint: disable=import-error
+from resources.exceptions import Error # pylint: disable=import-error
 from discord import Embed, Object
 import re
 
@@ -8,6 +9,7 @@ import re
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+set_guild_value = Bloxlink.get_module("cache", attrs="set_guild_value")
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
@@ -47,7 +49,7 @@ class GroupLockCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.aliases = ["group-lock", "serverlock", "server-lock"]
-
+        self._range_search = re.compile(r"([0-9]+)\-([0-9]+)")
 
     async def __main__(self, CommandArgs):
         choice = CommandArgs.parsed_args["choice"]
@@ -67,6 +69,17 @@ class GroupLockCommand(Bloxlink.Module):
                     "validation": self.validate_group
                 },
                 {
+                    "prompt": "Should only a **specific Roleset** be allowed to join your server? You may specify a Roleset name or ID. You may "
+                              "provide them in a list, and you may negate the number to capture everyone catch everyone with the rank _and above_.\n"
+                              "Example: `-10, 5, VIP` means people who are ranked 5, VIP, or if their roleset is greater than 10 can join your server.",
+                    "name": "rolesets",
+                    "footer": "Say **skip** to skip this option; if skipped, the roleset people have wouldn't matter, they'll be able to enter "
+                              "your server as long as they're in your group.",
+                    "type": "list",
+                    "exceptions": ("skip",),
+                    "max": 10,
+                },
+                {
                     "prompt": "Would you like people who are kicked to receive a custom DM? Please specify either `yes` or `no`.\n\n"
                               "Note that Unverified users will receive a different DM on instructions to linking to Bloxlink.",
                     "name": "dm_enabled",
@@ -77,6 +90,37 @@ class GroupLockCommand(Bloxlink.Module):
 
             group = args["group"]
             dm_enabled = args["dm_enabled"] == "yes"
+            rolesets_raw = args["rolesets"] if args["rolesets"] != "skip" else None
+
+            parsed_rolesets = []
+
+            if rolesets_raw:
+                for roleset in rolesets_raw:
+                    if roleset.isdigit():
+                        parsed_rolesets.append(int(roleset))
+                    elif roleset[:1] == "-":
+                        try:
+                            roleset = int(roleset)
+                        except ValueError:
+                            pass
+                        else:
+                            parsed_rolesets.append(roleset)
+                    else:
+                        range_search = self._range_search.search(roleset)
+
+                        if range_search:
+                            num1, num2 = range_search.group(1), range_search.group(2)
+                            parsed_rolesets.append([int(num1), int(num2)])
+                        else:
+                            # they specified a roleset name as a string
+
+                            roleset_find = group.rolesets.get(roleset.lower())
+
+                            if roleset_find:
+                                parsed_rolesets.append(roleset_find[1])
+
+            if not parsed_rolesets:
+                raise Error("Could not resolve any valid rolesets! Please make sure you're typing the Roleset name correctly.")
 
             if len(groups) >= 15:
                 raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="silly")
@@ -98,7 +142,7 @@ class GroupLockCommand(Bloxlink.Module):
             else:
                 dm_message = None
 
-            groups[group.group_id] = {"groupName": group.name, "dmMessage": dm_message}
+            groups[group.group_id] = {"groupName": group.name, "dmMessage": dm_message, "roleSets": parsed_rolesets}
 
             await self.r.table("guilds").insert({
                 "id": str(guild.id),
@@ -107,8 +151,9 @@ class GroupLockCommand(Bloxlink.Module):
 
             await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **added** a group to the `server-lock`.", BROWN_COLOR)
 
-            await response.success(f"Successfully added group **{group.name}** to your Server-Lock!")
+            await set_guild_value(guild, "groupLock", groups)
 
+            await response.success(f"Successfully added group **{group.name}** to your Server-Lock!")
 
         elif choice == "delete":
             group = (await CommandArgs.prompt([
@@ -133,6 +178,8 @@ class GroupLockCommand(Bloxlink.Module):
                 await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
             await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **deleted** a group from the `server-lock`.", BROWN_COLOR)
+
+            await set_guild_value(guild, "groupLock", groups)
 
             await response.success("Successfully **deleted** your group from the Server-Lock!")
 

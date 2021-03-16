@@ -226,18 +226,14 @@ class BindCommand(Bloxlink.Module):
                     else:
                         raise Message("This group is already linked.", type="silly")
 
-                for roleset in group.rolesets:
-                    roleset_name = roleset.get("name")
-                    roleset_rank = roleset.get("rank")
+                for _, roleset_data in group.rolesets.items():
+                    discord_role = find(lambda r: r.name == roleset_data[0], guild.roles)
 
-                    if roleset_rank:
-                        discord_role = find(lambda r: r.name == roleset_name, guild.roles)
-
-                        if not discord_role:
-                            try:
-                                discord_role = await guild.create_role(name=roleset_name)
-                            except Forbidden:
-                                raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
+                    if not discord_role:
+                        try:
+                            discord_role = await guild.create_role(name=roleset_data[0])
+                        except Forbidden:
+                            raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
 
                 # add group to guild_data.groupIDs
                 group_ids[group_id] = {"nickname": nickname not in ("skip", "next") and nickname, "groupName": group.name, "removeRoles": remove_roles}
@@ -298,10 +294,8 @@ class BindCommand(Bloxlink.Module):
                 role_binds["groups"][group_id]["groupName"] = group.name
                 role_binds["groups"][group_id]["removeRoles"] = remove_roles
 
-                rolesets_embed = Embed(title=f"{group.name} Rolesets", description="\n".join(f"**{x.get('name')}** {ARROW} {x.get('rank')}" for x in group.rolesets if x.get('rank')))
-
+                rolesets_embed = Embed(title=f"{group.name} Rolesets", description="\n".join(f"**{x[0]}** {ARROW} {x[1]}" for x in group.rolesets.values()))
                 rolesets_embed = await CommandArgs.response.send(embed=rolesets_embed)
-
                 response.delete(rolesets_embed)
 
                 failures = 0
@@ -353,25 +347,13 @@ class BindCommand(Bloxlink.Module):
                                 new_ranks["ranges"].append([num1, num2])
                             else:
                                 # they specified a roleset name as a string
-                                pending_roleset_names.append(rank)
+                                roleset_find = group.rolesets.get(rank.lower())
 
-                    if pending_roleset_names:
-                        found = False
-
-                        for roleset in group.rolesets:
-                            roleset_name = roleset.get("name")
-                            roleset_rank = roleset.get("rank")
-
-                            if roleset_name in pending_roleset_names and roleset_name not in new_ranks["binds"]:
-                                new_ranks["binds"].append(str(roleset_rank))
-                                found = True
-
-                        if not found:
-                            response.delete(await response.error("Could not find a matching Roleset name. Please try again."))
-                            failures += 1
-
-                            continue
-
+                                if roleset_find:
+                                    new_ranks["binds"].append(str(roleset_find[1]))
+                                else:
+                                    response.delete(await response.error("Could not find a matching Roleset name. Please try again."))
+                                    failures += 1
                     break
 
                 if new_ranks["binds"]:
