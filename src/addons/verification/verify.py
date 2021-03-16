@@ -67,7 +67,6 @@ class VerifyCommand(Bloxlink.Module):
                 roles                = True,
                 nickname             = True,
                 trello_board         = CommandArgs.trello_board,
-                given_trello_options = True,
                 cache                = False,
                 response             = response,
                 dm                   = False,

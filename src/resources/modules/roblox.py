@@ -818,7 +818,7 @@ class Roblox(Bloxlink.Module):
         return role_binds, group_ids, trello_binds_list
 
 
-    async def guild_obligations(self, member, guild, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, trello_board=None, roblox_user=None, given_trello_options=False):
+    async def guild_obligations(self, member, guild, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, trello_board=None, roblox_user=None):
         if member.bot:
             raise CancelCommand
 
