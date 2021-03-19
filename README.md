@@ -27,6 +27,7 @@ The **Members Privileged Intent** is required for the bot to function. This can 
 ```sh
 $ git clone https://github.com/bloxlink/Bloxlink
 $ cd Bloxlink
+[change the configuration]
 $ docker-compose up --build
 ```
 
