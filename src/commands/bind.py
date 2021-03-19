@@ -279,9 +279,7 @@ class BindCommand(Bloxlink.Module):
                 ])
 
                 discord_roles = discord_role["role"]
-
                 new_ranks = {"binds":[], "ranges": []}
-
                 role_binds = guild_data.get("roleBinds") or {}
 
                 if isinstance(role_binds, list):

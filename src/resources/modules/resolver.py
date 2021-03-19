@@ -31,7 +31,6 @@ class Resolver(Bloxlink.Module):
 
         return str(content), None
 
-
     async def number_resolver(self, arg, message=None, guild=None, content=None):
         if message and not content:
             content = message.content
