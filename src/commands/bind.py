@@ -98,7 +98,8 @@ class BindCommand(Bloxlink.Module):
                 "formatting": False
             },
             {
-                "prompt": "Should any roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.",
+                "prompt": "Should any roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.\n\n"
+                          "Note that this is an **advanced option**, so you most likely should `skip` this.",
                 "name": "remove_roles",
                 "multiple": True,
                 "type": "role",
