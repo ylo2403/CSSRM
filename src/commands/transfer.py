@@ -31,7 +31,7 @@ class TransferCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
 
         if transfer_to.bot:
-            raise Message("You cannot transfer your premium to bots!", type="silly")
+            raise Message("You cannot transfer your premium to bots!", type="confused")
 
         author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
 
@@ -45,14 +45,14 @@ class TransferCommand(Bloxlink.Module):
         if on_cooldown:
             days_left = math.ceil((transfer_cooldown - time_now)/86400)
 
-            raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="silly")
+            raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="confused")
 
         if author_premium_data.get("transferTo"):
             raise Message(f"You are currently transferring your premium to another user! Please disable it with `{prefix}transfer "
-                           "disable` first.", type="silly")
+                           "disable` first.", type="info")
         elif author_premium_data.get("transferFrom"):
-            raise Error("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
-                       f"with `{prefix}transfer disable`.")
+            raise Message("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
+                         f"with `{prefix}transfer disable`.", type="confused")
 
         prem_data, _ = await get_features(author, author_data=author_data, cache=False, rec=False, partner_check=False)
 
@@ -102,7 +102,7 @@ class TransferCommand(Bloxlink.Module):
             transfer_from = author_data_premium.get("transferFrom")
 
             if not transfer_from:
-                raise Message("You've not received a premium transfer!", type="silly")
+                raise Message("You've not received a premium transfer!", type="confused")
 
             # clear original transferee and recipient data
             transferee_data = await self.r.db("bloxlink").table("users").get(transfer_from).run() or {"id": transfer_from}

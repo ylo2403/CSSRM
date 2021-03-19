@@ -172,7 +172,7 @@ class UnBindCommand(Bloxlink.Module):
             additional = (not trello_binds_list and "\nAdditionally, you may use "
                          f"`{prefix}setup` to link a Trello board for bind-to-card creation.") or ""
             raise Message(f"You have no bounded roles! Please use `{prefix}bind` "
-                          f"to make a new role bind. {additional}", type="silly")
+                          f"to make a new role bind. {additional}", type="info")
 
         bind_category = CommandArgs.parsed_args["bind_id"]
 
@@ -182,7 +182,7 @@ class UnBindCommand(Bloxlink.Module):
             bind_id = bind_category
 
             if not (role_binds_groups_trello.get(bind_id) or group_ids_trello.get(bind_id)):
-                raise Message("There's no linked group with this ID!", type="silly")
+                raise Message("There's no linked group with this ID!", type="info")
 
             found_linked_group_trello = group_ids_trello.get(bind_id)
             found_linked_group = group_ids.get(bind_id)
@@ -257,7 +257,7 @@ class UnBindCommand(Bloxlink.Module):
 
                                 break
                         else:
-                            raise Message("There's no range found with this ID!", type="silly")
+                            raise Message("There's no range found with this ID!", type="info")
 
                 else:
                     found_group_trello["binds"] = found_group_trello.get("binds") or {}

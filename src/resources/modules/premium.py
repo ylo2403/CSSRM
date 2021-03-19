@@ -130,7 +130,7 @@ class Premium(Bloxlink.Module):
         profile, _ = await self.get_features(transfer_to, cache=False, partner_check=False)
 
         if profile.features.get("premium"):
-            raise Message("This user already has premium!", type="silly")
+            raise Message("This user already has premium!", type="info")
 
         if transfer_from == transfer_to:
             raise Message("You cannot transfer premium to yourself!")

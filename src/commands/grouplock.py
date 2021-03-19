@@ -123,14 +123,14 @@ class GroupLockCommand(Bloxlink.Module):
                 raise Error("Could not resolve any valid rolesets! Please make sure you're typing the Roleset name correctly.")
 
             if len(groups) >= 15:
-                raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="silly")
+                raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="confused")
 
             profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
             if len(groups) >= 3 and not profile.features.get("premium"):
                 raise Message("If you would like to add more than **3** groups to your group-lock, then you need Bloxlink Premium.\n"
                               f"Please use `{prefix}donate` for instructions on receiving Bloxlink Premium.\n"
-                              "Bloxlink Premium members may lock their server with up to **15** groups.", type="silly")
+                              "Bloxlink Premium members may lock their server with up to **15** groups.", type="info")
 
             if dm_enabled:
                 dm_message = (await CommandArgs.prompt([{
@@ -186,7 +186,7 @@ class GroupLockCommand(Bloxlink.Module):
 
         elif choice == "view":
             if not groups:
-                raise Message("You have no groups added to your Server-Lock!", type="silly")
+                raise Message("You have no groups added to your Server-Lock!", type="info")
 
             embed = Embed(title="Bloxlink Server-Lock")
             embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)

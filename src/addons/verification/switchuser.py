@@ -172,7 +172,7 @@ class SwitchUserCommand(Bloxlink.Module):
                             await CommandArgs.response.send(welcome_message)
 
                 else:
-                    raise Message(f"You only have one account linked! Please use `{prefix}verify add` to add another.", type="silly")
+                    raise Message(f"You only have one account linked! Please use `{prefix}verify add` to add another.", type="info")
 
 
             except UserNotVerified:

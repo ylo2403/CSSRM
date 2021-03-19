@@ -168,7 +168,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 user = users[0]
 
                 if user.bot:
-                    raise Message("Bots can't have Roblox accounts!", type="silly")
+                    raise Message("Bots can't have Roblox accounts!", type="confused")
 
                 old_nickname = user.display_name
 

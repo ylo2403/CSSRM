@@ -96,7 +96,7 @@ class LogChannelCommand(Bloxlink.Module):
 
             if not donator_profile.features.get("premium"):
                 raise Message("Only premium subscribers can subscribe to `inactivity notices`!\n"
-                              f"Please use `{prefix}donate` for instructions on subscribing to premium.", type="silly")
+                              f"Please use `{prefix}donate` for instructions on subscribing to premium.", type="info")
 
 
         if log_channel in ("clear", "delete"):
@@ -133,7 +133,7 @@ class LogChannelCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         if not log_channels:
-            raise Message("You have no log channels!", type="silly")
+            raise Message("You have no log channels!", type="confused")
 
         embed = Embed(title="Bloxlink Log Channels")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)

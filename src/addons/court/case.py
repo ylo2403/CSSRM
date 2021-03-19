@@ -230,7 +230,7 @@ class CaseCommand(Bloxlink.Module):
             raise Error("You must be the presiding judge in order to run this command!")
 
         elif not group_members:
-            raise Message(f"Your case has no group members! You may add them with `{prefix}case add`", type="silly")
+            raise Message(f"Your case has no group members! You may add them with `{prefix}case add`", type="confused")
 
         parsed_args = await CommandArgs.prompt([
             {
@@ -419,8 +419,7 @@ class CaseCommand(Bloxlink.Module):
                         "to begin the set-up.")
 
         elif not cases:
-            raise Message("Cannot clean cases: you have no cases saved to the database.", type="silly")
-
+            raise Message("Cannot clean cases: you have no cases saved to the database.", type="info")
 
         for judge_role_id in court_data.get("judgeRoles", []):
             if find(lambda r: r.id == int(judge_role_id), author.roles):
@@ -443,7 +442,7 @@ class CaseCommand(Bloxlink.Module):
         if removed:
             await response.success(f"Successfully removed **{removed}** old case(s) from the database.")
         else:
-            await response.silly("No cases to clean: all case channels still exist in your server.")
+            await response.info("No cases to clean: all case channels still exist in your server.")
 
 
     @Bloxlink.subcommand()

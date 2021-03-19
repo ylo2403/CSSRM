@@ -224,7 +224,7 @@ class BindCommand(Bloxlink.Module):
                         raise Message("Since your group is already linked, the nickname was updated.", type="success")
 
                     else:
-                        raise Message("This group is already linked.", type="silly")
+                        raise Message("This group is already linked.", type="confused")
 
                 for _, roleset_data in group.rolesets.items():
                     discord_role = find(lambda r: r.name == roleset_data[0], guild.roles)

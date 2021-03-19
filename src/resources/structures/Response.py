@@ -334,7 +334,15 @@ class Response(Bloxlink.Module):
         return msg
 
     async def error(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
-        emoji = self.webhook_only and ":cry:" or "<:BloxlinkError:506622933226225676>"
+        emoji = self.webhook_only and ":cry:" or "<:BloxlinkDead:821888989605789696>"
+
+        if embed and not dm:
+            embed.color = embed_color
+
+        return await self.send(f"{emoji} {text}", **kwargs)
+
+    async def confused(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
+        emoji = self.webhook_only and ":cry:" or "<:BloxlinkConfused:821888988482371595>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -342,7 +350,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", **kwargs)
 
     async def success(self, success, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":thumbsup:" or "<:BloxlinkSuccess:506622931791773696>"
+        emoji = self.webhook_only and ":thumbsup:" or "<:BloxlinkHappy:821888989547724810>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -350,7 +358,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {success}", embed=embed, dm=dm, **kwargs)
 
     async def silly(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":sweat_smile:" or "<:BloxlinkSweaty:506622933502918656>"
+        emoji = self.webhook_only and ":sweat_smile:" or "<:BloxlinkHappy:821888989547724810>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -358,7 +366,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", embed=embed, dm=dm, **kwargs)
 
     async def info(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":mag_right:" or "<:BloxlinkSearch:506622933012054028>"
+        emoji = self.webhook_only and ":mag_right:" or "<:BloxlinkDetective:821888989585735690>"
 
         if embed and not dm:
             embed.color = embed_color

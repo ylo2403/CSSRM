@@ -39,7 +39,7 @@ class GetinfoCommand(Bloxlink.Module):
         prefix   = CommandArgs.prefix
 
         if target.bot:
-            raise Message("Bots can't have Roblox accounts!", type="silly")
+            raise Message("Bots can't have Roblox accounts!", type="info")
 
         valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
 
@@ -58,5 +58,5 @@ class GetinfoCommand(Bloxlink.Module):
             raise Error(f"**{target}** is not linked to Bloxlink.")
         else:
             if not account:
-                raise Message(f"You have no primary account set! Please use `{prefix}switchuser` and set one.", type="silly")
+                raise Message(f"You have no primary account set! Please use `{prefix}switchuser` and set one.", type="info")
 

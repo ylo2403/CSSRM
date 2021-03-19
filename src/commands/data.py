@@ -107,7 +107,7 @@ class DataCommand(Bloxlink.Module):
         if new_backup:
             user_backups.append(new_backup)
         else:
-            raise Message("There's nothing to save - your server has no saved data!", type="silly")
+            raise Message("There's nothing to save - your server has no saved data!", type="info")
 
         user_data["backups"] = user_backups
 
@@ -165,7 +165,7 @@ class DataCommand(Bloxlink.Module):
         user_backups = user_data.get("backups", [])
 
         if not user_backups:
-            raise Message(f"You don't have any backups created! You may create them with `{prefix}data backup`.", type="silly")
+            raise Message(f"You don't have any backups created! You may create them with `{prefix}data backup`.", type="info")
 
         embed = Embed(title="Bloxlink Data Restore", description="Please select the backup you could like to restore with the reactions.")
 

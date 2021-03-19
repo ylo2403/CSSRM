@@ -207,7 +207,7 @@ class VerifyCommand(Bloxlink.Module):
         try:
             primary_account, accounts = await get_user("username", author=author, everything=False, basic_details=True)
         except UserNotVerified:
-            raise Message("You have no accounts linked to Bloxlink!", type="silly")
+            raise Message("You have no accounts linked to Bloxlink!", type="info")
         else:
             accounts = list(accounts)
 
