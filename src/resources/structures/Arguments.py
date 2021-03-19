@@ -195,6 +195,9 @@ class Arguments:
                 message = self.message
 
                 if prompt.get("optional") and not had_args.get(checked_args):
+                    if self.skipped_args:
+                        self.skipped_args.pop(0)
+
                     resolved_args[prompt["name"]] = None
                     checked_args += 1
 
@@ -249,6 +252,9 @@ class Arguments:
                 skipped_arg_lower = str(skipped_arg).lower()
 
                 if skipped_arg_lower in prompt.get("exceptions", []):
+                    if self.skipped_args:
+                        self.skipped_args.pop(0)
+
                     checked_args += 1
                     resolved_args[prompt["name"]] = skipped_arg_lower
 
@@ -307,7 +313,6 @@ class Arguments:
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
-
 
             return resolved_args
 

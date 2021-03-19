@@ -2407,7 +2407,8 @@ class Group(Bloxlink.Module):
                  "emblem_url", "url", "user_rank_name", "user_rank_id", "shout")
 
     def __init__(self, group_id, group_data, my_roles=None):
-        self.group_id = str(group_id)
+        numeric_filter = filter(str.isdigit, str(group_id))
+        self.group_id = "".join(numeric_filter)
 
         self.name = None
         self.description = None
