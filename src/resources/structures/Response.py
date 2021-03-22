@@ -334,7 +334,7 @@ class Response(Bloxlink.Module):
         return msg
 
     async def error(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
-        emoji = self.webhook_only and ":cry:" or "<:BloxlinkDead:821888989605789696>"
+        emoji = self.webhook_only and ":cry:" or "<:BloxlinkDead:823633973967716363>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -342,7 +342,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", **kwargs)
 
     async def confused(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
-        emoji = self.webhook_only and ":cry:" or "<:BloxlinkConfused:821888988482371595>"
+        emoji = self.webhook_only and ":cry:" or "<:BloxlinkConfused:823633690910916619>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -350,7 +350,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", **kwargs)
 
     async def success(self, success, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":thumbsup:" or "<:BloxlinkHappy:821888989547724810>"
+        emoji = self.webhook_only and ":thumbsup:" or "<:BloxlinkHappy:823633735446167552>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -358,7 +358,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {success}", embed=embed, dm=dm, **kwargs)
 
     async def silly(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":sweat_smile:" or "<:BloxlinkHappy:821888989547724810>"
+        emoji = self.webhook_only and ":sweat_smile:" or "<:BloxlinkSilly:823634273604468787>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -366,7 +366,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", embed=embed, dm=dm, **kwargs)
 
     async def info(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":mag_right:" or "<:BloxlinkDetective:821888989585735690>"
+        emoji = self.webhook_only and ":mag_right:" or "<:BloxlinkDetective:823633815171629098>"
 
         if embed and not dm:
             embed.color = embed_color

@@ -45,7 +45,7 @@ class TransferCommand(Bloxlink.Module):
         if on_cooldown:
             days_left = math.ceil((transfer_cooldown - time_now)/86400)
 
-            raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="confused")
+            raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="silly")
 
         if author_premium_data.get("transferTo"):
             raise Message(f"You are currently transferring your premium to another user! Please disable it with `{prefix}transfer "

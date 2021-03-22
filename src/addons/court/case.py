@@ -230,7 +230,7 @@ class CaseCommand(Bloxlink.Module):
             raise Error("You must be the presiding judge in order to run this command!")
 
         elif not group_members:
-            raise Message(f"Your case has no group members! You may add them with `{prefix}case add`", type="confused")
+            raise Message(f"Your case has no group members! You may add them with `{prefix}case add`", type="silly")
 
         parsed_args = await CommandArgs.prompt([
             {

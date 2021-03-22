@@ -123,7 +123,7 @@ class GroupLockCommand(Bloxlink.Module):
                     raise Error("Could not resolve any valid rolesets! Please make sure you're typing the Roleset name correctly.")
 
             if len(groups) >= 15:
-                raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="confused")
+                raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="silly")
 
             profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
