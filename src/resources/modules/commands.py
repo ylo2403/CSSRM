@@ -354,6 +354,12 @@ class Commands(Bloxlink.Module):
                 delete_commands_after = delete_options["deleteCommands"]
                 prompt_delete         = delete_options["promptDelete"]
 
+                if prompt_delete:
+                    if prompt_messages:
+                        delete_messages += prompt_messages
+                else:
+                    delete_messages = [] # we'll populate this with the command information
+
                 # since trello-set options will be strings
                 if delete_commands_after:
                     try:
@@ -361,10 +367,6 @@ class Commands(Bloxlink.Module):
                     except ValueError:
                         delete_commands_after = 0
 
-                if prompt_delete and prompt_messages:
-                    delete_messages += prompt_messages
-
-                if delete_commands_after:
                     if message:
                         delete_messages.append(message.id)
 
@@ -372,10 +374,11 @@ class Commands(Bloxlink.Module):
 
                     await asyncio.sleep(delete_commands_after)
 
-                try:
-                    await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
-                except (Forbidden, HTTPException):
-                    pass
+                if delete_messages:
+                    try:
+                        await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
+                    except (Forbidden, HTTPException):
+                        pass
 
 
     async def parse_message(self, message, guild_data=None):

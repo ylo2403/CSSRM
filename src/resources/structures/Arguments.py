@@ -197,6 +197,7 @@ class Arguments:
                 if prompt.get("optional") and not had_args.get(checked_args):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
+                        had_args[checked_args] = True
 
                     resolved_args[prompt["name"]] = None
                     checked_args += 1
@@ -254,6 +255,7 @@ class Arguments:
                 if skipped_arg_lower in prompt.get("exceptions", []):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
+                        had_args[checked_args] = True
 
                     checked_args += 1
                     resolved_args[prompt["name"]] = skipped_arg_lower
@@ -303,16 +305,15 @@ class Arguments:
                 else:
                     await self.say("\n".join(resolve_errors), type="error", embed=embed, dm=dm)
 
-                    try:
-                        self.skipped_args[checked_args] = None
+                    if self.skipped_args:
+                        self.skipped_args.pop(0)
                         had_args[checked_args] = True
-                    except IndexError:
-                        pass
 
                     err_count += 1
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
+                    had_args[checked_args] = True
 
             return resolved_args
 
