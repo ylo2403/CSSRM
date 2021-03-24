@@ -361,12 +361,12 @@ class Commands(Bloxlink.Module):
                     delete_messages = [] # we'll populate this with the command information
 
                 # since trello-set options will be strings
-                if delete_commands_after:
-                    try:
-                        delete_commands_after = int(delete_commands_after)
-                    except ValueError:
-                        delete_commands_after = 0
+                try:
+                    delete_commands_after = int(delete_commands_after)
+                except ValueError:
+                    delete_commands_after = 0
 
+                if delete_commands_after:
                     if message:
                         delete_messages.append(message.id)
 
