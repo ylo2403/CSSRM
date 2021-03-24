@@ -67,11 +67,15 @@ class UpdateUserCommand(Bloxlink.Module):
         users = []
 
         if not (users_ and CommandArgs.has_permission):
-            if message:
-                message.content = f"{prefix}getrole"
-                return await parse_message(message)
+            if not users_:
+                if message:
+                    message.content = f"{prefix}getrole"
+                    return await parse_message(message)
+                else:
+                    raise Message(f"To update yourself, please run the `{prefix}getrole` command.", hidden=True, type="info")
             else:
-                raise Message(f"To update yourself, please run the `{prefix}getrole` command.", hidden=True, type="info")
+                raise Message("You do not have permission to update users; you need the `Manage Roles` permission, or "
+                              "a role called `Bloxlink Updater`.", type="info", hidden=True)
 
         if isinstance(users_[0], Role):
             if not guild.chunked:
@@ -133,7 +137,6 @@ class UpdateUserCommand(Bloxlink.Module):
                     await self.redis.set(redis_cooldown_key, 2, ex=86400)
 
             trello_board = CommandArgs.trello_board
-            #trello_binds_list = trello_board and await trello_board.get_list(lambda l: l.name.lower() == "bloxlink binds")
 
             #async with response.loading():
             if len_users > 1:
