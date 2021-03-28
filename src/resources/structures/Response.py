@@ -1,5 +1,5 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object, Webhook
+from discord import Object, Webhook, AllowedMentions
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
@@ -175,7 +175,7 @@ class Response(Bloxlink.Module):
 
             await self.channel._state.http.request(route, json=payload)
 
-    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=None, send_as_slash_command=True, hidden=False):
+    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False):
         msg = None
 
         if isinstance(dest, Webhook):
@@ -202,7 +202,7 @@ class Response(Bloxlink.Module):
 
         return msg
 
-    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=None, hidden=False, ignore_errors=False):
+    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False):
         if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 

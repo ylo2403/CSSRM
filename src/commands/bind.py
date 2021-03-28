@@ -320,13 +320,16 @@ class BindCommand(Bloxlink.Module):
                         }
                     ], last=True)
 
-                    pending_roleset_names = []
-
                     for rank in selected_ranks["ranks"].split(","):
                         rank = rank.strip()
 
-                        if rank.isdigit():
-                            new_ranks["binds"].append(str(rank))
+                        if rank.isdigit() and rank != "0":
+                            if 1 <= int(rank) <= 255:
+                                new_ranks["binds"].append(str(rank))
+                            else:
+                                response.delete(await response.error("Ranks must be an integer between [1-255]"))
+                                failures += 1
+                                break
                         elif rank in ("all", "everyone"):
                             new_ranks["binds"].append("all")
                         elif rank in ("0", "guest"):
@@ -343,7 +346,12 @@ class BindCommand(Bloxlink.Module):
 
                             if range_search:
                                 num1, num2 = range_search.group(1), range_search.group(2)
-                                new_ranks["ranges"].append([num1, num2])
+                                if (1 <= int(num1) <= 255) and (1 <= int(num2) <= 255):
+                                    new_ranks["ranges"].append([num1, num2])
+                                else:
+                                    response.delete(await response.error("Ranges must be between [1-255]."))
+                                    failures += 1
+                                    break
                             else:
                                 # they specified a roleset name as a string
                                 roleset_find = group.rolesets.get(rank.lower())
@@ -353,7 +361,9 @@ class BindCommand(Bloxlink.Module):
                                 else:
                                     response.delete(await response.error("Could not find a matching Roleset name. Please try again."))
                                     failures += 1
-                    break
+                                    break
+                    else:
+                        break
 
                 if new_ranks["binds"]:
                     for x in new_ranks["binds"]:
