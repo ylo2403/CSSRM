@@ -104,13 +104,14 @@ class BindCommand(Bloxlink.Module):
                 "multiple": True,
                 "type": "role",
                 "max": 10,
-                "exceptions": "skip",
+                "exceptions": ("skip",),
                 "footer": "Say **skip** to skip this option."
             }
         ])
 
         bind_choice = parsed_args["bind_choice"].lower()
         nickname = parsed_args["nickname"]
+
         remove_roles = [str(r.id) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []
         remove_roles_trello = [str(r) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []
 
