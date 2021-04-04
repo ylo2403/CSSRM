@@ -2519,7 +2519,7 @@ class Game(RobloxItem):
 class RobloxUser(Bloxlink.Module):
     __slots__ = ("username", "id", "discord_id", "verified", "complete", "more_details", "groups",
                  "avatar", "premium", "presence", "badges", "description", "banned", "age", "created",
-                 "join_date", "profile_link", "session", "embed", "dev_forum")
+                 "join_date", "profile_link", "session", "embed", "dev_forum", "display_name")
 
     def __init__(self, *, username=None, roblox_id=None, discord_id=None, **kwargs):
         self.username = username
@@ -2540,6 +2540,7 @@ class RobloxUser(Bloxlink.Module):
         self.banned = kwargs.get("banned", False)
         self.created =  kwargs.get("created", None)
         self.dev_forum =  kwargs.get("dev_forum", None)
+        self.display_name =  kwargs.get("display_name", username)
 
         self.embed = None
 
@@ -2554,6 +2555,7 @@ class RobloxUser(Bloxlink.Module):
 
         roblox_data = {
             "username": username,
+            "display_name": None,
             "id": roblox_id,
             "groups": None,
             "presence": None,
@@ -2588,6 +2590,7 @@ class RobloxUser(Bloxlink.Module):
         if roblox_user_from_cache and roblox_user_from_cache.verified:
             roblox_data["id"] = roblox_id or roblox_user_from_cache.id
             roblox_data["username"] = username or roblox_user_from_cache.username
+            roblox_data["display_name"] = roblox_user_from_cache.display_name
             roblox_data["groups"] = roblox_user_from_cache.groups
             roblox_data["avatar"] = roblox_user_from_cache.avatar
             roblox_data["premium"] = roblox_user_from_cache.premium
@@ -2750,7 +2753,7 @@ class RobloxUser(Bloxlink.Module):
 
 
         async def profile():
-            banned = description = age = created = join_date = None
+            banned = description = age = created = join_date = display_name = None
 
             if roblox_data["description"] is not None and roblox_data["age"] is not None and roblox_data["join_date"] is not None and roblox_data["created"] is not None:
                 description = roblox_data["description"]
@@ -2758,12 +2761,14 @@ class RobloxUser(Bloxlink.Module):
                 join_date = roblox_data["join_date"]
                 banned = roblox_data["banned"]
                 created = roblox_data["created"]
+                display_name = roblox_data.get("displayName")
             else:
                 banned = None
                 description = None
                 age = None
                 created = None
                 join_date = None
+                display_name = None
 
                 data, _ = await fetch(f"https://users.roblox.com/v1/users/{roblox_data['id']}")
 
@@ -2775,10 +2780,12 @@ class RobloxUser(Bloxlink.Module):
                     description = profile.get("description")
                     created = profile.get("created")
                     banned = profile.get("isBanned")
+                    display_name = profile.get("displayName")
 
                     roblox_data["description"] = description
                     roblox_data["created"] = created
                     roblox_data["banned"] = banned
+                    roblox_data["display_name"] = display_name
 
             if age is None:
                 today = datetime.today()
@@ -2825,12 +2832,16 @@ class RobloxUser(Bloxlink.Module):
                 if description and (everything or "description" in args):
                     embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
 
+                if display_name:
+                    embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
+
             if roblox_user:
                 roblox_user.description = description
                 roblox_user.age = age
                 roblox_user.join_date = join_date
                 roblox_user.created = created
                 roblox_user.banned = banned
+                roblox_user.display_name = display_name
 
         async def dev_forum():
             dev_forum_profile = None
@@ -2891,7 +2902,12 @@ class RobloxUser(Bloxlink.Module):
             await dev_forum()
 
         if embed:
-            embed[0].title = username
+            display_name = roblox_data["display_name"]
+
+            if display_name:
+                embed[0].title = f"@{display_name}"
+            else:
+                embed[0].title = username
 
             if not args:
                 user_tags, _ = await Roblox.apply_perks(roblox_user, author=author, tags=True, guild=guild, embed=embed and embed[0])
