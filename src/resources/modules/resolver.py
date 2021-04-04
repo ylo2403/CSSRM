@@ -248,7 +248,7 @@ class Resolver(Bloxlink.Module):
                 category = None
 
                 if lookup_string.isdigit():
-                    category = guild.get_category(int(lookup_string))
+                    category = find(lambda c: c.id == int(lookup_string), guild.categories)
                 else:
                     category = find(lambda c: c.name == lookup_string, guild.categories)
 
