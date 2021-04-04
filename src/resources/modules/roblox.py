@@ -2832,9 +2832,6 @@ class RobloxUser(Bloxlink.Module):
                 if description and (everything or "description" in args):
                     embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
 
-                if display_name:
-                    embed[0].add_field(name="Description", value=description.replace("\n\n\n", "\n\n")[0:500], inline=False)
-
             if roblox_user:
                 roblox_user.description = description
                 roblox_user.age = age
