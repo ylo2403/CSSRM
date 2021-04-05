@@ -654,13 +654,14 @@ class Roblox(Bloxlink.Module):
                                         card_binds["groups"]["binds"][new_bind["group"]]["ranges"] = card_binds["groups"]["binds"][new_bind["group"]].get("ranges") or []
                                         card_binds["groups"]["binds"][new_bind["group"]]["ranges"] += ranges
 
-                                        new_rank = {"nickname": bind_nickname, "roles": bound_roles, "trello": {"cards": [{"roles": set(bound_roles), "card": card, "trello_str": new_bind["trello_str"], "ranks": new_bind.get("ranks") }]}}
+                                        new_rank = {"nickname": bind_nickname, "roles": bound_roles, "removeRoles": new_bind.get("removeRoles"), "trello": {"cards": [{"roles": set(bound_roles), "card": card, "trello_str": new_bind["trello_str"], "ranks": new_bind.get("ranks") }]}}
 
                                         if not is_range:
                                             old_rank = card_binds["groups"]["binds"][new_bind["group"]]["binds"].get(rank)
 
                                             if old_rank:
                                                 new_rank["roles"].update(old_rank["roles"])
+                                                new_rank["removeRoles"].update(old_rank["removeRoles"])
                                                 new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
 
                                             card_binds["groups"]["binds"][new_bind["group"]]["binds"][rank] = new_rank
@@ -675,6 +676,7 @@ class Roblox(Bloxlink.Module):
                                                     old_range = range_
 
                                                     new_range["roles"].update(old_range["roles"])
+                                                    new_range["removeRoles"].update(old_range["removeRoles"])
                                                     new_range["trello"]["cards"] += old_range["trello"]["cards"]
 
                                                     break
@@ -703,6 +705,7 @@ class Roblox(Bloxlink.Module):
 
                                     if old_rank:
                                         new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
+                                        new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
                                         new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
 
                                     card_binds["groups"]["binds"][new_bind["group"]]["binds"]["all"] = new_rank
@@ -733,6 +736,7 @@ class Roblox(Bloxlink.Module):
 
                                 if old_rank:
                                     new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
+                                    new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
                                     new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
 
                                 card_binds["groups"]["entire group"][new_bind["group"]] = new_rank
@@ -759,6 +763,7 @@ class Roblox(Bloxlink.Module):
 
                             if old_rank:
                                 new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
+                                new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
                                 new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
 
                             card_binds[bind_category_plural][new_bind["bind_id"]] = new_rank
