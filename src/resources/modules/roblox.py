@@ -526,7 +526,7 @@ class Roblox(Bloxlink.Module):
                         is_main_group = False
                         treat_as_bind = False
                         bind_category = None
-                        new_bind = {"trello_str": {}, "nickname": None, "removeRoles": [], "trello": True, "card": card}
+                        new_bind = {"trello_str": {}, "nickname": None, "removeRoles": set(), "trello": True, "card": card}
 
                         for card_bind_data in card.description.split("\n"):
                             card_bind_data_search = trello_card_bind_regex.search(card_bind_data)
