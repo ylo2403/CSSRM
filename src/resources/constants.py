@@ -183,7 +183,7 @@ DEFAULTS = {
     "persistRoles": False,
     "trelloID": "No Trello Board",
     "allowReVerify": True,
-    "welcomeMessage": "Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
+    "welcomeMessage": ":wave: Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
     "nicknameTemplate": "{roblox-name}",
     "unverifiedRoleName": "Unverified",
     "shorterNicknames": True,
