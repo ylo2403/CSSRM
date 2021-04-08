@@ -2632,7 +2632,7 @@ class RobloxUser(Bloxlink.Module):
                         embed.append(sent_embed)
 
                 if basic_details or "username" in args:
-                    embed[0].add_field(name="Username", value=f"[{username}]({roblox_data['profile_link']})")
+                    embed[0].add_field(name="Username", value=f"[@{username}]({roblox_data['profile_link']})")
 
                 if basic_details or "id" in args:
                     embed[0].add_field(name="ID", value=roblox_id)
@@ -2907,7 +2907,7 @@ class RobloxUser(Bloxlink.Module):
             display_name = roblox_data["display_name"]
 
             if display_name:
-                embed[0].title = f"@{display_name}"
+                embed[0].title = display_name
             else:
                 embed[0].title = username
 
