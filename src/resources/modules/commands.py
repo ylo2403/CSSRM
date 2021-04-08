@@ -337,7 +337,7 @@ class Commands(Bloxlink.Module):
             prompt_messages = arguments.messages
             bot_responses   = response.bot_responses
 
-            if arguments.dm_post:
+            if arguments.dm_post and not response.webhook_only:
                 if arguments.cancelled:
                     content = f"{author.mention}, **this DM prompt has been cancelled.**"
                 else:
