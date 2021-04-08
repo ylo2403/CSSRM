@@ -144,7 +144,7 @@ class SwitchUserCommand(Bloxlink.Module):
                                     except Forbidden:
                                         pass
                         try:
-                            added, removed, nickname, errors, roblox_user = await update_member(
+                            added, removed, nickname, errors, warnings, roblox_user = await update_member(
                                 member,
                                 guild        = guild,
                                 roles        = True,

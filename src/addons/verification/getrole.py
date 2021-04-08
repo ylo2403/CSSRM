@@ -36,7 +36,7 @@ class GetRoleCommand(Bloxlink.Module):
         try:
             old_nickname = author.display_name
 
-            added, removed, nickname, errors, roblox_user = await guild_obligations(
+            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                 author,
                 guild                = guild,
                 guild_data           = guild_data,
@@ -66,11 +66,8 @@ class GetRoleCommand(Bloxlink.Module):
             raise Error(e.message)
 
         else:
-            welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
+            welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
 
-            if embed:
-                await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
-            else:
-                embed = Embed(description="This user is all up-to-date; no changes were made.")
+            await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
             await response.send(content=welcome_message, embed=embed)

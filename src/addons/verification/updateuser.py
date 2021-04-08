@@ -143,7 +143,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 for user in users:
                     if not user.bot:
                         try:
-                            added, removed, nickname, errors, roblox_user = await guild_obligations(
+                            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                                 user,
                                 guild             = guild,
                                 guild_data        = guild_data,
@@ -176,7 +176,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 old_nickname = user.display_name
 
                 try:
-                    added, removed, nickname, errors, roblox_user = await guild_obligations(
+                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         user,
                         guild             = guild,
                         guild_data        = guild_data,
@@ -188,7 +188,7 @@ class UpdateUserCommand(Bloxlink.Module):
                         event             = True,
                         exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError"))
 
-                    _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != user.display_name else None, prefix=prefix, guild_data=guild_data)
+                    _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != user.display_name else None, prefix=prefix, guild_data=guild_data)
 
                     if embed:
                         await response.send(embed=embed)

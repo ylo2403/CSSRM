@@ -359,15 +359,16 @@ class Roblox(Bloxlink.Module):
 
         return clan_tag
 
-    async def format_update_embed(self, roblox_user, author, added, removed, errors, *, nickname, prefix, guild_data):
+    async def format_update_embed(self, roblox_user, author, added, removed, errors, warnings, *, nickname, prefix, guild_data):
         welcome_message = guild_data.get("welcomeMessage", DEFAULTS.get("welcomeMessage"))
         welcome_message = await self.get_nickname(author, welcome_message, guild_data=guild_data, roblox_user=roblox_user, is_nickname=False, prefix=prefix)
 
         embed = None
 
         if added or removed or errors or nickname:
-            embed = Embed(title=f"Discord Profile for {roblox_user.username}")
+            embed = Embed(title=f":man_office_worker: Role data for {roblox_user.username}")
             embed.set_author(name=str(author), icon_url=author.avatar_url, url=roblox_user.profile_link)
+            embed.set_thumbnail(url=roblox_user.avatar)
 
             if nickname:
                 embed.add_field(name="Nickname", value=nickname)
@@ -377,6 +378,11 @@ class Roblox(Bloxlink.Module):
                 embed.add_field(name="Removed Roles", value=", ".join(removed))
             if errors:
                 embed.add_field(name="Errors", value=", ".join(errors))
+        else:
+            embed = Embed(description="This user is all up-to-date; no changes were made.")
+
+        if warnings:
+            embed.set_footer(text=" | ".join(warnings))
 
         return welcome_message, embed
 
@@ -832,7 +838,7 @@ class Roblox(Bloxlink.Module):
         donator_profile = None
         unverified = False
         exceptions = exceptions or ()
-        added, removed, errored, chosen_nickname = [], [], [], None
+        added, removed, errored, warnings, chosen_nickname = [], [], [], [], None
 
         if RELEASE == "PRO":
             donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
@@ -928,9 +934,9 @@ class Roblox(Bloxlink.Module):
 
                                             raise CancelCommand
 
-                                        return added, removed, chosen_nickname, errored, roblox_user
+                                        return added, removed, chosen_nickname, errored, warnings, roblox_user
         try:
-            added, removed, chosen_nickname, errored, _ = await self.update_member(
+            added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
                 member,
                 guild                   = guild,
                 guild_data              = guild_data,
@@ -997,7 +1003,7 @@ class Roblox(Bloxlink.Module):
                     else:
                         raise CancelCommand
 
-                    return added, removed, chosen_nickname, errored, roblox_user
+                    return added, removed, chosen_nickname, errored, warnings, roblox_user
 
             if required_groups:
                 for group_id, group_data in required_groups.items():
@@ -1039,7 +1045,7 @@ class Roblox(Bloxlink.Module):
                                 else:
                                     raise CancelCommand
 
-                                return added, removed, chosen_nickname, errored, roblox_user
+                                return added, removed, chosen_nickname, errored, warnings, roblox_user
                     else:
                         if dm:
                             dm_message = group_data.get("dmMessage")
@@ -1068,7 +1074,7 @@ class Roblox(Bloxlink.Module):
                         else:
                             raise CancelCommand
 
-                        return added, removed, chosen_nickname, errored, roblox_user
+                        return added, removed, chosen_nickname, errored, warnings, roblox_user
 
             if dm and verified_dm:
                 if verified_dm != DEFAULTS.get("welcomeMessage"):
@@ -1106,7 +1112,7 @@ class Roblox(Bloxlink.Module):
                     else:
                         raise CancelCommand
 
-                    return added, removed, chosen_nickname, errored, roblox_user
+                    return added, removed, chosen_nickname, errored, warnings, roblox_user
 
             if required_groups:
                 if dm:
@@ -1128,7 +1134,7 @@ class Roblox(Bloxlink.Module):
                 else:
                     raise CancelCommand
 
-                return added, removed, chosen_nickname, errored, roblox_user
+                return added, removed, chosen_nickname, errored, warnings, roblox_user
 
             if dm and unverified_dm:
                 unverified_dm = await self.get_nickname(member, unverified_dm, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False)
@@ -1139,7 +1145,7 @@ class Roblox(Bloxlink.Module):
                     pass
 
         if not unverified:
-            return added, removed, chosen_nickname, errored, roblox_user
+            return added, removed, chosen_nickname, errored, warnings, roblox_user
         else:
             if "UserNotVerified" in exceptions:
                 raise UserNotVerified
@@ -1169,6 +1175,7 @@ class Roblox(Bloxlink.Module):
         add_roles, remove_roles = set(), set()
         possible_nicknames = []
         errors = []
+        warnings = []
         unverified = False
         top_role_nickname = None
         trello_options = {}
@@ -1642,7 +1649,6 @@ class Roblox(Bloxlink.Module):
 
                         if highest_role:
                             nickname = highest_role[0][1]
-
                 else:
                     nickname = top_role_nickname or await self.get_nickname(template=guild_data.get("nicknameTemplate", DEFAULTS.get("nicknameTemplate")), author=author, user_data=author_data, roblox_user=roblox_user, dm=dm, response=response)
 
@@ -1654,7 +1660,7 @@ class Roblox(Bloxlink.Module):
                     await author.edit(nick=nickname)
                 except Forbidden:
                     if guild.owner_id == author.id:
-                        errors.append("Since you're the Server Owner, I cannot edit your nickname. You may ignore this message; verification will work for normal users.")
+                        warnings.append("Since you're the Server Owner, I cannot edit your nickname. You may ignore this message; verification will work for normal users.")
                     else:
                         errors.append(f"I was unable to edit your nickname. Please ensure I have the `Manage Nickname` permission, and drag my role above the other roles. See: {BIND_ROLE_BUG}")
                 except NotFound:
@@ -1666,7 +1672,7 @@ class Roblox(Bloxlink.Module):
         if not roblox_user:
             roblox_user, _ = await self.get_user(author=author, guild=guild, everything=True, author_data=author_data)
 
-        return [r.name for r in add_roles], [r.name for r in remove_roles], nickname, errors, roblox_user
+        return [r.name for r in add_roles], [r.name for r in remove_roles], nickname, errors, warnings, roblox_user
 
     async def get_group_shout(self, group_id):
         """gets the group shout. not cached."""
