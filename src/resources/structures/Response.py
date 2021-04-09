@@ -1,5 +1,5 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object, Webhook, AllowedMentions
+from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
@@ -211,7 +211,7 @@ class Response(Bloxlink.Module):
 
         content = str(content) if content else None
 
-        channel = channel_override or (dm and self.author) or self.channel
+        channel = original_channel = channel_override or (dm and self.author) or self.channel
         webhook = None
         msg = None
 
@@ -255,7 +255,6 @@ class Response(Bloxlink.Module):
                 else:
                     self.bot_responses.append(msg.id)
 
-
         paginate = False
         pages = None
 
@@ -264,7 +263,6 @@ class Response(Bloxlink.Module):
 
             if len(pages) > 1:
                 paginate = True
-
 
         if embed and not dm and not embed.color:
             embed.color = EMBED_COLOR
@@ -278,6 +276,11 @@ class Response(Bloxlink.Module):
 
             except (Forbidden, NotFound):
                 channel = channel_override or (not strict_post and (dm and self.channel or self.author) or channel) # opposite channel
+
+                if isinstance(channel, (User, Member)) and isinstance(original_channel, TextChannel):
+                    content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}!\n{content}"[:2000]
+                else:
+                    content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content}"[:2000]
 
                 if webhook:
                     await cache_pop(f"webhooks:{channel.id}")
@@ -294,7 +297,6 @@ class Response(Bloxlink.Module):
                                 await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please double check my permissions and try again.")
                             except (Forbidden, NotFound):
                                 pass
-
                     return
 
                 try:
