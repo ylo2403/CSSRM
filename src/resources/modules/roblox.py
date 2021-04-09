@@ -1367,7 +1367,7 @@ class Roblox(Bloxlink.Module):
 
                                     for role_id in bind_remove_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                         if role:
                                             remove_roles.add(role)
@@ -1440,7 +1440,7 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
@@ -1472,7 +1472,6 @@ class Roblox(Bloxlink.Module):
 
                                                             else:
                                                                 add_roles.add(role)
-
                                                     else:
                                                         add_roles.add(role)
 
@@ -1487,7 +1486,7 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
@@ -1539,7 +1538,7 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
@@ -1593,7 +1592,7 @@ class Roblox(Bloxlink.Module):
 
                                     for role_id in bind_remove_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                         if role:
                                             remove_roles.add(role)

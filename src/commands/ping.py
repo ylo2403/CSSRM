@@ -17,7 +17,6 @@ class PingCommand(Bloxlink.Module):
         response = CommandArgs.response
         locale   = CommandArgs.locale
 
-
         t_1 = time.perf_counter()
 
         if response.webhook_only:
@@ -25,7 +24,7 @@ class PingCommand(Bloxlink.Module):
         else:
             try:
                 await channel.trigger_typing()
-            except NotFound:
+            except (NotFound, Forbidden):
                 pass
 
         t_2 = time.perf_counter()
