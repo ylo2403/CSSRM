@@ -2,7 +2,6 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error
 from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error
 from discord import Embed, Object
-from os import environ as env
 from discord.errors import Forbidden
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
@@ -225,6 +224,21 @@ class SettingsCommand(Bloxlink.Module):
                 if parsed_value == "clear":
                     guild_data.pop(choice, None)
                 else:
+                    if choice == "nicknameTemplate" and "display-name" in parsed_value:
+                        display_name_confirm = (await CommandArgs.prompt([{
+                            "prompt": "**Warning!** You chose Display Names for your Nickname Template.\n"
+                                    "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
+                            "type": "choice",
+                            "choices": ("yes", "no"),
+                            "name": "confirm",
+                            "embed_title": "Display Names Confirmation",
+                            "embed_color": BROWN_COLOR,
+                            "formatting": False
+                        }]))["confirm"]
+
+                        if display_name_confirm == "no":
+                            raise CancelledPrompt
+
                     guild_data[choice] = parsed_value
 
                 await self.r.table("guilds").insert(guild_data, conflict="replace").run()

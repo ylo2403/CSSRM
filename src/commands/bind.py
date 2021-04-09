@@ -1,7 +1,8 @@
 import re
-from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error
+from resources.exceptions import CancelledPrompt # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import PermissionError, Error, RobloxNotFound, RobloxAPIError, Message, CancelCommand  # pylint: disable=import-error
-from resources.constants import NICKNAME_TEMPLATES, ARROW, LIMITS, BLURPLE_COLOR  # pylint: disable=import-error
+from resources.constants import NICKNAME_TEMPLATES, ARROW, LIMITS, BLURPLE_COLOR, BROWN_COLOR  # pylint: disable=import-error
 from discord import Embed, Object
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
@@ -111,6 +112,21 @@ class BindCommand(Bloxlink.Module):
 
         bind_choice = parsed_args["bind_choice"].lower()
         nickname = parsed_args["nickname"]
+
+        if "display-name" in nickname:
+            display_name_confirm = (await CommandArgs.prompt([{
+                "prompt": "**Warning!** You chose Display Names for your Nickname Template.\n"
+                          "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
+                "type": "choice",
+                "choices": ("yes", "no"),
+                "name": "confirm",
+                "embed_title": "Display Names Confirmation",
+                "embed_color": BROWN_COLOR,
+                "formatting": False
+            }]))["confirm"]
+
+            if display_name_confirm == "no":
+                raise CancelledPrompt
 
         remove_roles = [str(r.id) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []
         remove_roles_trello = [str(r) for r in parsed_args["remove_roles"]] if parsed_args["remove_roles"] != "skip" else []

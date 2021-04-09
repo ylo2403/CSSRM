@@ -1,4 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from resources.exceptions import CancelledPrompt # pylint: disable=import-error
 from resources.constants import ARROW, ESCAPED_NICKNAME_TEMPLATES, BROWN_COLOR # pylint: disable=import-error
 
 
@@ -45,6 +46,21 @@ class NicknameCommand(Bloxlink.Module):
         guild = CommandArgs.guild
 
         global_nickname = CommandArgs.parsed_args["global_nickname"]
+
+        if "display-name" in global_nickname:
+            display_name_confirm = (await CommandArgs.prompt([{
+                "prompt": "**Warning!** You chose Display Names for your Nickname Template.\n"
+                          "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
+                "type": "choice",
+                "choices": ("yes", "no"),
+                "name": "confirm",
+                "embed_title": "Display Names Confirmation",
+                "embed_color": BROWN_COLOR,
+                "formatting": False
+            }]))["confirm"]
+
+            if display_name_confirm == "no":
+                raise CancelledPrompt
 
         if global_nickname.lower() != "skip":
             guild_data["nicknameTemplate"] = global_nickname
