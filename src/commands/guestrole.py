@@ -38,15 +38,23 @@ class GuestRoleCommand(Bloxlink.Module):
                 "type": "string",
                 "max": 100,
                 "formatting": False
+            },
+            {
+                "prompt": "Should any roles be **removed from the user** if they aren't in the group? You can specify multiple roles.\n\n"
+                          "Note that this is an **advanced option**, so you most likely should `skip` this.",
+                "name": "remove_roles",
+                "multiple": True,
+                "type": "role",
+                "max": 10,
+                "exceptions": ("skip",),
+                "footer": "Say **skip** to skip this option."
             }
-
         ]
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
         self.aliases = ["guestbind", "guest-role", "guest-bind"]
         self.slash_enabled = True
-
 
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
@@ -56,6 +64,8 @@ class GuestRoleCommand(Bloxlink.Module):
         group_id = str(CommandArgs.parsed_args["groupID"])
         role = CommandArgs.parsed_args["role"]
         nickname = CommandArgs.parsed_args["nickname"]
+        remove_roles = [str(r.id) for r in CommandArgs.parsed_args["remove_roles"]] if CommandArgs.parsed_args["remove_roles"] != "skip" else []
+        remove_roles_trello = [str(r) for r in CommandArgs.parsed_args["remove_roles"]] if CommandArgs.parsed_args["remove_roles"] != "skip" else []
 
         nickname_lower = nickname.lower()
         role_id = str(role.id)
@@ -103,7 +113,7 @@ class GuestRoleCommand(Bloxlink.Module):
         rank = role_binds["groups"][group_id].get("binds", {}).get(x, {})
 
         if not isinstance(rank, dict):
-            rank = {"nickname": nickname_lower not in ("skip", "done") and nickname or None, "roles": [str(rank)]}
+            rank = {"nickname": nickname_lower not in ("skip", "done") and nickname or None, "roles": [str(rank)], "removeRoles": remove_roles}
 
             if role_id not in rank["roles"]:
                 rank["roles"].append(role_id)
@@ -117,6 +127,8 @@ class GuestRoleCommand(Bloxlink.Module):
                 else:
                     if not rank.get("nickname"):
                         rank["nickname"] = None
+
+            rank["removeRoles"] = remove_roles
 
         role_binds["groups"][group_id]["binds"][x] = rank
 
@@ -139,6 +151,9 @@ class GuestRoleCommand(Bloxlink.Module):
                                     f"Group: {group_id}",
                                     f"Nickname: {(nickname != 'skip' and nickname) or rank.get('nickname') or card_data_.get('nickname') or 'None'}",
                                 ]
+
+                                if remove_roles:
+                                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                                 for role_ in trello_bind_roles:
                                     if role_ in (role_id, role.name):
@@ -173,6 +188,9 @@ class GuestRoleCommand(Bloxlink.Module):
                     f"Nickname: {nickname != 'skip' and nickname or 'None'}",
                     f"Roles: {role.name}",
                 ]
+
+                if remove_roles:
+                    card_bind_data.append(f"Remove roles: {', '.join(remove_roles_trello)}")
 
                 if x != "all":
                     card_bind_data.append(f"Ranks: {x}")
