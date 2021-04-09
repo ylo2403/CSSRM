@@ -441,6 +441,10 @@ class Roblox(Bloxlink.Module):
             template = template.replace(
                 "roblox-name", roblox_user.username
             ).replace(
+                "display-name", roblox_user.display_name,
+            ).replace(
+                "smart-name", f"{roblox_user.display_name} ({roblox_user.username})" if roblox_user.display_name != roblox_user.username else roblox_user.username,
+            ).replace(
                 "roblox-id", str(roblox_user.id)
             ).replace(
                 "roblox-age", str(roblox_user.age)

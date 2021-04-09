@@ -7,7 +7,7 @@ from discord import Embed
 from discord.utils import find
 import re
 
-NICKNAME_DEFAULT = "{roblox-name}"
+NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
 get_group, generate_code = Bloxlink.get_module("roblox", attrs=["get_group", "generate_code"])

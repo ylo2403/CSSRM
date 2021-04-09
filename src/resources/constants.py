@@ -109,7 +109,9 @@ WORDS = [
 ]
 
 NICKNAME_TEMPLATES = (
-    "{roblox-name} \u2192 changes to their Roblox username\n"
+    "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
+    "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
+    "{smart-name} \u2192 changes to: username (display name) if the user has a display name; otherwise, changes to their username\n"
     "{roblox-id} \u2192 changes to their Roblox user ID\n"
     "{roblox-age} \u2192 changes to their Roblox user age in days\n"
     "{roblox-join-date} \u2192 changes to their Roblox join date\n"
@@ -184,7 +186,7 @@ DEFAULTS = {
     "trelloID": "No Trello Board",
     "allowReVerify": True,
     "welcomeMessage": ":wave: Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
-    "nicknameTemplate": "{roblox-name}",
+    "nicknameTemplate": "{smart-name}",
     "unverifiedRoleName": "Unverified",
     "shorterNicknames": True,
     "ageLimit": 0,
