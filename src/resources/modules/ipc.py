@@ -87,7 +87,7 @@ class IPC(Bloxlink.Module):
                     return
 
                 try:
-                    added, removed, nickname, errors, roblox_user = await guild_obligations(
+                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         member,
                         guild                = guild,
                         roles                = True,
