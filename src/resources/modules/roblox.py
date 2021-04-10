@@ -2769,13 +2769,13 @@ class RobloxUser(Bloxlink.Module):
         async def profile():
             banned = description = age = created = join_date = display_name = None
 
-            if roblox_data["description"] is not None and roblox_data["age"] is not None and roblox_data["join_date"] is not None and roblox_data["created"] is not None:
+            if roblox_data["description"] is not None and roblox_data["age"] is not None and roblox_data["join_date"] is not None and roblox_data["created"] is not None and roblox_data["display_name"] is not None:
                 description = roblox_data["description"]
                 age = roblox_data["age"]
                 join_date = roblox_data["join_date"]
                 banned = roblox_data["banned"]
                 created = roblox_data["created"]
-                display_name = roblox_data.get("displayName")
+                display_name = roblox_data["display_name"]
             else:
                 banned = None
                 description = None
