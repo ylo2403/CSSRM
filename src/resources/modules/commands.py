@@ -114,7 +114,7 @@ class Commands(Bloxlink.Module):
                 except NotFound:
                     raise CancelCommand
 
-        restriction = await get_restriction("discord_ids", author.id)
+        restriction = await get_restriction("users", author.id)
 
         if restriction:
             restrction_text = isinstance(restriction, str) and f"has an active restriction for: `{restriction}`" or "has an active restriction from Bloxlink."

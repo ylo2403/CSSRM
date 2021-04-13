@@ -248,7 +248,8 @@ LIMITS = {
         "FREE": 60,
         "PREMIUM": 200
     },
-    "BACKUPS": 4
+    "BACKUPS": 4,
+    "RESTRICTIONS": 10
 }
 
 PLAYING_STATUS = "{prefix}help | {prefix}invite"

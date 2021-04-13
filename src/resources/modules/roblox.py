@@ -266,7 +266,7 @@ class Roblox(Bloxlink.Module):
         else:
             roblox_id = str(roblox)
 
-        restriction = await get_restriction("discord_ids", author.id) or await get_restriction("roblox_ids", roblox_id)
+        restriction = await get_restriction("users", author.id) or await get_restriction("robloxAccounts", roblox_id)
 
         if restriction:
             raise Blacklisted(restriction)
@@ -1156,7 +1156,7 @@ class Roblox(Bloxlink.Module):
 
 
     async def update_member(self, author, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, author_data=None, binds=None, guild_data=None, trello_board=None, given_trello_options=False, response=None, dm=False, cache=True):
-        restriction = await get_restriction("discord_ids", author.id)
+        restriction = await get_restriction("users", author.id, guild=guild)
 
         if restriction:
             raise Blacklisted(restriction)
@@ -1258,7 +1258,7 @@ class Roblox(Bloxlink.Module):
             unverified = True
 
         else:
-            restriction = await get_restriction("roblox_ids", roblox_user.id)
+            restriction = await get_restriction("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
 
             if restriction:
                 raise Blacklisted(restriction)
