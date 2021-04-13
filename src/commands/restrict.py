@@ -141,7 +141,7 @@ class RestrictCommand(Bloxlink.Module):
 
     @Bloxlink.subcommand()
     async def view(self, CommandArgs):
-        """view your the restricted users or groups"""
+        """view your restricted users or groups"""
 
         response = CommandArgs.response
         guild    = CommandArgs.guild
