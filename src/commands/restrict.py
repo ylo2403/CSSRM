@@ -21,12 +21,6 @@ class RestrictCommand(Bloxlink.Module):
         self._roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
     async def resolve_restriction(self, message, content, prompt):
-        # user check
-        user, _ = await user_resolver({}, message, message.guild, content)
-
-        if user:
-            return ("users", "Discord user", user, user.id, str(user))
-
         if content.isdigit():
             # if there's a group and roblox account with the same ID
             try:
@@ -82,6 +76,12 @@ class RestrictCommand(Bloxlink.Module):
             pass
         else:
             return ("robloxAccounts", "Roblox account", account, account.id, account.username)
+
+        # user check
+        user, _ = await user_resolver({}, message, message.guild, content)
+
+        if user:
+            return ("users", "Discord user", user, user.id, str(user))
 
         return None, "No results were found! Please either provide a Group URL/ID, a Discord user, or a Roblox username/id."
 
