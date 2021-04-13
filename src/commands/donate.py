@@ -10,8 +10,6 @@ PREMIUM_PERKS = "\n".join([
         "and pfp of the bot** (white-labeling), and much more. "
         "See `{prefix}settings change/help` and look at the premium section.",
      "- No cooldown on some commands.",
-     "- Instant role/nickname updates: No more waiting 10 minutes for role updates; the internal cache "
-        "is bypassed for premium servers allowing for instant role updates.",
      "- More groups allowed to be added to your Group-Lock (`{prefix}grouplock`)."
 ])
 
