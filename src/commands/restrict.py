@@ -128,7 +128,7 @@ class RestrictCommand(Bloxlink.Module):
                 restrictions["robloxAccounts"] = restrictions.get("robloxAccounts", {})
                 parsed_accounts = await parse_accounts(accounts) # TODO: poison ban their discord accounts as well?
 
-                for roblox_account in parsed_accounts:
+                for roblox_account in parsed_accounts.values():
                     restrictions["robloxAccounts"][roblox_account.id] = {"name": roblox_account.username, "addedBy": str(author.id), "reason": reason}
 
         guild_data["restrictions"] = restrictions
