@@ -29,7 +29,7 @@ class SetupCommand(Bloxlink.Module):
         self.slash_enabled = True
 
     @staticmethod
-    async def validate_group(message, content):
+    async def validate_group(message, content, prompt):
         if content.lower() in ("skip", "next"):
             return "skip"
 
@@ -48,7 +48,7 @@ class SetupCommand(Bloxlink.Module):
         return group
 
     @staticmethod
-    async def validate_trello_board(message, content):
+    async def validate_trello_board(message, content, prompt):
         content_lower = content.lower()
 
         if content_lower in ("skip", "next"):

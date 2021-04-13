@@ -20,7 +20,7 @@ class GroupLockCommand(Bloxlink.Module):
 
 
     @staticmethod
-    async def validate_group(message, content):
+    async def validate_group(message, content, prompt):
         regex_search = roblox_group_regex.search(content)
 
         if regex_search:

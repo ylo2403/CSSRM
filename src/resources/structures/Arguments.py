@@ -190,29 +190,29 @@ class Arguments:
                 if last and checked_args +1 == len(arguments):
                     self.skipped_args = [" ".join(self.skipped_args)]
 
-                prompt = arguments[checked_args]
+                prompt_ = arguments[checked_args]
                 skipped_arg = self.skipped_args and str(self.skipped_args[0])
                 message = self.message
 
-                if prompt.get("optional") and not had_args.get(checked_args):
+                if prompt_.get("optional") and not had_args.get(checked_args):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
                         had_args[checked_args] = True
 
-                    resolved_args[prompt["name"]] = None
+                    resolved_args[prompt_["name"]] = None
                     checked_args += 1
 
                     continue
 
-                formatting = prompt.get("formatting", True)
-                prompt_text = prompt["prompt"]
+                formatting = prompt_.get("formatting", True)
+                prompt_text = prompt_["prompt"]
 
                 if not skipped_arg:
                     try:
                         if formatting:
                             prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
 
-                        await self.say(prompt_text, embed_title=prompt.get("embed_title"), embed_color=prompt.get("embed_color"), footer=prompt.get("footer"), type=error and "error", embed=embed, dm=dm)
+                        await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm)
 
                         if dm and IS_DOCKER:
                             message_content = await broadcast(self.author.id, type="DM", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
@@ -227,7 +227,7 @@ class Arguments:
 
                                 skipped_arg = message.content
 
-                                if prompt.get("delete_original", True):
+                                if prompt_.get("delete_original", True):
                                     self.messages.append(message.id)
 
                             if skipped_arg == "cluster timeout":
@@ -238,7 +238,7 @@ class Arguments:
 
                             skipped_arg = message.content
 
-                            if prompt.get("delete_original", True):
+                            if prompt_.get("delete_original", True):
                                 self.messages.append(message.id)
 
                         skipped_arg_lower = skipped_arg.lower()
@@ -252,17 +252,17 @@ class Arguments:
 
                 skipped_arg_lower = str(skipped_arg).lower()
 
-                if skipped_arg_lower in prompt.get("exceptions", []):
+                if skipped_arg_lower in prompt_.get("exceptions", []):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
                         had_args[checked_args] = True
 
                     checked_args += 1
-                    resolved_args[prompt["name"]] = skipped_arg_lower
+                    resolved_args[prompt_["name"]] = skipped_arg_lower
 
                     continue
 
-                resolver_types = prompt.get("type", "string")
+                resolver_types = prompt_.get("type", "string")
 
                 if not isinstance(resolver_types, list):
                     resolver_types = [resolver_types]
@@ -273,11 +273,11 @@ class Arguments:
 
                 for resolver_type in resolver_types:
                     resolver = get_resolver(resolver_type)
-                    resolved, error_message = await resolver(prompt, content=skipped_arg, guild=self.guild, message=message)
+                    resolved, error_message = await resolver(prompt_, content=skipped_arg, guild=self.guild, message=message)
 
                     if resolved:
-                        if prompt.get("validation"):
-                            res = [await prompt["validation"](content=skipped_arg, message=not dm and message)]
+                        if prompt_.get("validation"):
+                            res = [await prompt_["validation"](content=skipped_arg, message=not dm and message, prompt=self.prompt)]
 
                             if isinstance(res[0], tuple):
                                 if not res[0][0]:
@@ -301,7 +301,7 @@ class Arguments:
 
                 if resolved:
                     checked_args += 1
-                    resolved_args[prompt["name"]] = resolved
+                    resolved_args[prompt_["name"]] = resolved
                 else:
                     await self.say("\n".join(resolve_errors), type="error", embed=embed, dm=dm)
 

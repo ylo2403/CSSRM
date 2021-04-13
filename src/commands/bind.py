@@ -1,10 +1,10 @@
 import re
 from resources.exceptions import CancelledPrompt # pylint: disable=import-error
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import PermissionError, Error, RobloxNotFound, RobloxAPIError, Message, CancelCommand  # pylint: disable=import-error
+from resources.exceptions import PermissionError, Error, RobloxNotFound, RobloxAPIError, Message  # pylint: disable=import-error
 from resources.constants import NICKNAME_TEMPLATES, ARROW, LIMITS, BLURPLE_COLOR, BROWN_COLOR  # pylint: disable=import-error
 from discord import Embed, Object
-from discord.errors import Forbidden, NotFound, HTTPException
+from discord.errors import Forbidden
 from discord.utils import find
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
@@ -41,7 +41,7 @@ class BindCommand(Bloxlink.Module):
         return {}, 0
 
     @staticmethod
-    async def validate_group(message, content):
+    async def validate_group(message, content, prompt):
         regex_search = roblox_group_regex.search(content)
 
         if regex_search:
