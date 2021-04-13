@@ -121,7 +121,7 @@ class RestrictCommand(Bloxlink.Module):
         if resolvable[0] == "users":
             # poison ban
             try:
-                _, accounts = await get_user("username", author=author, everything=False, basic_details=True)
+                _, accounts = await get_user("username", author=resolvable[2], everything=False, basic_details=True)
             except UserNotVerified:
                 pass
             else:

@@ -68,7 +68,7 @@ class SetupCommand(Bloxlink.Module):
 
     @staticmethod
     async def verify_trello_board(trello_board, code):
-        async def validate(message, content):
+        async def validate(message, content, prompt):
             try:
                 await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
             except TrelloNotFound:
