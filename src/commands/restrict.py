@@ -126,7 +126,7 @@ class RestrictCommand(Bloxlink.Module):
             },
             {
                 "prompt": "What's the reason for this restriction? __This will be publicly displayed to "
-                          "people who try to verify and are restricted.__\n\nOptionally, say `skip` to set "
+                          "people who try to verify and are restricted **in this server**.__\n\nOptionally, say `skip` to set "
                           "a default text.",
                 "name": "reason",
                 "exceptions": ("skip",)
