@@ -1,13 +1,14 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import RobloxNotFound, Error, UserNotVerified, RobloxAPIError # pylint: disable=import-error
 from resources.constants import LIMITS # pylint: disable=import-error
-from discord import Embed
+from discord import Embed, Object
 import re
 
 
 get_group, get_user, parse_accounts = Bloxlink.get_module("roblox", attrs=["get_group", "get_user", "parse_accounts"])
 user_resolver = Bloxlink.get_module("resolver", attrs="user_resolver")
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
 @Bloxlink.command
@@ -111,12 +112,22 @@ class RestrictCommand(Bloxlink.Module):
         response   = CommandArgs.response
         author     = CommandArgs.author
         guild      = CommandArgs.guild
+        prefix     = CommandArgs.prefix
 
         restrictions = guild_data.get("restrictions", {})
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
 
-        if len_restrictions >= LIMITS["RESTRICTIONS"]:
-            raise Error("You have the max restrictions for this server! Please delete some before adding more.")
+        if len_restrictions >= LIMITS["RESTRICTIONS"]["FREE"]:
+            profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+
+            if not profile.features.get("premium"):
+                raise Error(f"You have the max restrictions `({LIMITS['RESTRICTIONS']['FREE']})` allowed for free servers! You may "
+                            f"unlock **additional restrictions** `({LIMITS['RESTRICTIONS']['PREMIUM']})` by subscribing to premium. Find out "
+                            f"more info with `{prefix}donate`.\nFor now, you may remove restrictions with `{prefix}restrict remove` "
+                            "to add additional restrictions.")
+            else:
+                if len_restrictions >= LIMITS["RESTRICTIONS"]["PREMIUM"]:
+                    raise Error("You have the max restrictions for this server! Please delete some before adding more.")
 
         parsed_args = await CommandArgs.prompt([
             {

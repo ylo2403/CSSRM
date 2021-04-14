@@ -10,6 +10,7 @@ PREMIUM_PERKS = "\n".join([
         "and pfp of the bot** (white-labeling), and much more. "
         "See `{prefix}settings change/help` and look at the premium section.",
      "- No cooldown on some commands.",
+     "- More restrictions (`{prefix}restrict`) " + f"allowed (from {LIMITS['RESTRICTIONS']['FREE']} to {LIMITS['RESTRICTIONS']['PREMIUM']}).",
      "- More groups allowed to be added to your Group-Lock (`{prefix}grouplock`)."
 ])
 
