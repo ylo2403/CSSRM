@@ -176,7 +176,7 @@ class RestrictCommand(Bloxlink.Module):
 
         for restriction_type, restriction_data in restrictions.items():
             if restriction_data:
-                embed.add_field(name=restriction_type.title(), value=", ".join([y['name'] + ' (' + x + ')' for x,y in restriction_data.items()]))
+                embed.add_field(name=restriction_type.title(), value="\n".join(["**" + y['name'] + '** (' + x + ')' + ' | Reason: ' + str(y['reason']) + ' | Added by: ' + y['addedBy'] for x,y in restriction_data.items()]))
 
         await response.send(embed=embed)
 
