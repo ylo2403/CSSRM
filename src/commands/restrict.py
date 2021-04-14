@@ -86,6 +86,27 @@ class RestrictCommand(Bloxlink.Module):
         return None, "No results were found! Please either provide a Group URL/ID, a Discord user, or a Roblox username/id."
 
     async def __main__(self, CommandArgs):
+        if CommandArgs.string_args:
+            await self.add(CommandArgs)
+        else:
+            subcommand = (await CommandArgs.prompt([{
+                "prompt": "Would you like to **add** a new restriction, **view** your restrictions, "
+                          "or **remove** an active restriction?",
+                "name": "subcommand",
+                "type": "choice",
+                "choices": ("add", "remove", "view")
+            }]))["subcommand"]
+
+            if subcommand == "add":
+                await self.add(CommandArgs)
+            elif subcommand == "view":
+                await self.view(CommandArgs)
+            elif subcommand == "remove":
+                await self.remove(CommandArgs)
+
+    @Bloxlink.subcommand()
+    async def add(self, CommandArgs):
+        """add a new Roblox user or group to your restrictions"""
         guild_data = CommandArgs.guild_data
         response   = CommandArgs.response
         author     = CommandArgs.author
@@ -137,7 +158,6 @@ class RestrictCommand(Bloxlink.Module):
         await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
         await response.success(f"Successfully **added** {resolvable[1]} **{resolvable[4]}** to your restrictions.")
-
 
     @Bloxlink.subcommand()
     async def view(self, CommandArgs):
