@@ -11,6 +11,13 @@ set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
+RESTRICTION_NAME_MAP = {
+    "groups": "Groups",
+    "users": "Users",
+    "robloxAccounts": "Roblox Accounts"
+}
+
+
 @Bloxlink.command
 class RestrictCommand(Bloxlink.Module):
     """restrict a Roblox user or group from verifying in your server"""
@@ -187,7 +194,7 @@ class RestrictCommand(Bloxlink.Module):
 
         for restriction_type, restriction_data in restrictions.items():
             if restriction_data:
-                embed.add_field(name=restriction_type.title(), value="\n".join(["**" + y['name'] + '** (' + x + ')' + ' | Reason: ' + str(y['reason']) + ' | Added by: ' + y['addedBy'] for x,y in restriction_data.items()]))
+                embed.add_field(name=RESTRICTION_NAME_MAP[restriction_type], value="\n".join(["**" + y['name'] + '** (' + x + ')' + ' | Reason: ' + str(y['reason']) + ' | Added by: ' + y['addedBy'] for x,y in restriction_data.items()]))
 
         await response.send(embed=embed)
 
