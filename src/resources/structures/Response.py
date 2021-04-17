@@ -281,9 +281,6 @@ class Response(Bloxlink.Module):
                 msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reply=reply, reference=reference, mention_author=mention_author)
 
                 if dm and not (no_dm_post or isinstance(self.channel, (DMChannel, User, Member))):
-                    print("running here", flush=True)
-                    print(self.channel, flush=True)
-
                     await self.send_to(self.channel, "**Please check your DMs!**", reply=reply, reference=reference, mention_author=mention_author)
 
             except (Forbidden, NotFound):
