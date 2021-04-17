@@ -124,7 +124,7 @@ class Paginate:
             except (NotFound, Forbidden):
                 raise CancelCommand
         else:
-            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden)
+            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden, reference=None, reply=False, menntion_author=False)
 
             if not self.sent_message:
                 return False
@@ -144,7 +144,7 @@ class Paginate:
 
         if success:
             if self.dm:
-                await send_to.send(self.author.mention + ", **check your DMs!**")
+                await send_to.send(self.author.mention + ", **check your DMs!**", fail_on_dm=True)
         else:
             if self.dm:
                 await send_to.send(self.author.mention + ", I was unable to DM you! Please check your privacy settings and try again.")

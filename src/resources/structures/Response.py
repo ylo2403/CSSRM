@@ -1,5 +1,5 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel
+from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
@@ -175,8 +175,14 @@ class Response(Bloxlink.Module):
 
             await self.channel._state.http.request(route, json=payload)
 
-    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False):
+    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, reply=None, mention_author=None, fail_on_dm=None):
         msg = None
+
+        if reply:
+            reference = reference or self.message
+
+        if fail_on_dm and isinstance(dest, (DMChannel, User, Member)):
+            return None
 
         if isinstance(dest, Webhook):
             msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions)
@@ -195,19 +201,22 @@ class Response(Bloxlink.Module):
             msg = InteractionWebhook(interaction_token=self.slash_command["token"], data=response, state=self.channel._state, channel=self.channel)
 
         else:
-            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions)
+            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author)
 
 
         self.bot_responses.append(msg.id)
 
         return msg
 
-    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False):
+    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False, reply=True, reference=None, mention_author=False):
         if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 
-        if dm:
+        if dm or isinstance(self.channel, DMChannel):
             send_as_slash_command = False
+            reply = False
+            reference = None
+            mention_author = False
 
         content = str(content) if content else None
 
@@ -269,13 +278,19 @@ class Response(Bloxlink.Module):
 
         if not paginate:
             try:
-                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden)
+                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reply=reply, reference=reference, mention_author=mention_author)
 
-                if dm and not no_dm_post:
-                    await self.send_to(self.channel, "**Please check your DMs!**")
+                if dm and not (no_dm_post or isinstance(self.channel, (DMChannel, User, Member))):
+                    print("running here", flush=True)
+                    print(self.channel, flush=True)
+
+                    await self.send_to(self.channel, "**Please check your DMs!**", reply=reply, reference=reference, mention_author=mention_author)
 
             except (Forbidden, NotFound):
                 channel = channel_override or (not strict_post and (dm and self.channel or self.author) or channel) # opposite channel
+                reply = False
+                reference = None
+                mention_author = False
 
                 if isinstance(channel, (User, Member)) and isinstance(original_channel, TextChannel):
                     content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}!\n{content or ''}"[:2000]
@@ -289,28 +304,28 @@ class Response(Bloxlink.Module):
                     if not ignore_errors:
                         if dm:
                             try:
-                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.")
+                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", reply=reply, reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
                         else:
                             try:
-                                await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please double check my permissions and try again.")
+                                await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please double check my permissions and try again.", reply=reply, reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
                     return
 
                 try:
-                    msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden)
+                    msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden, reply=reply, reference=reference, mention_author=mention_author)
                 except (Forbidden, NotFound):
                     if not no_dm_post:
                         if channel == self.author:
                             try:
-                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", hidden=True)
+                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", hidden=True, reply=reply, reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
                         else:
                             try:
-                                await self.send_to(self.channel, "I was unable to post in the specified channel!", hidden=True)
+                                await self.send_to(self.channel, "I was unable to post in the specified channel!", hidden=True, reply=reply, reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
 
