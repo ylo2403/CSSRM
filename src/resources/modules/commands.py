@@ -402,7 +402,7 @@ class Commands(Bloxlink.Module):
         trello_board = guild and await get_board(guild)
         prefix, _    = await get_prefix(guild, trello_board)
 
-        client_match = re.search(f"<@!?{self.client.user.id}>", content)
+        client_match = re.search(f"^(<@!?{self.client.user.id}>)", content)
         check = (content[:len(prefix)].lower() == prefix.lower() and prefix) or client_match and client_match.group(0)
         check_verify_channel = False
 

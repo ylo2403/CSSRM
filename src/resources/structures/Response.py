@@ -278,9 +278,9 @@ class Response(Bloxlink.Module):
                 channel = channel_override or (not strict_post and (dm and self.channel or self.author) or channel) # opposite channel
 
                 if isinstance(channel, (User, Member)) and isinstance(original_channel, TextChannel):
-                    content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}!\n{content}"[:2000]
+                    content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}!\n{content or ''}"[:2000]
                 else:
-                    content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content}"[:2000]
+                    content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content or ''}"[:2000]
 
                 if webhook:
                     await cache_pop(f"webhooks:{channel.id}")
