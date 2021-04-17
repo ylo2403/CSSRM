@@ -438,12 +438,23 @@ class Roblox(Bloxlink.Module):
 
                 template = template.replace("{group-rank-"+group_id+"}", group_role_from_group)
 
+            if "smart-name" in template:
+                if roblox_user.display_name != roblox_user.username:
+                    smart_name = f"{roblox_user.display_name} ({roblox_user.username})"
+
+                    if len(smart_name) > 32:
+                        smart_name = roblox_user.username
+                else:
+                    smart_name = roblox_user.username
+            else:
+                smart_name = ""
+
             template = template.replace(
                 "roblox-name", roblox_user.username
             ).replace(
                 "display-name", roblox_user.display_name,
             ).replace(
-                "smart-name", f"{roblox_user.display_name} ({roblox_user.username})" if roblox_user.display_name != roblox_user.username else roblox_user.username,
+                "smart-name", smart_name,
             ).replace(
                 "roblox-id", str(roblox_user.id)
             ).replace(
