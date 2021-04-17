@@ -124,7 +124,7 @@ class Paginate:
             except (NotFound, Forbidden):
                 raise CancelCommand
         else:
-            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden, reference=None, reply=False, menntion_author=False)
+            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden, reference=None, reply=False, mention_author=False)
 
             if not self.sent_message:
                 return False
