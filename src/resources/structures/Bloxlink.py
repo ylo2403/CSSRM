@@ -54,7 +54,7 @@ class BloxlinkStructure(AutoShardedClient):
 
 
     async def get_session(self):
-        self.session = aiohttp.ClientSession() # headers={"Connection": "close"}
+        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) # headers={"Connection": "close"}
 
     @staticmethod
     def log(*text, level=LOG_LEVEL):
@@ -371,7 +371,7 @@ redis, redis_cache = load_redis()
 class Module:
     client = Bloxlink
     r = r
-    session = aiohttp.ClientSession(loop=loop)
+    session = aiohttp.ClientSession(loop=loop, timeout=aiohttp.ClientTimeout(total=20))
     loop = loop
     redis = redis
     cache = redis_cache

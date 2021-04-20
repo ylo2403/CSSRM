@@ -151,7 +151,7 @@ class UpdateUserCommand(Bloxlink.Module):
                                 roles             = True,
                                 nickname          = True,
                                 dm                = False,
-                                exceptions        = ("BloxlinkBypass", "UserNotVerified", "Blacklisted", "PermissionError"),
+                                exceptions        = ("BloxlinkBypass", "UserNotVerified", "Blacklisted", "PermissionError", "RobloxDown"),
                                 cache             = False)
                         except BloxlinkBypass:
                             if len_users <= 10:
@@ -186,7 +186,7 @@ class UpdateUserCommand(Bloxlink.Module):
                         cache             = False,
                         dm                = False,
                         event             = True,
-                        exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError"))
+                        exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError", "RobloxDown", "RobloxAPIError"))
 
                     _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != user.display_name else None, prefix=prefix, guild_data=guild_data)
 

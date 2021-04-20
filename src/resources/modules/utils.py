@@ -8,6 +8,7 @@ from discord.errors import NotFound, Forbidden
 from discord import Embed
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
 from requests.utils import requote_uri
+from async_timeout import timeout as a_timeout
 import asyncio
 import aiohttp
 
@@ -63,7 +64,7 @@ class Utils(Bloxlink.Module):
                     pass
 
 
-    async def fetch(self, url, method="GET", params=None, headers=None, json=None, text=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT):
+    async def fetch(self, url, method="GET", params=None, headers=None, json=None, text=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20):
         params  = params or {}
         headers = headers or {}
 
@@ -77,38 +78,39 @@ class Utils(Bloxlink.Module):
                 params[k] = "true" if v else "false"
 
         try:
-            async with self.session.request(method, url, json=json, params=params, headers=headers) as response:
-                if text:
-                    text = await response.text()
+            async with a_timeout(timeout): # I noticed sometimes the aiohttp timeout parameter doesn't work. This is added as a backup.
+                async with self.session.request(method, url, json=json, params=params, headers=headers, timeout=timeout) as response:
+                    if text:
+                        text = await response.text()
 
-                if text == "The service is unavailable." or response.status == 503:
-                    raise RobloxDown
+                    if text == "The service is unavailable." or response.status == 503:
+                        raise RobloxDown
 
-                if raise_on_failure:
-                    if response.status >= 500:
-                        if retry != 0:
-                            retry -= 1
-                            await asyncio.sleep(1.0)
+                    if raise_on_failure:
+                        if response.status >= 500:
+                            if retry != 0:
+                                retry -= 1
+                                await asyncio.sleep(1.0)
 
-                            return await self.fetch(url, raise_on_failure=raise_on_failure, bytes=bytes, text=text, params=params, headers=headers, retry=retry)
+                                return await self.fetch(url, raise_on_failure=raise_on_failure, bytes=bytes, text=text, params=params, headers=headers, retry=retry, timeout=timeout)
 
-                        raise RobloxAPIError
+                            raise RobloxAPIError
 
-                    elif response.status == 400:
-                        raise RobloxAPIError
-                    elif response.status == 404:
-                        raise RobloxNotFound
+                        elif response.status == 400:
+                            raise RobloxAPIError
+                        elif response.status == 404:
+                            raise RobloxNotFound
 
-                if bytes:
-                    return await response.read(), response
-                elif text:
-                    return text, response
-                else:
-                    return response
+                    if bytes:
+                        return await response.read(), response
+                    elif text:
+                        return text, response
+                    else:
+                        return response
 
         except ServerDisconnectedError:
             if retry != 0:
-                return await self.fetch(url, raise_on_failure=raise_on_failure, retry=retry-1)
+                return await self.fetch(url, raise_on_failure=raise_on_failure, retry=retry-1, timeout=timeout)
             else:
                 raise ServerDisconnectedError
 
@@ -117,7 +119,7 @@ class Utils(Bloxlink.Module):
             raise RobloxAPIError
 
         except asyncio.TimeoutError:
-            raise CancelCommand
+            raise RobloxDown
 
 
     async def get_prefix(self, guild=None, trello_board=None):

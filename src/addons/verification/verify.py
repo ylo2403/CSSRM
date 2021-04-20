@@ -70,7 +70,7 @@ class VerifyCommand(Bloxlink.Module):
                 cache                = False,
                 response             = response,
                 dm                   = False,
-                exceptions           = ("BloxlinkBypass", "Blacklisted", "UserNotVerified", "PermissionError")
+                exceptions           = ("BloxlinkBypass", "Blacklisted", "UserNotVerified", "PermissionError", "RobloxDown", "RobloxAPIError")
             )
 
         except BloxlinkBypass:

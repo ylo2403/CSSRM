@@ -1693,8 +1693,11 @@ class Roblox(Bloxlink.Module):
 
         text, response = await fetch(f"https://groups.roblox.com/v1/groups/{group_id}", raise_on_failure=False)
 
-        if response.status != 200:
+        if response.status == 404:
             raise RobloxNotFound
+
+        elif response.status >= 500:
+            raise RobloxDown
 
         try:
             response = json.loads(text)
@@ -1822,6 +1825,8 @@ class Roblox(Bloxlink.Module):
 
                 return group
 
+            elif roleset_response.status >= 500:
+                raise RobloxDown
 
         raise RobloxNotFound
 
@@ -2463,6 +2468,9 @@ class Group(Bloxlink.Module):
             else:
                 self.load_json(group_data)
 
+        elif roleset_response.status >= 500:
+            raise RobloxDown
+
     def load_json(self, group_data, my_roles=None):
         self.shout = group_data.get("shout") or self.shout
         self.emblem_url = self.emblem_url or group_data.get("imageUrl")
@@ -2878,20 +2886,24 @@ class RobloxUser(Bloxlink.Module):
             if roblox_data["dev_forum"] is not None:
                 dev_forum_profile = roblox_data["dev_forum"]
             else:
-                data, response = await fetch(f"https://devforum.roblox.com/u/by-external/{roblox_data['id']}.json", raise_on_failure=False)
+                try:
+                    data, response = await fetch(f"https://devforum.roblox.com/u/by-external/{roblox_data['id']}.json", raise_on_failure=False, timeout=5, retry=0)
 
-                if response.status == 200:
-                    try:
-                        dev_forum_profile_ = json.loads(data)
-                    except json.decoder.JSONDecodeError:
-                        raise RobloxAPIError
-                    else:
-                        dev_forum_profile = dev_forum_profile_.get("user")
+                    if response.status == 200:
+                        try:
+                            dev_forum_profile_ = json.loads(data)
+                        except json.decoder.JSONDecodeError:
+                            raise RobloxAPIError
+                        else:
+                            dev_forum_profile = dev_forum_profile_.get("user")
 
-                        roblox_data["dev_forum"] = dev_forum_profile
+                            roblox_data["dev_forum"] = dev_forum_profile
 
-                        if roblox_user:
-                            roblox_user.dev_forum = roblox_data["dev_forum"]
+                            if roblox_user:
+                                roblox_user.dev_forum = roblox_data["dev_forum"]
+
+                except RobloxDown:
+                    pass
 
             if embed and (everything or "dev_forum" in args or "devforum" in args):
                 if dev_forum_profile and dev_forum_profile.get("trust_level"):
