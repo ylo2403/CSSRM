@@ -4,8 +4,6 @@ from re import search
 from discord import Game
 from discord.utils import find
 
-VERSION = "v3.14.3"
-
 RELEASE = env.get("RELEASE", "LOCAL")
 IS_DOCKER = bool(env.get("RELEASE"))
 
@@ -111,7 +109,9 @@ WORDS = [
 ]
 
 NICKNAME_TEMPLATES = (
-    "{roblox-name} \u2192 changes to their Roblox username\n"
+    "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
+    "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
+    "{smart-name} \u2192 changes to: username (display name) if the user has a display name; otherwise, changes to their username\n"
     "{roblox-id} \u2192 changes to their Roblox user ID\n"
     "{roblox-age} \u2192 changes to their Roblox user age in days\n"
     "{roblox-join-date} \u2192 changes to their Roblox join date\n"
@@ -141,20 +141,20 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "unverifiedRoleEnabled": (None, "boolean", None, False, "The Unverified role is given to people who aren't linked on Bloxlink. Enable/disable it here."),
     "Linked Groups":         (None,  None, None,     False, "Bind groups to your server so group members get specific roles."),
     "allowOldRoles":         (None, "boolean", None, False, "Bloxlink will NOT remove roles if this is enabled."),
-    "autoRoles":             (None, "boolean", None, False, "Bloxlink will give all matching/corresponding roles to people who join the server. Set eligible roles with ``{prefix}bind``. Note that this being enabled will override 'autoVerification'."),
+    "autoRoles":             (None, "boolean", None, False, "Bloxlink will give all matching/corresponding roles to people who join the server. Set eligible roles with `{prefix}bind`. Note that this being enabled will override 'autoVerification'."),
     "autoVerification":      (None, "boolean", None, False, "Bloxlink will give the Verified role to people who join the server and are linked to Bloxlink.\nNote that 'autoRoles' being enabled overrides this setting."),
     #"dmVerifications":       (None, "boolean", None, False, "Set whether verifications default to DMs."),
     "dynamicRoles":          (None, "boolean", None, False, "Bloxlink will make missing group roles from your Linked Groups as people need them."),
-    "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on ``{prefix}verify`` responses. Note that you can use these templates: ```{templates}```"),
+    "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `{prefix}verify` responses. Note that you can use these templates: ```{templates}```"),
     "joinDM":                (lambda g, gd: bool(gd.get("verifiedDM", True)) or bool(gd.get("unverifiedDM")), None, None, False, "Customize the join DM messages of people who join the server."),
     "persistRoles":          (None, "boolean", None, True,  "Update members' roles/nickname as they type."),
     "allowReVerify":         (None, "boolean", None, True,  "If this is enabled: members can change their Roblox account as many times as they want in your server; otherwise, only allow 1 account change."),
     "trelloID":              (None,  None, None,     False, "Link a Trello board that can change Bloxlink settings!"),
-    "nicknameTemplate":      (None,  "string", 100,  False, "Set the universal nickname template. Note that ``{prefix}bind`` nicknames will override this."),
+    "nicknameTemplate":      (None,  "string", 100,  False, "Set the universal nickname template. Note that `{prefix}bind` nicknames will override this."),
     "unverifiedRoleName":    (None,  "string", 100,  False, "Set the 'Unverified' role name -- the role that Unverified users get."),
     "shorterNicknames":      (None,  "boolean", None,False, "Brackets in group rank names will be captured instead of the full rank name, resulting in a shorter nickname."),
     "ageLimit":              (None,  "number", None, True,  "Set the minimum Roblox age in days a user must be to enter your server. People who are less than this value will be kicked."),
-    "inactiveRole":          (lambda g, gd: gd.get("inactiveRole") and find(lambda r: r.id == int(gd["inactiveRole"]), g.roles), "role", None, True, "Set the role given to people who declared themselves as \"inactive\" from ``{prefix}profile``."),
+    "inactiveRole":          (lambda g, gd: gd.get("inactiveRole") and find(lambda r: r.id == int(gd["inactiveRole"]), g.roles), "role", None, True, "Set the role given to people who declared themselves as \"inactive\" from `{prefix}profile`."),
     "banRelatedAccounts":    (None, "boolean", None, True,  "If this is enabled: when members are banned, their known alts are also banned from the server."),
     "unbanRelatedAccounts":  (None, "boolean", None, True,  "If this is enabled: when members are unbanned, their known alts are also unbanned from the server."),
     "disallowAlts":          (None, "boolean", None, True,  "If this is enabled: when someone joins the server and already has a linked account in the server, kick the old alt out."),
@@ -162,6 +162,7 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     #"groupShoutChannel":     (lambda g, gd: g.get_channel(int(gd.get("groupShoutChannel", "0"))),  None, None, True, "Group shouts will be sent to your Discord channel."),
     "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
+    "deleteCommands":        (None, "number", 25, False, "Set X higher than 0 to delete every command after X seconds."),
     "trelloBindMode":        (None, "choice", ("merge", "replace"), False, "Choose 'replace' if trello binds should replace the server binds, or 'merge' if trello binds should be merged with the server binds. Default = merge."),
 }
 
@@ -172,7 +173,7 @@ PROMPT = {
 
 DEFAULTS = {
     "prefix": "{prefix}",
-    "Linked Groups": "view using ``@Bloxlink viewbinds``",
+    "Linked Groups": "view using `@Bloxlink viewbinds`",
     "verifiedRoleName": "Verified",
     "verifiedRoleEnabled": True,
     "unverifiedRoleEnabled": True,
@@ -181,17 +182,18 @@ DEFAULTS = {
     "autoVerification": True,
     #"dmVerifications": True,
     "dynamicRoles": True,
-    "persistRoles": True,
+    "persistRoles": False,
     "trelloID": "No Trello Board",
     "allowReVerify": True,
-    "welcomeMessage": "Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
-    "nicknameTemplate": "{roblox-name}",
+    "welcomeMessage": ":wave: Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
+    "nicknameTemplate": "{smart-name}",
     "unverifiedRoleName": "Unverified",
     "shorterNicknames": True,
     "ageLimit": 0,
     #"groupShoutChannel": None,
     "whiteLabel": False,
     "promptDelete": True,
+    "deleteCommands": 0,
     "inactiveRole": None,
     "banRelatedAccounts": False,
     "unbanRelatedAccounts": False,
@@ -211,7 +213,8 @@ HELP_DESCRIPTION = "**Welcome to Bloxlink!**\n\n" \
                    "**Support Server:** https://blox.link/support\n" \
                    "**Website:** https://blox.link/\n" \
                    "**Invite:** https://blox.link/invite\n\n" \
-                   "Please use ``{prefix}setup`` to set-up your server.\n" \
+                   "Please use `{prefix}setup` to set-up your server.\n" \
+                   "**Bloxlink tutorials:** https://blox.link/tutorials/\n" \
                    "Want sweet perks for your server? Check out our **[Patreon!](https://www.patreon.com/join/bloxlink?)**"
 
 
@@ -227,10 +230,12 @@ TABLE_STRUCTURE = {
         "robloxAccounts",
         "commands",
         "miscellaneous",
-        "restrictedUsers"
+        "restrictedUsers",
+        "addonData"
     ],
     "canary": [
         "guilds",
+        "addonData"
     ],
     "patreon": [
         "refreshTokens",
@@ -243,10 +248,14 @@ LIMITS = {
         "FREE": 60,
         "PREMIUM": 200
     },
-    "BACKUPS": 4
+    "BACKUPS": 4,
+    "RESTRICTIONS": {
+        "FREE": 25,
+        "PREMIUM": 250
+    }
 }
 
-PLAYING_STATUS = "Meet Bloxlink: {prefix}about"
+PLAYING_STATUS = "{prefix}help | {prefix}invite"
 
 AVATARS = {
     "PRIDE": "https://cdn.discordapp.com/attachments/480614508633522176/730969660010266644/rainbow_resized.png"
@@ -268,4 +277,15 @@ TRELLO = {
 	"CARD_LIMIT": 100,
 	"LIST_LIMIT": 10,
     "TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
+}
+
+EMBED_PERKS = {
+    "GROUPS": { # title: group id, rank id, emote to show by username, backup emote
+        "Bloxlink Developer":  ["3587262", -200, "<:BloxlinkStaff:814303496538947594>", ":man_technologist:"],
+        "Bloxlink Staff":      ["3587262", -50, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
+        "Bloxlink Contractor": ["3587262", 30, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
+        "Roblox Admin":        ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
+        "Roblox Intern":       ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
+        "Roblox Star":         ["4199740", None, ":star:", ":star:"]
+    }
 }

@@ -19,7 +19,7 @@ class Partners(Bloxlink.Module):
         await self.load_data()
 
     async def is_partner(self, author):
-        return await cache_get("partners:users", author.id, primitives=True)
+        return await cache_get(f"partners:users:{author.id}", primitives=True)
 
     async def parse_data(self, trello_list, directory):
         for card in await trello_list.get_cards():
@@ -28,8 +28,10 @@ class Partners(Bloxlink.Module):
             if match:
                 group_name = match.group(1)
                 group_id = match.group(2)
-                await cache_set("partners:guilds", card.desc.isdigit() and int(card.desc) or group_id, (directory, group_id, group_name, card.desc.isdigit() and int(card.desc)))
+                servers = [(lambda x: x.isdigit() and int(x))(y.strip()) for y in card.desc.split(",")]
 
+                for server_id in servers:
+                    await cache_set(f"partners:guilds:{server_id}", (directory, group_id, group_name))
 
     async def load_data(self):
         try:
@@ -65,4 +67,4 @@ class Partners(Bloxlink.Module):
 
             if partners_role:
                 for member in partners_role.members:
-                    await cache_set("partners:users", member.id, "true")
+                    await cache_set(f"partners:users:{member.id}", "true")

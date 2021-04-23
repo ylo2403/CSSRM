@@ -7,9 +7,8 @@ from asyncio import TimeoutError
 class Paginate:
     """Smart paginator for Discord embeds"""
 
-    def __init__(self, message, channel, embed, response=None, original_channel=None, field_limit=25, pages=None, dm=False):
-        self.message = message
-        self.author = message.author
+    def __init__(self, author, channel, embed, response=None, original_channel=None, field_limit=25, hidden=False, pages=None, dm=False):
+        self.author = author
         self.embed = embed
         self.response = response
         self.original_channel = original_channel
@@ -18,6 +17,7 @@ class Paginate:
         self.channel = channel
         self._pages = pages
         self.dm = dm
+        self.hidden = hidden
 
         self.sent_message = None
 
@@ -29,7 +29,7 @@ class Paginate:
         len_fields = len(fields)
 
         while True:
-            remaining = 5000
+            remaining = 4000
             field = fields[i]
             current_page = []
 
@@ -42,7 +42,7 @@ class Paginate:
                 len_field_name = len(field.name)
                 if remaining > len_field_name + 1:
                     # get first 1024 characters with respect to remaining
-                    chars = field.value[0:min(1000, remaining - len_field_name)]
+                    chars = field.value[0:min(500, remaining - len_field_name)]
                     len_chars = len(chars)
                     current_page.append({"name": field.name, "value": chars})
                     remaining -= len_chars
@@ -124,7 +124,7 @@ class Paginate:
             except (NotFound, Forbidden):
                 raise CancelCommand
         else:
-            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True)
+            self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden, reference=None, reply=False, mention_author=False)
 
             if not self.sent_message:
                 return False
@@ -144,13 +144,12 @@ class Paginate:
 
         if success:
             if self.dm:
-                await send_to.send(self.author.mention + ", **check your DMs!**")
+                await send_to.send(self.author.mention + ", **check your DMs!**", fail_on_dm=True)
         else:
             if self.dm:
                 await send_to.send(self.author.mention + ", I was unable to DM you! Please check your privacy settings and try again.")
             else:
-                await send_to.send(self.author.mention + ", an unknown error occured while sending the message. Please report this to the Bloxlink "
-                                                         f"support server here: {SERVER_INVITE}")
+                await send_to.send(self.author.mention + ", I was unable to send the message. Please make sure I have the `Embed Links` permission.")
 
             raise CancelCommand
 
@@ -166,7 +165,7 @@ class Paginate:
                 try:
                     await self.sent_message.add_reaction(reaction)
                 except Forbidden:
-                    raise Error("I'm missing the ``Add Reactions`` permission.")
+                    raise Error("I'm missing the `Add Reactions` permission.")
 
             while True:
                 try:
@@ -177,7 +176,7 @@ class Paginate:
                         await self.sent_message.clear_reactions()
                         raise CancelCommand
                     except Forbidden:
-                        raise Error("I'm missing the ``Manage Messages`` permission.")
+                        raise Error("I'm missing the `Manage Messages` permission.")
                     except NotFound:
                         raise CancelCommand
 
@@ -193,7 +192,7 @@ class Paginate:
                     try:
                         await self.sent_message.remove_reaction(emoji, user)
                     except Forbidden:
-                        raise Error("I'm missing the ``Manage Messages`` permission.")
+                        raise Error("I'm missing the `Manage Messages` permission.")
                     except NotFound:
                         raise CancelCommand
 

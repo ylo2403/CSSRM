@@ -1,7 +1,9 @@
 class BloxlinkException(Exception):
-    def __init__(self, arg=None, type="error", dm=False):
+    def __init__(self, message=None, type="error", dm=False, hidden=False):
         self.type = type
         self.dm = dm # only implemented in a few places
+        self.hidden = hidden
+        self.message = message
 
 
 class CancelCommand(BloxlinkException):
@@ -16,11 +18,12 @@ class Message(Messages):
         super().__init__(*args, type=type, **kwargs)
 
 class Error(Messages):
-    pass
+    def __init__(self, *args, type="send", **kwargs):
+        super().__init__(*args, type=type, **kwargs)
 
 class CancelledPrompt(CancelCommand):
-    def __init__(self, *args, type="send", dm=False, **kwargs):
-        super().__init__(*args, type=type, dm=dm, **kwargs)
+    def __init__(self, *args, type="send", **kwargs):
+        super().__init__(*args, type=type, **kwargs)
 
 
 class PermissionError(BloxlinkException):

@@ -29,12 +29,11 @@ class PrefixCommand(Bloxlink.Module):
         self.category = "Administration"
 
     async def __main__(self, CommandArgs):
-        locale = CommandArgs.locale
         response = CommandArgs.response
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
         new_prefix = CommandArgs.parsed_args.get("new_prefix")
@@ -60,26 +59,26 @@ class PrefixCommand(Bloxlink.Module):
 
                 if card:
                     try:
-                        if card.name == "prefix":
+                        if card.name == prefix_name:
                             await card.edit(desc=new_prefix)
                         else:
-                            await card.edit(name=f"prefix:{new_prefix}")
+                            await card.edit(name=f"{prefix_name}:{new_prefix}")
                     except TrelloUnauthorized:
-                        await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                        await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                              "Trello board.")
                     except (TrelloNotFound, TrelloBadRequest):
                         pass
                     else:
                         await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``prefix`` option.", BROWN_COLOR)
+            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `prefix` option.", BROWN_COLOR)
+
+            await set_guild_value(guild, prefix_name, new_prefix)
 
             await response.success("Your prefix was successfully changed!")
-
-            await set_guild_value(guild, "prefix", new_prefix)
 
         else:
             old_prefix = CommandArgs.prefix
 
-            await response.send(f"Your prefix used for Bloxlink: ``{old_prefix}``.\n"
-                                 "Change it with ``@Bloxlink prefix <new prefix>``.")
+            await response.send(f"Your prefix used for Bloxlink: `{old_prefix}`.\n"
+                                 "Change it with `@Bloxlink prefix <new prefix>`.")

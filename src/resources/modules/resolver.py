@@ -3,9 +3,9 @@ from discord.errors import Forbidden, NotFound
 from re import compile
 
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..exceptions import PermissionError # pylint: disable=import-error
 
 import string
+
 
 @Bloxlink.module
 class Resolver(Bloxlink.Module):
@@ -13,8 +13,8 @@ class Resolver(Bloxlink.Module):
         self.user_pattern = compile(r"<@!?([0-9]+)>")
         self.role_pattern = compile(r"<@&([0-9]+)>")
 
-    async def string_resolver(self, message, arg, content=None):
-        if not content:
+    async def string_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         min = arg.get("min", 1)
@@ -31,32 +31,37 @@ class Resolver(Bloxlink.Module):
 
         return str(content), None
 
-    async def number_resolver(self, message, arg, content=None):
-        if not content:
+    async def number_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         if content.isdigit():
-            min = arg.get("min", -100)
+            min = arg.get("min", 1)
             max = arg.get("max", 100)
 
+            int_content = int(content)
+
             if arg.get("min") or arg.get("max"):
-                if min <= len(content) <= max:
-                    return int(content), None
+                if min <= int_content <= max:
+                    return int_content, None
                 else:
                     return False, f'Number character count not in range: {min}-{max}'
             else:
-                return int(content), None
-
-            return int(content), None
+                return int_content, None
 
         return False, "You must pass a number"
 
-    async def choice_resolver(self, message, arg, content=None):
-        if not content:
+    async def choice_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         content = content.lower()
         content = content.strip(string.punctuation)
+
+        choice_dict = {x:True for x in arg["choices"]}
+
+        if content in choice_dict:
+            return content, None
 
         for choice in arg["choices"]:
             choice_lower = choice.lower()
@@ -67,30 +72,28 @@ class Resolver(Bloxlink.Module):
         return False, f"Choice must be of either: {str(arg['choices'])}"
 
 
-    async def user_resolver(self, message, arg, content=None):
-        if not content:
+    async def user_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
-
         if not arg.get("multiple"):
-            if message.mentions:
+            if message:
                 for mention in message.mentions:
                     if mention.id != self.client.user.id:
                         return mention, None
 
-            if message.raw_mentions:
-                user_id = self.user_pattern.search(content)
+                if message.raw_mentions:
+                    user_id = self.user_pattern.search(content)
 
-                if user_id:
-                    user_id = int(user_id.group(1))
+                    if user_id:
+                        user_id = int(user_id.group(1))
 
-                    if user_id != self.client.user.id:
-                        try:
-                            user = await self.client.fetch_user(user_id)
-                            return user, None
-                        except NotFound:
-                            return False, "A user with this discord ID does not exist"
+                        if user_id != self.client.user.id:
+                            try:
+                                user = await self.client.fetch_user(user_id)
+                                return user, None
+                            except NotFound:
+                                return False, "A user with this discord ID does not exist"
 
 
             is_int, is_id = None, None
@@ -136,14 +139,15 @@ class Resolver(Bloxlink.Module):
             if max:
                 lookup_strings = lookup_strings[:max]
 
-            for user in message.mentions:
-                if max:
-                    if count >= max:
-                        break
-                    else:
-                        count += 1
+            if message:
+                for user in message.mentions:
+                    if max:
+                        if count >= max:
+                            break
+                        else:
+                            count += 1
 
-                users.append(user)
+                    users.append(user)
 
             for lookup_string in lookup_strings:
                 if lookup_string:
@@ -172,55 +176,125 @@ class Resolver(Bloxlink.Module):
 
             return users, None
 
-    async def channel_resolver(self, message, arg, content=None):
-        if not content:
+
+    async def channel_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
+        channels = []
+        create_missing_channel = arg.get("create_missing_channel", True)
+        max = arg.get("max")
+        multiple = arg.get("multiple")
 
         if message and message.channel_mentions:
-            return message.channel_mentions[0], None
+            for channel in message.channel_mentions:
+                channels.append(channel)
+
+                if not multiple:
+                    break
         else:
-            is_int, is_id = None, None
+            lookup_strings = content.split(",")
 
-            try:
-                is_int = int(content)
-                is_id = is_int > 15
-            except ValueError:
-                pass
+            for lookup_string in lookup_strings:
+                if lookup_string:
+                    lookup_string = lookup_string.strip()
+                    channel = None
 
-            if is_id:
-                channel = guild.get_channel(is_int)
+                    if lookup_string.isdigit():
+                        channel = find(lambda c: c.id == int(lookup_string), guild.text_channels)
+                    else:
+                        channel = find(lambda c: c.name == lookup_string, guild.text_channels)
 
-                if channel:
-                    return channel, None
+                    if not channel:
+                        if create_missing_channel:
+                            try:
+                                channel = await guild.create_text_channel(name=lookup_string.replace(" ", "-"))
+                            except Forbidden:
+                                return None, "I was unable to create the channel. Please ensure I have the `Manage Channels` permission."
+                            else:
+                                channels.append(channel)
+                        else:
+                            return None, "Invalid channel"
+                    else:
+                        if channel not in channels:
+                            channels.append(channel)
+
+        if not channels:
+            return None, "Invalid channel(s)"
+
+        if max:
+            return channels[:max], None
+        else:
+            if multiple:
+                return channels, None
             else:
-                channel = find(lambda c: c.name == content, guild.text_channels)
-
-                if channel:
-                    return channel, None
-
-        return False, "Invalid channel"
+                return channels[0], None
 
 
-    async def role_resolver(self, message, arg, content=None):
-        if not content:
+    async def category_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
-        guild = message.guild
+        categories = []
+        create_missing_category = arg.get("create_missing_category", True)
+        max = arg.get("max")
+        multiple = arg.get("multiple")
+
+        lookup_strings = content.split(",")
+
+        for lookup_string in lookup_strings:
+            if lookup_string:
+                lookup_string = lookup_string.strip()
+                category = None
+
+                if lookup_string.isdigit():
+                    category = find(lambda c: c.id == int(lookup_string), guild.categories)
+                else:
+                    category = find(lambda c: c.name == lookup_string, guild.categories)
+
+                if not category:
+                    if create_missing_category:
+                        try:
+                            category = await guild.create_category(name=lookup_string)
+                        except Forbidden:
+                            return None, "I was unable to create the category. Please ensure I have the `Manage Channels` permission."
+                        else:
+                            categories.append(category)
+                    else:
+                        return None, "Invalid category"
+                else:
+                    if category not in categories:
+                        categories.append(category)
+
+        if not categories:
+            return None, "Invalid category"
+
+        if max:
+            return categories[:max], None
+        else:
+            if multiple:
+                return categories, None
+            else:
+                return categories[0], None
+
+
+    async def role_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
+            content = message.content
+
         roles = []
         create_missing_role = arg.get("create_missing_role", True)
         max = arg.get("max")
         multiple = arg.get("multiple")
 
-        if message.role_mentions:
+        if message and message.role_mentions:
             for role in message.role_mentions:
                 roles.append(role)
 
                 if not multiple:
                     break
         else:
-            lookup_strings = content.split(",")
+            lookup_strings = multiple and content.split(",") or [content]
 
             for lookup_string in lookup_strings:
                 if lookup_string:
@@ -237,7 +311,7 @@ class Resolver(Bloxlink.Module):
                             try:
                                 role = await guild.create_role(name=lookup_string)
                             except Forbidden:
-                                return None, "I was unable to create the role. Please ensure I have the ``Manage Roles`` permission."
+                                return None, "I was unable to create the role. Please ensure I have the `Manage Roles` permission."
                             else:
                                 roles.append(role)
                         else:
@@ -250,7 +324,7 @@ class Resolver(Bloxlink.Module):
             return None, "Invalid role(s)"
 
         if max:
-            return roles[:max]
+            return roles[:max], None
         else:
             if multiple:
                 return roles, None
@@ -258,51 +332,8 @@ class Resolver(Bloxlink.Module):
                 return roles[0], None
 
 
-    async def role_resolver2(self, message, arg, content=None):
-        if not content:
-            content = message.content
-
-        guild = message.guild
-
-        roles = []
-
-        if message and message.role_mentions:
-            for role in message.role_mentions:
-                if role != guild.default_role:
-                    roles.append(role)
-
-                    if not arg.get("multiple"):
-                        break
-        else:
-            is_int, is_id = None, None
-            role = None
-
-            try:
-                is_int = int(content)
-                is_id = is_int > 15
-            except ValueError:
-                pass
-
-            if is_id:
-                role = find(lambda r: r.id == is_int, guild.roles)
-            else:
-                role = find(lambda r: r.name == content, guild.roles)
-
-            if role and role != guild.default_role:
-                return role, None
-
-            if arg.get("create_missing_role", True):
-                try:
-                    role = await guild.create_role(name=content, reason="Creating missing role")
-                except Forbidden:
-                    raise PermissionError(f"Failed to create role {content}, please ensure I have the ``Manage Roles`` permission.")
-                else:
-                    return role, None
-
-        return False, "Invalid role"
-
-    async def image_resolver(self, message, arg, content=None):
-        if not content:
+    async def image_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
             content = message.content
 
         if message and message.attachments:
@@ -315,6 +346,21 @@ class Resolver(Bloxlink.Module):
             return content, None
         else:
             return False, "This doesn't appear to be a valid https URL."
+
+
+    async def list_resolver(self, arg, message=None, guild=None, content=None):
+        if message and not content:
+            content = message.content
+
+        max = arg.get("max")
+
+        items = content.split(",")
+        items = [x.strip() for x in items]
+
+        if max:
+            return items[:max], None
+        else:
+            return items, None
 
 
     def get_resolver(self, name):

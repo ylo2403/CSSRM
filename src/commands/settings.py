@@ -2,7 +2,6 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error
 from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error
 from discord import Embed, Object
-from os import environ as env
 from discord.errors import Forbidden
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
@@ -69,7 +68,7 @@ class SettingsCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your server settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
@@ -80,8 +79,9 @@ class SettingsCommand(Bloxlink.Module):
         options_trello_data = {}
 
         donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+        premium = donator_profile.features.get("premium")
 
-        if donator_profile.features.get("premium"):
+        if premium:
             text_buffer.append("**This is a [Premium Server](https://www.patreon.com/join/bloxlink?)**\n")
             embed.colour = GOLD_COLOR
 
@@ -99,6 +99,9 @@ class SettingsCommand(Bloxlink.Module):
                     value = str(guild_data.get(option_name, DEFAULTS.get(option_name, "False")))
                 except KeyError:
                     value = str(guild_data.get(option_name, DEFAULTS.get(option_name, "False")))
+
+            if option_data[3] and not premium:
+                value = str(DEFAULTS.get(option_name, "False"))
 
             value = value.replace("{prefix}", prefix)
             text_buffer.append(f"**{option_name}** {ARROW} {value}")
@@ -121,7 +124,7 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         message = CommandArgs.message
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
         guild = CommandArgs.message.guild
         guild_data = CommandArgs.guild_data
@@ -129,30 +132,38 @@ class SettingsCommand(Bloxlink.Module):
         parsed_args = await CommandArgs.prompt([{
             "prompt": "What value would you like to change? Note that some settings you can't change "
                       "from this command due to the extra complexity, but I will tell you the "
-                      f"appropriate command to use.\n\nOptions: ``{options_strings}``\n\nPremium-only options: ``{premium_options_strings}``",
+                      f"appropriate command to use.\n\nOptions: `{options_strings}`\n\nPremium-only options: `{premium_options_strings}`",
             "name": "choice",
             "type": "choice",
             "formatting": False,
-            "footer": f"Use ``{prefix}settings help`` to view a description of all choices.",
+            "footer": f"Use `{prefix}settings help` to view a description of all choices.",
             "choices": options_combined
         }])
 
         choice = parsed_args["choice"]
 
         if choice == "trelloID":
-            raise Message(f"You can link your Trello board from ``{prefix}setup``!", type="success")
+            raise Message(f"You can link your Trello board from `{prefix}setup`!", type="success")
         elif choice == "Linked Groups":
-            raise Message(f"You can link your group from ``{prefix}bind``!", type="success")
+            raise Message(f"You can link your group from `{prefix}bind`!", type="success")
         elif choice == "joinDM":
-            message.content = f"{prefix}joindm"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}joindm"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}joindm`!")
         elif choice == "groupShoutChannel":
-            message.content = f"{prefix}shoutproxy"
-            return await parse_message(message)
+            if message:
+                message.content = f"{prefix}shoutproxy"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}shoutproxy`!")
         elif choice == "whiteLabel":
-            message.content = f"{prefix}whitelabel"
-            return await parse_message(message)
-
+            if message:
+                message.content = f"{prefix}whitelabel"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}whitelabel`!")
 
         option_find = OPTIONS.get(choice)
 
@@ -162,7 +173,7 @@ class SettingsCommand(Bloxlink.Module):
 
                 if not profile.features.get("premium"):
                     raise Error("This option is premium-only! The server owner must have premium for it to be changed.\n"
-                                f"Use ``{prefix}donate`` for more instructions on getting premium.")
+                                f"Use `{prefix}donate` for more instructions on getting premium.")
 
             option_type = option_find[1]
             trello_board = CommandArgs.trello_board
@@ -176,79 +187,88 @@ class SettingsCommand(Bloxlink.Module):
                 if options_trello_find:
                     card = options_trello_find[1]
 
-
             if option_type == "boolean":
                 parsed_value = await CommandArgs.prompt([{
-                    "prompt": f"Would you like to **enable** or **disable** ``{choice}``?\n\n"
+                    "prompt": f"Would you like to **enable** or **disable** `{choice}`?\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "choice",
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False,
                     "choices": ("enable", "disable", "clear")
-                }])
+                }], last=True)
 
                 parsed_bool_choice = parsed_value["choice"]
 
                 if parsed_bool_choice == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
                 else:
                     parsed_value = parsed_bool_choice == "enable"
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-                success_text = f"Successfully **{parsed_bool_choice}d** ``{choice}``!"
+                success_text = f"Successfully **{parsed_bool_choice}d** `{choice}`!"
 
             elif option_type == "string":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a new value for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a new value for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "string",
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False,
                     "max": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    if choice == "nicknameTemplate" and "display-name" in parsed_value:
+                        display_name_confirm = (await CommandArgs.prompt([{
+                            "prompt": "**Warning!** You chose Display Names for your Nickname Template.\n"
+                                    "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
+                            "type": "choice",
+                            "choices": ("yes", "no"),
+                            "name": "confirm",
+                            "embed_title": "Display Names Confirmation",
+                            "embed_color": BROWN_COLOR,
+                            "formatting": False
+                        }]))["confirm"]
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                        if display_name_confirm == "no":
+                            raise CancelledPrompt
+
+                    guild_data[choice] = parsed_value
+
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
                 success_text = f"Successfully saved your new {choice}!"
 
             elif option_type == "role":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a role for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a role for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "role",
                     "type": "role",
                     "exceptions": ("clear",),
                     "footer": "Say **clear** to set as the default value.",
                     "formatting": False
-                }]))["role"]
+                }], last=True))["role"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
                 else:
                     parsed_value = str(parsed_value.id)
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
 
             elif option_type == "number":
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please specify a new integer for ``{choice}``.\n\n"
+                    "prompt": f"Please specify a new integer for `{choice}`.\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "number",
@@ -256,22 +276,21 @@ class SettingsCommand(Bloxlink.Module):
                     "formatting": False,
                     "exceptions": ("clear",),
                     "max": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
 
             elif option_type == "choice":
                 choices = ", ".join(option_find[2])
                 parsed_value = (await CommandArgs.prompt([{
-                    "prompt": f"Please pick a new value for ``{choice}``: ``{choices}``\n\n"
+                    "prompt": f"Please pick a new value for `{choice}`: `{choices}`\n\n"
                               f"**Option description:**\n{desc}",
                     "name": "choice",
                     "type": "choice",
@@ -279,17 +298,16 @@ class SettingsCommand(Bloxlink.Module):
                     "formatting": False,
                     "exceptions": ["clear"],
                     "choices": option_find[2]
-                }]))["choice"]
+                }], last=True))["choice"]
 
                 if parsed_value == "clear":
-                    parsed_value = DEFAULTS.get(choice)
+                    guild_data.pop(choice, None)
+                else:
+                    guild_data[choice] = parsed_value
 
-                await self.r.table("guilds").insert({
-                    "id": str(guild.id),
-                    choice: parsed_value
-                }, conflict="update").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-                success_text = f"Successfully saved your new ``{choice}``!"
+                success_text = f"Successfully saved your new `{choice}`!"
             else:
                 raise Error("An unknown type was specified.")
         else:
@@ -312,7 +330,7 @@ class SettingsCommand(Bloxlink.Module):
                     await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
 
             except TrelloUnauthorized:
-                await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                      "Trello board.")
 
             except (TrelloNotFound, TrelloBadRequest):
@@ -320,7 +338,7 @@ class SettingsCommand(Bloxlink.Module):
 
         await set_guild_value(guild, choice, parsed_value)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``{choice}`` option.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}` option.", BROWN_COLOR)
 
         raise Message(success_text, type="success")
 
@@ -336,14 +354,14 @@ class SettingsCommand(Bloxlink.Module):
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
-        author = CommandArgs.message.author
+        author = CommandArgs.author
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
 
 
         parsed_arg = (await CommandArgs.prompt([{
-            "prompt": f"Which setting would you like to clear? Valid choices: ``{RESET_CHOICES}``",
+            "prompt": f"Which setting would you like to clear? Valid choices: `{RESET_CHOICES}`",
             "name": "choice",
             "type": "choice",
             "formatting": False,
@@ -353,20 +371,21 @@ class SettingsCommand(Bloxlink.Module):
         if parsed_arg == "everything":
             cont = (await CommandArgs.prompt([{
                 "prompt": "**Warning!** This will clear **all of your settings** including binds, "
-                          f"saved group information, etc. You'll need to run ``{prefix}setup`` "
-                           "and set-up the bot again. Continue? ``Y/N``",
+                          f"saved group information, etc. You'll need to run `{prefix}setup` "
+                           "and set-up the bot again. Continue? `Y/N`",
                 "name": "continue",
                 "choices": ("yes", "no"),
                 "embed_title": "Warning!",
                 "embed_color": ORANGE_COLOR,
                 "type": "choice",
                 "footer": "Say **yes** to clear all of your settings, or **no** to cancel."
-            }]))["continue"]
+            }], last=True))["continue"]
 
             if cont == "no":
                 raise CancelledPrompt
 
             await self.r.table("guilds").get(str(guild.id)).delete().run()
+            await self.r.table("addonData").get(str(guild.id)).delete().run()
 
             if trello_board:
                 trello_options, _ = await get_options(trello_board, return_cards=True)
@@ -385,7 +404,7 @@ class SettingsCommand(Bloxlink.Module):
                         trello_binds_list.parsed_bind_data = None
 
                 except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                          "Trello board.")
                 except (TrelloNotFound, TrelloBadRequest):
                     pass
@@ -405,7 +424,7 @@ class SettingsCommand(Bloxlink.Module):
 
             cont = (await CommandArgs.prompt([{
                 "prompt": "**Warning!** This will clear **all of your binds**. You'll need to "
-                         f"run ``{prefix}bind`` to set up your binds again. Continue? ``Y/N``",
+                         f"run `{prefix}bind` to set up your binds again. Continue? `Y/N`",
                 "name": "continue",
                 "choices": ("yes", "no"),
                 "type": "choice",
@@ -434,11 +453,10 @@ class SettingsCommand(Bloxlink.Module):
                             for role_id in range_data["roles"]:
                                 role_ids.add(int(role_id))
 
-
                 if role_ids:
                     delete_roles = (await CommandArgs.prompt([{
                         "prompt": "Would you like me to **delete these roles from your server as well?** If yes, "
-                                  f"then this will delete **{len(role_ids)}** role(s). ``Y/N``",
+                                  f"then this will delete **{len(role_ids)}** role(s). `Y/N`",
                         "name": "delete_roles",
                         "choices": ("yes", "no"),
                         "type": "choice",
@@ -446,13 +464,13 @@ class SettingsCommand(Bloxlink.Module):
                         "embed_color": ORANGE_COLOR,
                         "formatting": False,
                         "footer": "Say **yes** to delete these roles, or **no** to cancel."
-                    }]))["delete_roles"]
+                    }], last=True))["delete_roles"]
 
                     if delete_roles == "yes":
                         for role_id in role_ids:
                             role = guild.get_role(role_id)
 
-                            if role:
+                            if role and not role.managed:
                                 try:
                                     await role.delete(reason=f"{author} chose to delete bound roles through {prefix}settings")
                                 except Forbidden:
@@ -476,7 +494,7 @@ class SettingsCommand(Bloxlink.Module):
                         trello_binds_list.parsed_bind_data = None
 
                 except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add ``@bloxlink`` to your "
+                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
                                          "Trello board.")
                 except (TrelloNotFound, TrelloBadRequest):
                     pass
@@ -494,7 +512,7 @@ class SettingsCommand(Bloxlink.Module):
     async def help(self, CommandArgs):
         """provides a description of all changeable settings"""
 
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Settings Help")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)

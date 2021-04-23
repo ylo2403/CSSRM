@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Error, RobloxNotFound, RobloxAPIError # pylint: disable=import-error
+from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message # pylint: disable=import-error
 from discord.errors import NotFound
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
@@ -11,14 +11,15 @@ class RobloxSearchCommand(Bloxlink.Module):
     """retrieve the Roblox information of a user"""
 
     def __init__(self):
-        self.aliases = ["rs", "search"]
+        self.aliases = ["rs", "search", "roblox-search"]
         self.arguments = [
             {
                 "prompt": "Please specify either a username or Roblox ID. If the person's name is all numbers, "
-                          "then attach a ``--username`` flag to this command. Example: ``!getinfo 1234 --username`` will "
+                          "then attach a `--username` flag to this command. Example: `!getinfo 1234 --username` will "
                           "search for a user with a Roblox username of '1234' instead of a Roblox ID.",
+                "slash_desc": "Please enter a Roblox username or Roblox ID.",
                 "type": "string",
-                "name": "target"
+                "name": "roblox_name"
             }
         ]
         self.examples = [
@@ -28,24 +29,25 @@ class RobloxSearchCommand(Bloxlink.Module):
         ]
         self.cooldown = 5
         self.dm_allowed = True
+        self.slash_enabled = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        target = CommandArgs.parsed_args["target"]
+        target = CommandArgs.parsed_args["roblox_name"]
         flags = CommandArgs.flags
         response = CommandArgs.response
         message = CommandArgs.message
-        guild = CommandArgs.message.guild
+        guild = CommandArgs.guild
         prefix = CommandArgs.prefix
 
-        if message.mentions:
+        if message and message.mentions:
             message.content = f"{prefix}getinfo {message.mentions[0].id}"
             return await parse_message(message)
 
-        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned"]
+        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
 
         if not all(f in valid_flags for f in flags.keys()):
-            raise Error(f"Invalid flag! Valid flags are: ``{', '.join(valid_flags)}``")
+            raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")
 
         username = ID = False
 
@@ -74,7 +76,11 @@ class RobloxSearchCommand(Bloxlink.Module):
                 except NotFound:
                     raise Error("This Roblox account doesn't exist.")
                 else:
-                    message.content = f"{prefix}getinfo {target}"
-                    return await parse_message(message)
+                    if message:
+                        message.content = f"{prefix}getinfo {target}"
+                        return await parse_message(message)
+                    else:
+                        raise Message(f"To search with Discord IDs, please use the `{prefix}getinfo` command.\n"
+                                      "This command only searches by Roblox username or ID.", hidden=True, type="info")
             else:
                 raise Error("This Roblox account doesn't exist.")

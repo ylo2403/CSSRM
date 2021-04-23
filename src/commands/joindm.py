@@ -22,6 +22,7 @@ class JoinDMCommand(Bloxlink.Module):
             "name": "subcommand"
         }]
         self.hidden = True
+        self.aliases = ["join-dm"]
 
     async def __main__(self, CommandArgs):
         subcommand = CommandArgs.parsed_args["subcommand"]
@@ -37,8 +38,8 @@ class JoinDMCommand(Bloxlink.Module):
         guild_data = CommandArgs.guild_data
         verifiedDM = guild_data.get("verifiedDM", DEFAULTS.get("welcomeMessage"))
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         response = CommandArgs.response
 
@@ -61,7 +62,7 @@ class JoinDMCommand(Bloxlink.Module):
                             f"these templates: ```{NICKNAME_TEMPLATES}```",
                 "name": "text",
                 "formatting": False
-            }]))["text"]
+            }], last=True))["text"]
 
             guild_data["verifiedDM"] = parsed_args_2
             await set_guild_value(guild, "verifiedDM", parsed_args_2)
@@ -74,7 +75,7 @@ class JoinDMCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``joinDM`` option for ``verified`` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")
 
@@ -82,7 +83,8 @@ class JoinDMCommand(Bloxlink.Module):
     async def unverified(self, CommandArgs):
         """set the DM message of people who are UNVERIFIED on Bloxlink"""
 
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         guild_data = CommandArgs.guild_data
         unverifiedDM = guild_data.get("unverifiedDM")
 
@@ -108,7 +110,7 @@ class JoinDMCommand(Bloxlink.Module):
                             f"these templates: ```{UNVERIFIED_TEMPLATES}```",
                 "name": "text",
                 "formatting": False
-            }]))["text"]
+            }], last=True))["text"]
 
             guild_data["unverifiedDM"] = parsed_args_2
             await set_guild_value(guild, "unverifiedDM", parsed_args_2)
@@ -121,9 +123,6 @@ class JoinDMCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
-
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the ``joinDM`` option for ``unverified`` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `unverified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")

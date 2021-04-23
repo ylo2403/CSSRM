@@ -1,8 +1,8 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import Message, Error # pylint: disable=import-error
+from resources.constants import BROWN_COLOR # pylint: disable=import-error
 import time
 import math
-from discord import Embed, Object
 
 
 transfer_premium, get_features = Bloxlink.get_module("premium", attrs=["transfer_premium", "get_features"])
@@ -23,16 +23,15 @@ class TransferCommand(Bloxlink.Module):
         self.category = "Premium"
         self.free_to_use = True
 
-    @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         transfer_to = CommandArgs.parsed_args.get("user")
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
         if transfer_to.bot:
-            raise Message("You cannot transfer your premium to bots!", type="silly")
+            raise Message("You cannot transfer your premium to bots!", type="confused")
 
         author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
 
@@ -49,11 +48,11 @@ class TransferCommand(Bloxlink.Module):
             raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="silly")
 
         if author_premium_data.get("transferTo"):
-            raise Message(f"You are currently transferring your premium to another user! Please disable it with ``{prefix}transfer "
-                           "disable`` first.", type="silly")
+            raise Message(f"You are currently transferring your premium to another user! Please disable it with `{prefix}transfer "
+                           "disable` first.", type="info")
         elif author_premium_data.get("transferFrom"):
-            raise Error("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
-                       f"with ``{prefix}transfer disable``.")
+            raise Message("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
+                         f"with `{prefix}transfer disable`.", type="confused")
 
         prem_data, _ = await get_features(author, author_data=author_data, cache=False, rec=False, partner_check=False)
 
@@ -64,8 +63,22 @@ class TransferCommand(Bloxlink.Module):
         recipient_data_premium = recipient_data.get("premium", {})
 
         if recipient_data_premium.get("transferFrom"):
-            raise Error(f"Another user is already forwarding their premium to this user. The recipient must run ``{prefix}transfer disable`` "
+            raise Error(f"Another user is already forwarding their premium to this user. The recipient must run `{prefix}transfer disable` "
                         "to revoke the external transfer.")
+
+        await CommandArgs.prompt([{
+            "prompt": f"Are you sure you want to transfer your premium to **{transfer_to}**?\n"
+                      "You will not be able transfer again for **5** days! We also do __not__ "
+                      "remove cool-downs for __any reason at all.__\n\nYou will be "
+                      f"able to cancel the transfer at anytime with `{prefix}transfer disable`.",
+            "footer": "Please say **yes** to complete the transfer.",
+            "type": "choice",
+            "choices": ("yes",),
+            "name": "_",
+            "embed_title": "Premium Transfer Confirmation",
+            "embed_color": BROWN_COLOR,
+            "formatting": False
+        }])
 
         await transfer_premium(transfer_from=author, transfer_to=transfer_to, guild=guild, apply_cooldown=True)
 
@@ -76,8 +89,8 @@ class TransferCommand(Bloxlink.Module):
     async def disable(self, CommandArgs):
         """disable your Bloxlink premium transfer"""
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         response = CommandArgs.response
 
         author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
@@ -89,7 +102,7 @@ class TransferCommand(Bloxlink.Module):
             transfer_from = author_data_premium.get("transferFrom")
 
             if not transfer_from:
-                raise Message("You've not received a premium transfer!", type="silly")
+                raise Message("You've not received a premium transfer!", type="confused")
 
             # clear original transferee and recipient data
             transferee_data = await self.r.db("bloxlink").table("users").get(transfer_from).run() or {"id": transfer_from}
@@ -104,9 +117,9 @@ class TransferCommand(Bloxlink.Module):
             await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
             await self.r.db("bloxlink").table("users").insert(transferee_data, conflict="update").run()
 
-            await cache_pop("premium_cache", author.id)
-            await cache_pop("premium_cache", int(transfer_from))
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{author.id}")
+            await cache_pop(f"premium_cache:{transfer_from}")
+            await cache_pop(f"premium_cache:{guild.id}")
 
             raise Message("Successfully **disabled** the premium transfer!", type="success")
 
@@ -123,8 +136,8 @@ class TransferCommand(Bloxlink.Module):
             await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
             await self.r.db("bloxlink").table("users").insert(recipient_data, conflict="update").run()
 
-            await cache_pop("premium_cache", author.id)
-            await cache_pop("premium_cache", int(transfer_to))
-            await cache_pop("premium_cache", guild.id)
+            await cache_pop(f"premium_cache:{author.id}")
+            await cache_pop(f"premium_cache:{transfer_to}")
+            await cache_pop(f"premium_cache:{guild.id}")
 
             await response.success("Successfully **disabled** your premium transfer!")

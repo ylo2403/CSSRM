@@ -13,14 +13,14 @@ class IgnoreChannelCommand(Bloxlink.Module):
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
-        self.aliases = ["ignore"]
+        self.aliases = ["ignore", "ignore-channel"]
 
     async def __main__(self, CommandArgs):
-        channel = CommandArgs.message.channel
+        channel = CommandArgs.channel
         channel_id = str(channel.id)
 
-        guild  = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild  = CommandArgs.guild
+        author = CommandArgs.author
 
         response   = CommandArgs.response
         guild_data = CommandArgs.guild_data
@@ -40,7 +40,7 @@ class IgnoreChannelCommand(Bloxlink.Module):
         if disabled:
             await response.success("Successfully **disabled** commands from this channel for non-admins.\n"
                                    "If you would like to grant a certain person access to use commands, give them a role called "
-                                   "``Bloxlink Bypass``."
+                                   "`Bloxlink Bypass`."
             )
             await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **disabled** all commands for channel {channel.mention}.", BROWN_COLOR)
         else:

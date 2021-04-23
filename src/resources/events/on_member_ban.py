@@ -4,7 +4,7 @@ from ..constants import DEFAULTS, RED_COLOR # pylint: disable=import-error
 from discord.errors import NotFound, Forbidden
 from discord import Object
 
-cache_get, cache_set, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "set", "get_guild_value"])
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_user = Bloxlink.get_module("roblox", attrs=["get_user"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -52,4 +52,4 @@ class MemberBanEvent(Bloxlink.Module):
                                             except Forbidden:
                                                 pass
                                             else:
-                                                await post_event(guild, None, "moderation", f"{user_find.mention} is an alt of {user.mention} and has been ``banned``.", RED_COLOR)
+                                                await post_event(guild, None, "moderation", f"{user_find.mention} is an alt of {user.mention} and has been `banned`.", RED_COLOR)

@@ -5,7 +5,7 @@ import asyncio
 from discord import Status, Game, Streaming
 from discord.errors import NotFound, Forbidden
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT # pylint: disable=import-error
+from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT, DEFAULTS # pylint: disable=import-error
 from ..exceptions import (BloxlinkBypass, Blacklisted, Blacklisted, PermissionError, # pylint: disable=import-error
                          RobloxAPIError, CancelCommand, RobloxDown) # pylint: disable=import-error
 from config import PREFIX # pylint: disable=import-error, no-name-in-module
@@ -16,7 +16,8 @@ import async_timeout
 
 eval = Bloxlink.get_module("evalm", attrs="__call__")
 post_event = Bloxlink.get_module("utils", attrs="post_event")
-guild_obligations, get_user = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user"])
+guild_obligations, get_user, get_nickname = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname"])
+get_guild_value = Bloxlink.get_module("cache", attrs="get_guild_value")
 
 
 @Bloxlink.module
@@ -75,10 +76,18 @@ class IPC(Bloxlink.Module):
                     except NotFound:
                         return
 
-                roblox_user, _ = await get_user(roblox_id=roblox_id)
+                try:
+                    roblox_user, _ = await get_user(roblox_id=roblox_id)
+                except RobloxDown:
+                    try:
+                        await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
+                    except Forbidden:
+                        pass
+
+                    return
 
                 try:
-                    added, removed, nickname, errors, roblox_user = await guild_obligations(
+                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         member,
                         guild                = guild,
                         roles                = True,
@@ -91,19 +100,19 @@ class IPC(Bloxlink.Module):
                 except Blacklisted as b:
                     blacklist_text = ""
 
-                    if str(b):
-                        blacklist_text = f"You have an active restriction for: ``{b}``"
+                    if isinstance(b.message, str):
+                        blacklist_text = f"You have an active restriction for: `{b}`"
                     else:
                         blacklist_text = f"You have an active restriction from Bloxlink."
 
                     try:
-                        await member.send(f"Failed to update you in the server: ``{blacklist_text}``")
+                        await member.send(f"Failed to update you in the server: `{blacklist_text}`")
                     except Forbidden:
                         pass
 
                 except BloxlinkBypass:
                     try:
-                        await member.send(f"You have the ``Bloxlink Bypass`` role, so I am unable to update you in the server.")
+                        await member.send(f"You have the `Bloxlink Bypass` role, so I am unable to update you in the server.")
                     except Forbidden:
                         pass
 
@@ -121,7 +130,7 @@ class IPC(Bloxlink.Module):
 
                 except PermissionError as e:
                     try:
-                        await member.send(f"A permission error occured, so I was unable to update you in the server: ``{e}``")
+                        await member.send(f"A permission error occured, so I was unable to update you in the server: `{e}`")
                     except Forbidden:
                         pass
 
@@ -129,17 +138,24 @@ class IPC(Bloxlink.Module):
                     pass
 
                 else:
+                    verified_dm, guild_data = await get_guild_value(guild, ["joinDM", ""], return_guild_data=True)
+                    server_message = ""
+
+                    if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
+                        server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
+                        server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500]
+
                     try:
-                        await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**")
+                        await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"
+                                          f"{server_message}")
                     except Forbidden:
                         pass
 
-                    guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {} # FIXME: use cache
-
-                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as ``{roblox_user.username}``.", GREEN_COLOR)
+                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
 
         elif type == "EVAL":
+            """
             res = (await eval(data, codeblock=False)).description
 
             data = json.dumps({
@@ -152,6 +168,8 @@ class IPC(Bloxlink.Module):
             })
 
             await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+            """
+            pass
 
         elif type == "CLIENT_RESULT":
             task = self.pending_tasks.get(nonce)

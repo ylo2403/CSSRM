@@ -115,23 +115,17 @@ class BloxlinkStructure(AutoShardedClient):
             pass
 
     def _handle_async_error(self, loop, context):
-        exception = context.get("exception")
+        exception   = context.get("exception")
         future_info = context.get("future")
         title = None
 
         if exception:
             title = exception.__class__.__name__
-
-        if future_info:
-            msg = str(future_info)
+            msg = "".join(traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__))
         else:
-            if exception:
-                msg = str(exception)
-            else:
-                msg = str(context["message"])
+            msg = future_info and str(future_info) or str(context["message"])
 
-
-        self.error(future_info or str(context["message"]), title=title)
+        self.error(msg, title=title)
 
     @staticmethod
     def module(module):
@@ -377,7 +371,7 @@ redis, redis_cache = load_redis()
 class Module:
     client = Bloxlink
     r = r
-    #session = aiohttp.ClientSession(loop=loop)
+    session = aiohttp.ClientSession(loop=loop)
     loop = loop
     redis = redis
     cache = redis_cache

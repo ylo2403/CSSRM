@@ -9,7 +9,7 @@ guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["g
 parse_message = Bloxlink.get_module("commands", attrs=["parse_message"])
 get_features = Bloxlink.get_module("premium", attrs="get_features")
 
-@Bloxlink.command
+
 class UpdateUserCommand(Bloxlink.Module):
     """force update user(s) with roles and nicknames"""
 
@@ -18,10 +18,10 @@ class UpdateUserCommand(Bloxlink.Module):
         permissions.allow_bypass = True
 
         self.permissions = permissions
-        self.aliases = ["update", "updateroles"]
+        self.aliases = ["update", "updateroles", "update-user"]
         self.arguments = [
             {
-                "prompt": "Please specify user(s) or role(s) to update. For example: ``@user1 @user2 @user3`` or ``@role``",
+                "prompt": "Please specify user(s) or role(s) to update. For example: `@user1 @user2 @user3` or `@role`",
                 "type": ["user", "role"],
                 "name": "users",
                 "multiple": True,
@@ -29,34 +29,53 @@ class UpdateUserCommand(Bloxlink.Module):
                 "create_missing_role": False
             }
         ]
+        self.slash_args = [
+            {
+                "prompt": "Please select the user to update.",
+                "name": "user",
+                "type": "user",
+                "optional": True
+            },
+            {
+                "prompt": "Please select the role of members to update.",
+                "name": "role",
+                "type": "role",
+                "optional": True
+            }
+        ]
         self.category = "Administration"
         self.cooldown = 2
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
+        self.slash_enabled = True
+        self.slash_ack = False
 
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        users_ = CommandArgs.parsed_args["users"]
+
+        user_slash = CommandArgs.parsed_args.get("user")
+        role_slash = CommandArgs.parsed_args.get("role")
+        users_ = CommandArgs.parsed_args.get("users") or ([user_slash, role_slash] if user_slash or role_slash else None)
         prefix = CommandArgs.prefix
 
         message = CommandArgs.message
-        author = message.author
-        guild = message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
 
         guild_data = CommandArgs.guild_data
 
         users = []
 
-        if not users_:
-            message.content = f"{prefix}getrole"
-            return await parse_message(message)
-
-        if not CommandArgs.has_permission:
-            if users_[0] == author:
-                message.content = f"{prefix}getrole"
-                return await parse_message(message)
+        if not (users_ and CommandArgs.has_permission):
+            if not users_:
+                if message:
+                    message.content = f"{prefix}getrole"
+                    return await parse_message(message)
+                else:
+                    raise Message(f"To update yourself, please run the `{prefix}getrole` command.", hidden=True, type="info")
             else:
-                raise PermissionError("You do not have permission to update arbitrary users or roles!")
+                raise Message("You do not have permission to update users; you need the `Manage Roles` permission, or "
+                              "a role called `Bloxlink Updater`.", type="info", hidden=True)
 
         if isinstance(users_[0], Role):
             if not guild.chunked:
@@ -66,10 +85,11 @@ class UpdateUserCommand(Bloxlink.Module):
                 users += role.members
 
             if not users:
-                raise Error("These role(s) have no members in it!")
+                raise Error("These role(s) have no members in it!", hidden=True)
         else:
             users = users_
 
+        await response.slash_ack()
 
         len_users = len(users)
 
@@ -106,7 +126,7 @@ class UpdateUserCommand(Bloxlink.Module):
             if len_users > 10:
                 if not premium:
                     raise Error("You need premium in order to update more than 10 members at a time! "
-                                f"Use ``{prefix}donate`` for instructions on donating.")
+                                f"Use `{prefix}donate` for instructions on donating.")
 
                 if len_users >= 100:
                     cooldown = math.ceil(((len_users / 1000) * 120) * 60)
@@ -117,14 +137,13 @@ class UpdateUserCommand(Bloxlink.Module):
                     await self.redis.set(redis_cooldown_key, 2, ex=86400)
 
             trello_board = CommandArgs.trello_board
-            #trello_binds_list = trello_board and await trello_board.get_list(lambda l: l.name.lower() == "bloxlink binds")
 
             #async with response.loading():
             if len_users > 1:
                 for user in users:
                     if not user.bot:
                         try:
-                            added, removed, nickname, errors, roblox_user = await guild_obligations(
+                            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                                 user,
                                 guild             = guild,
                                 guild_data        = guild_data,
@@ -132,7 +151,7 @@ class UpdateUserCommand(Bloxlink.Module):
                                 roles             = True,
                                 nickname          = True,
                                 dm                = False,
-                                exceptions        = ("BloxlinkBypass", "UserNotVerified", "Blacklisted"),
+                                exceptions        = ("BloxlinkBypass", "UserNotVerified", "Blacklisted", "PermissionError"),
                                 cache             = False)
                         except BloxlinkBypass:
                             if len_users <= 10:
@@ -140,6 +159,8 @@ class UpdateUserCommand(Bloxlink.Module):
                         except UserNotVerified:
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['ERROR']} {user.mention} is **not linked to Bloxlink**")
+                        except PermissionError as e:
+                            raise Error(e.message)
                         except Blacklisted as b:
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['ERROR']} {user.mention} has an active restriction.")
@@ -155,7 +176,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 old_nickname = user.display_name
 
                 try:
-                    added, removed, nickname, errors, roblox_user = await guild_obligations(
+                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         user,
                         guild             = guild,
                         guild_data        = guild_data,
@@ -165,9 +186,9 @@ class UpdateUserCommand(Bloxlink.Module):
                         cache             = False,
                         dm                = False,
                         event             = True,
-                        exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified"))
+                        exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError"))
 
-                    _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, nickname=nickname if old_nickname != user.display_name else None, prefix=prefix, guild_data=guild_data)
+                    _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != user.display_name else None, prefix=prefix, guild_data=guild_data)
 
                     if embed:
                         await response.send(embed=embed)
@@ -175,11 +196,11 @@ class UpdateUserCommand(Bloxlink.Module):
                         await response.success("This user is all up-to-date; no changes were made.")
 
                 except BloxlinkBypass:
-                    raise Message("Since you have the ``Bloxlink Bypass`` role, I was unable to update your roles/nickname.", type="info")
+                    raise Message("Since this user has the Bloxlink Bypass role, I was unable to update their roles/nickname.", type="info")
 
                 except Blacklisted as b:
-                    if str(b):
-                        raise Error(f"{user.mention} has an active restriction for: ``{b}``")
+                    if isinstance(b.message, str):
+                        raise Error(f"{user.mention} has an active restriction for: `{b}`")
                     else:
                         raise Error(f"{user.mention} has an active restriction from Bloxlink.")
 
@@ -188,6 +209,9 @@ class UpdateUserCommand(Bloxlink.Module):
 
                 except UserNotVerified:
                     raise Error("This user is not linked to Bloxlink.")
+
+                except PermissionError as e:
+                    raise Error(e.message)
 
             if cooldown:
                 await self.redis.set(redis_cooldown_key, 3, ex=cooldown)

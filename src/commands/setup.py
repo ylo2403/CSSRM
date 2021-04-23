@@ -7,7 +7,7 @@ from discord import Embed
 from discord.utils import find
 import re
 
-NICKNAME_DEFAULT = "{roblox-name}"
+NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
 get_group, generate_code = Bloxlink.get_module("roblox", attrs=["get_group", "generate_code"])
@@ -25,9 +25,11 @@ class SetupCommand(Bloxlink.Module):
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
+        self.aliases = ["set-up"]
+        self.slash_enabled = True
 
     @staticmethod
-    async def validate_group(message, content):
+    async def validate_group(message, content, prompt):
         if content.lower() in ("skip", "next"):
             return "skip"
 
@@ -39,14 +41,14 @@ class SetupCommand(Bloxlink.Module):
             group_id = content
 
         try:
-            group = await get_group(group_id, rolesets=True)
+            group = await get_group(group_id, full_group=True)
         except RobloxNotFound:
             return None, "No group was found with this ID. Please try again."
 
         return group
 
     @staticmethod
-    async def validate_trello_board(message, content):
+    async def validate_trello_board(message, content, prompt):
         content_lower = content.lower()
 
         if content_lower in ("skip", "next"):
@@ -60,13 +62,13 @@ class SetupCommand(Bloxlink.Module):
             return None, "No Trello board was found with this ID. Please try again."
         except TrelloUnauthorized:
             return None, "I don't have permission to view this Trello board; please make sure " \
-                         "this Trello board is set to **PUBLIC**, or add ``@bloxlink`` to your Trello board."
+                         "this Trello board is set to **PUBLIC**, or add `@bloxlink` to your Trello board."
 
         return board
 
     @staticmethod
     async def verify_trello_board(trello_board, code):
-        async def validate(message, content):
+        async def validate(message, content, prompt):
             try:
                 await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
             except TrelloNotFound:
@@ -90,8 +92,8 @@ class SetupCommand(Bloxlink.Module):
         return validate
 
     async def __main__(self, CommandArgs):
-        guild = CommandArgs.message.guild
-        author = CommandArgs.message.author
+        guild = CommandArgs.guild
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
@@ -107,12 +109,13 @@ class SetupCommand(Bloxlink.Module):
 
         nickname = None
 
+        response.delete(await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=True, no_dm_post=True))
 
         parsed_args_1 = await CommandArgs.prompt([
             {
                 "prompt": "**Thank you for choosing Bloxlink!** In a few simple prompts, **we'll configure Bloxlink for your server.**\n\n"
                           "**Pre-configuration:**\nBefore continuing, please ensure that Bloxlink has all the proper permissions, "
-                          "such as the ability to ``manage roles, nicknames, channels``, etc. If you do not set these "
+                          "such as the ability to `manage roles, nicknames, channels`, etc. If you do not set these "
                           "permissions, you may encounter issues with using certain commands.",
                 "name": "_",
                 "footer": "Say **next** to continue.",
@@ -129,7 +132,7 @@ class SetupCommand(Bloxlink.Module):
             },
             {
                 "prompt": "Would you like to change the **Verified role** (the role people are given if they're linked to Bloxlink) name to something else?\n"
-                          "Default: ``Verified``",
+                          "Default: `Verified`",
                 "name": "verified_role",
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
@@ -151,6 +154,7 @@ class SetupCommand(Bloxlink.Module):
 
         group = parsed_args_1["group"]
         verified = parsed_args_1["verified_role"]
+        verified_lower = verified.lower()
 
         trello_board = parsed_args_1["trello_board"]
 
@@ -168,10 +172,10 @@ class SetupCommand(Bloxlink.Module):
                 },
                 {
                     "prompt": "Would you like to automatically transfer your Roblox group ranks to Discord roles?\nValid choices:\n"
-                              "``merge`` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
-                              "``replace`` — **This will REMOVE and REPLACE your CURRENT ROLES** with your Roblox group Rolesets. You'll "
+                              "`merge` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
+                              "`replace` — **This will REMOVE and REPLACE your CURRENT ROLES** with your Roblox group Rolesets. You'll "
                               "need to configure permissions and colors yourself.\n"
-                              "``skip`` — nothing will be changed.\n\nValid choices: (merge/replace/skip)",
+                              "`skip` — nothing will be changed.\n\nValid choices: (merge/replace/skip)",
                     "name": "merge_replace",
                     "type": "choice",
                     "choices": ["merge", "replace", "skip", "next"],
@@ -208,8 +212,8 @@ class SetupCommand(Bloxlink.Module):
 
             parsed_args_3 = await CommandArgs.prompt([
                 {
-                    "prompt": "We'll now attempt to verify that you own this Trello board. To begin, please add ``trello@blox.link`` (@bloxlink) "
-                              "to your Trello board. Then, say ``next`` to continue.",
+                    "prompt": "We'll now attempt to verify that you own this Trello board. To begin, please add `trello@blox.link` (@bloxlink) "
+                              "to your Trello board. Then, say `next` to continue.",
                     "name": "trello_continue",
                     "type": "choice",
                     "choices": ["next"],
@@ -242,7 +246,7 @@ class SetupCommand(Bloxlink.Module):
                 "embed_color": BROWN_COLOR,
                 "formatting": False
             }
-        ], dm=True, no_dm_post=True)
+        ], dm=True, no_dm_post=True, last=True)
 
         if group and group != "skip":
             merge_replace = parsed_args_2.get("merge_replace")
@@ -258,25 +262,21 @@ class SetupCommand(Bloxlink.Module):
                                     pass
                                 except HTTPException:
                                     pass
+
                         except AttributeError: # guild.me is None -- bot kicked out
                             raise CancelCommand
 
-                sorted_rolesets = sorted(group.rolesets, key=lambda r: r.get("rank"), reverse=True)
-
-                for roleset in sorted_rolesets:
-                    roleset_name = roleset.get("name")
-                    # roleset_rank = roleset.get("rank")
-
-                    if not find(lambda r: r.name == roleset_name, guild.roles):
+                for _, roleset_data in group.rolesets.items():
+                    if not find(lambda r: r.name == roleset_data[0], guild.roles):
                         try:
-                            await guild.create_role(name=roleset_name)
+                            await guild.create_role(name=roleset_data[0])
                         except Forbidden:
-                            raise Error("Please ensure I have the ``Manage Roles`` permission; setup aborted.")
+                            raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 
         if verified:
-            if verified == "disable":
+            if verified_lower == "disable":
                 guild_data["verifiedRoleEnabled"] = False
-            elif verified not in ("next", "skip"):
+            elif verified_lower not in ("next", "skip"):
                 guild_data["verifiedRoleName"] = verified
                 guild_data["verifiedRoleEnabled"] = True
 
@@ -311,8 +311,8 @@ class SetupCommand(Bloxlink.Module):
             trello_info_embed = Embed(title="Trello Information")
             trello_info_embed.description = "Now that you've linked your Trello board, you may now modify Bloxlink settings and Role Binds from " \
                                             "the board. **No cards will be created right away;** cards are created **as you use commands**. For " \
-                                            f"example, if you use ``{prefix}settings`` or ``{prefix}bind``, then cards will be created/edited.\n\n" \
+                                            f"example, if you use `{prefix}settings` or `{prefix}bind`, then cards will be created/edited.\n\n" \
                                             "Any pre-existing settings or binds will be simply be **merged** with any Trello settings/binds **unless " \
-                                            f"you switch \"``trelloBindMode``\" to ``replace`` through the ``{prefix}settings`` command.**"
+                                            f"you switch \"`trelloBindMode`\" to `replace` through the `{prefix}settings` command.**"
 
             await response.send(embed=trello_info_embed, dm=True, no_dm_post=True)

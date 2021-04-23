@@ -1,21 +1,20 @@
-from resources.structures.Bloxlink import Bloxlink
-from resources.exceptions import UserNotVerified, Message, Error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from resources.exceptions import UserNotVerified, Message, Error # pylint: disable=import-error
 from discord import Embed
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 
 
-@Bloxlink.command
 class GetinfoCommand(Bloxlink.Module):
-    """retrieve the Roblox information from a member"""
+    """retrieve the Roblox information for a member"""
 
     def __init__(self):
-        self.aliases = ["whois"]
+        self.aliases = ["whois", "get-info"]
         self.arguments = [
             {
                 "prompt": "Please specify the user.",
                 "type": "user",
-                "name": "target",
+                "name": "user",
                 "optional": True
             }
         ]
@@ -27,24 +26,25 @@ class GetinfoCommand(Bloxlink.Module):
             "@justin --avatar",
             "@justin --avatar --groups"
         ]
-        self.cooldown = 5
-        self.dm_allowed = True
+        self.cooldown      = 5
+        self.dm_allowed    = True
+        self.slash_enabled = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        target = CommandArgs.parsed_args["target"] or CommandArgs.message.author
-        flags = CommandArgs.flags
-        guild = CommandArgs.message.guild
+        target   = CommandArgs.parsed_args["user"] or CommandArgs.author
+        flags    = CommandArgs.flags
+        guild    = CommandArgs.guild
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
+        prefix   = CommandArgs.prefix
 
         if target.bot:
-            raise Message("Bots can't have Roblox accounts!", type="silly")
+            raise Message("Bots can't have Roblox accounts!", type="info")
 
-        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned"]
+        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
 
         if not all(f in valid_flags for f in flags.keys()):
-            raise Error(f"Invalid flag! Valid flags are: ``{', '.join(valid_flags)}``")
+            raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")
 
         #async with response.loading():
         if guild:
@@ -58,5 +58,5 @@ class GetinfoCommand(Bloxlink.Module):
             raise Error(f"**{target}** is not linked to Bloxlink.")
         else:
             if not account:
-                raise Message(f"You have no primary account set! Please use ``{prefix}switchuser`` and set one.", type="silly")
+                raise Message(f"You have no primary account set! Please use `{prefix}switchuser` and set one.", type="info")
 

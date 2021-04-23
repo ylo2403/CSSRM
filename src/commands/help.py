@@ -4,6 +4,8 @@ from resources.exceptions import CancelCommand, Error # pylint: disable=import-e
 from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error
 from discord import Embed
 
+get_enabled_addons = Bloxlink.get_module("addonsm", attrs=["get_enabled_addons"])
+
 
 @Bloxlink.command
 class HelpCommand(Bloxlink.Module):
@@ -19,11 +21,13 @@ class HelpCommand(Bloxlink.Module):
             }
         ]
         self.dm_allowed = True
+        self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
         command_name = CommandArgs.parsed_args.get("command_name")
         prefix = CommandArgs.prefix
         response = CommandArgs.response
+        guild = CommandArgs.guild
 
         if command_name:
             command_name = command_name.lower()
@@ -35,9 +39,9 @@ class HelpCommand(Bloxlink.Module):
                     embed.add_field(name="Category", value=command.category)
 
                     if command.usage:
-                        embed.add_field(name="Usage", value=f"``{prefix}{name} {command.usage}``")
+                        embed.add_field(name="Usage", value=f"`{prefix}{name} {command.usage}`")
                     else:
-                        embed.add_field(name="Usage", value=f"``{prefix}{name}``")
+                        embed.add_field(name="Usage", value=f"`{prefix}{name}`")
 
                     if command.aliases:
                         if len(command.aliases) > 1:
@@ -54,34 +58,34 @@ class HelpCommand(Bloxlink.Module):
                     if permissions.bloxlink_role:
                         if permissions.bloxlink_role == "Bloxlink Updater":
                             permission_text.append("**Bloxlink Updater**\nTo grant this permission:\n"
-                                                   "You need a role called ``Bloxlink Updater``, or "
-                                                   "the ``Manage Server`` or ``Manage Roles`` role permission.")
+                                                   "You need a role called `Bloxlink Updater`, or "
+                                                   "the `Manage Server` or `Manage Roles` role permission.")
 
                         elif permissions.bloxlink_role == "Bloxlink Moderator":
                             permission_text.append("**Bloxlink Moderator**\nTo grant this permission:\n"
-                                                   "You need the ``Kick Members`` or ``Ban Members`` role permission.")
+                                                   "You need the `Kick Members` or `Ban Members` role permission.")
 
                         elif permissions.bloxlink_role == "Bloxlink Manager":
                             permission_text.append("**Bloxlink Manager**\nTo grant this permission:\n"
-                                                   "You need the ``Manage Server`` role permission.")
+                                                   "You need the `Manage Server` role permission.")
 
                         elif permissions.bloxlink_role == "Bloxlink Admin":
                             permission_text.append("**Bloxlink Admin**\nTo grant this permission:\n"
-                                                   "You need the ``Administrator``` role permission.")
+                                                   "You need the `Administrator` role permission.")
 
                     if permissions.developer_only or command.category == "Developer":
                         permission_text.append("**Developer Only**\nThis command can only be used by the Bloxlink Developer.")
 
                     if permissions.allowed["roles"]:
                         permission_text.append("**Role Names**\nTo grant this permission:\n"
-                                              f"You need the following role(s): ``{', '.join(permissions.allowed['roles'])}``")
+                                              f"You need the following role(s): `{', '.join(permissions.allowed['roles'])}`")
 
                     if permissions.allowed["functions"]:
                         permission_text.append("**Custom Permission**\nYou must meet a custom predicate to use this command.")
 
                     if permissions.allowed["discord_perms"]:
                         permission_text.append("**Discord Permission**\nYou must have the following role permission(s):"
-                                               f"``{', '.join(permissions.allowoed['discord_perms'])}``")
+                                               f"`{', '.join(permissions.allowoed['discord_perms'])}`")
 
                     if permission_text:
                         embed.add_field(name="Permissions", value="\n\n".join(permission_text))
@@ -98,14 +102,16 @@ class HelpCommand(Bloxlink.Module):
 
                     break
             else:
-                raise Error(f"This command does not exist! Please use ``{prefix}help`` to view a full list of commands.")
+                raise Error(f"This command does not exist! Please use `{prefix}help` to view a full list of commands.")
 
         else:
             embed = Embed(description=HELP_DESCRIPTION.format(prefix=prefix))
             categories = {}
 
+            enabled_addons = guild and await get_enabled_addons(guild) or {}
+
             for name, command in commands.items():
-                if command.hidden and CommandArgs.message.author.id != OWNER:
+                if (command.addon and str(command.addon) not in enabled_addons) or (command.hidden and CommandArgs.author.id != OWNER):
                     continue
 
                 category = categories.get(command.category, [])
@@ -118,14 +124,14 @@ class HelpCommand(Bloxlink.Module):
 
                     for subcommand_name, subcommand in command.subcommands.items():
                         subcommand_description = subcommand.__doc__ or "N/A"
-                        subcommands.append(f"``{prefix}{command.name} {subcommand_name}`` {ARROW} {subcommand_description}")
+                        subcommands.append(f"`{prefix}{command.name} {subcommand_name}` {ARROW} {subcommand_description}")
 
                     subcommands = "\n".join(subcommands)
                 else:
                     subcommands = ""
                 """
 
-                category.append(f"``{prefix}{command.name}`` {ARROW} {command.description}{subcommands}")
+                category.append(f"`{prefix}{command.name}` {ARROW} {command.description}{subcommands}")
                 categories[command.category] = category
 
             for i,v in categories.items():

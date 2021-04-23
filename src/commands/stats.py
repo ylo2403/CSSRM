@@ -1,14 +1,12 @@
 import math
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import VERSION, SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error
+from resources.constants import SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error
 from discord import Embed
 from time import time
 from psutil import Process
 from os import getpid
 
 broadcast = Bloxlink.get_module("ipc", attrs="broadcast")
-
-
 
 
 
@@ -21,17 +19,22 @@ class StatsCommand(Bloxlink.Module):
         self.dm_allowed = True
 
         if len(SHARD_RANGE) > 1:
-            self.shard_range = f"[{SHARD_RANGE[0]}-{SHARD_RANGE[len(SHARD_RANGE)-1]}]"
+            self.shard_range = f"{SHARD_RANGE[0]}-{SHARD_RANGE[len(SHARD_RANGE)-1]}"
         else:
-            self.shard_range = SHARD_RANGE
+            self.shard_range = SHARD_RANGE[0]
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        clusters = 0
+
+        clusters  = 0
+        total_mem = 0
+
+        process = Process(getpid())
+        process_mem = math.floor(process.memory_info()[0] / float(2 ** 20))
 
         if IS_DOCKER:
             total_guilds = guilds = 0
-            mem = 0
+            total_mem = 0
             errored = 0
 
             stats = await broadcast(None, type="STATS")
@@ -42,7 +45,7 @@ class StatsCommand(Bloxlink.Module):
                     errored += 1
                 else:
                     total_guilds += cluster_data[0]
-                    mem += cluster_data[1]
+                    total_mem += cluster_data[1]
 
             if errored:
                 guilds = f"{total_guilds} ({len(self.client.guilds)}) ({errored} errored)"
@@ -52,10 +55,7 @@ class StatsCommand(Bloxlink.Module):
         else:
             total_guilds = guilds = str(len(self.client.guilds))
             clusters = 1
-
-            process = Process(getpid())
-            mem = math.floor(process.memory_info()[0] / float(2 ** 20))
-
+            total_mem = process_mem
 
         seconds = math.floor(time() - STARTED)
 
@@ -75,29 +75,29 @@ class StatsCommand(Bloxlink.Module):
             seconds = f"{s}s"
 
         uptime = f"{days or ''} {hours or ''} {minutes or ''} {seconds or ''}".strip()
+        mem = IS_DOCKER and f"{total_mem} ({process_mem})" or process_mem
 
-        embed = Embed(description=f"Showing collective stats from **{clusters}** clusters")
+        embed = Embed(description=f"Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.")
         embed.set_author(name=Bloxlink.user.name, icon_url=Bloxlink.user.avatar_url)
 
-        embed.add_field(name="Version", value=VERSION)
-        embed.add_field(name="Cluster", value=CLUSTER_ID)
-        embed.add_field(name="Shards", value=self.shard_range)
         embed.add_field(name="Servers", value=guilds)
-        embed.add_field(name="Uptime", value=uptime)
+        embed.add_field(name="Node Uptime", value=uptime)
         embed.add_field(name="Memory Usage", value=f"{mem} MB")
 
-        embed.add_field(name="Invite **Bloxlink**", value=f"https://blox.link/invite")
-        embed.add_field(name="Website", value=f"https://blox.link")
+        embed.add_field(name="Resources", value="**[Website](https://blox.link)** | **[Discord](https://blox.link/support)** | **[Invite Bot]"
+                             "(https://blox.link/invite)** | **[Premium](https://blox.link/premium)**\n\n**[Repository](https://github.com/bloxlink/Bloxlink)**",
+                             inline=False)
+
+        embed.set_footer(text=f"Shards: {self.shard_range} | Node: {CLUSTER_ID}/{clusters-1}")
 
         await response.send(embed=embed)
 
-        if IS_DOCKER and RELEASE == "MAIN": # FIXME: temp until we get an update-server
+        if IS_DOCKER and RELEASE == "MAIN":
             await self.r.table("miscellaneous").insert({
                 "id": "stats",
                 "stats": {
                     "guilds": total_guilds,
-                    "version": VERSION,
-                    "memory": f"{mem} MB",
+                    "memory": total_mem,
                     "uptime": uptime,
                     "clusters": clusters
                 }

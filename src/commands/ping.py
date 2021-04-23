@@ -9,12 +9,13 @@ class PingCommand(Bloxlink.Module):
     """measure the latency between the bot and Discord"""
 
     def __init__(self):
-        self.dm_allowed = True
+        self.dm_allowed    = True
+        self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
-        message = CommandArgs.message
+        channel  = CommandArgs.channel
         response = CommandArgs.response
-        locale = CommandArgs.locale
+        locale   = CommandArgs.locale
 
         t_1 = time.perf_counter()
 
@@ -22,8 +23,8 @@ class PingCommand(Bloxlink.Module):
             m = await response.send(locale("commands.ping.pinging"))
         else:
             try:
-                await message.channel.trigger_typing()
-            except NotFound:
+                await channel.trigger_typing()
+            except (NotFound, Forbidden):
                 pass
 
         t_2 = time.perf_counter()

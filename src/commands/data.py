@@ -36,7 +36,7 @@ class DataCommand(Bloxlink.Module):
 
         await self.r.table("guilds").insert(chosen_backup["data"], conflict="replace").run()
 
-        await cache_pop("trello_boards", guild.id)
+        await cache_pop(f"trello_boards:{guild.id}")
 
     def _reaction_check(self, author):
         def wrapper(reaction, user):
@@ -69,8 +69,8 @@ class DataCommand(Bloxlink.Module):
     async def backup(self, CommandArgs):
         """backup your Server Data"""
 
-        author = CommandArgs.message.author
-        guild = CommandArgs.message.guild
+        author = CommandArgs.author
+        guild = CommandArgs.guild
         response = CommandArgs.response
 
         author_id = str(author.id)
@@ -98,7 +98,7 @@ class DataCommand(Bloxlink.Module):
                 "name": "backup_name",
                 "max": 30
             }
-        ])
+        ], last=True)
 
         backup_name = parsed_args["backup_name"]
 
@@ -107,7 +107,7 @@ class DataCommand(Bloxlink.Module):
         if new_backup:
             user_backups.append(new_backup)
         else:
-            raise Message("There's nothing to save - your server has no saved data!", type="silly")
+            raise Message("There's nothing to save - your server has no saved data!", type="info")
 
         user_data["backups"] = user_backups
 
@@ -165,7 +165,7 @@ class DataCommand(Bloxlink.Module):
         user_backups = user_data.get("backups", [])
 
         if not user_backups:
-            raise Message(f"You don't have any backups created! You may create them with ``{prefix}data backup``.", type="silly")
+            raise Message(f"You don't have any backups created! You may create them with `{prefix}data backup`.", type="info")
 
         embed = Embed(title="Bloxlink Data Restore", description="Please select the backup you could like to restore with the reactions.")
 
@@ -228,7 +228,7 @@ class DataCommand(Bloxlink.Module):
                                       f"**{chosen_backup['len_role_binds']}** Role Binds\n"
                                       f"**{chosen_backup['prefix']}** prefix\n"
                                       f"**{chosen_backup['nickname_template']}** Nickname Template\n"
-                                      "Continue? ``Y/N``",
+                                      "Continue? `Y/N`",
                             "name": "confirm",
                             "type": "choice",
                             "formatting": False,
@@ -237,7 +237,7 @@ class DataCommand(Bloxlink.Module):
                             "embed_color": ORANGE_COLOR,
                             "footer": "Say **yes** to continue, or **no** to cancel."
                         }
-                    ])
+                    ], last=True)
 
                     if parsed_args["confirm"] == "yes":
                         await self._restore(guild, chosen_backup)

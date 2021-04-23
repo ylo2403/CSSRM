@@ -5,7 +5,7 @@ Roblox Verification made easy! Features everything you need to integrate your Di
   - Python 3.5+ (satisfied if using our Docker Compose file)
   - [Docker](https://www.docker.com/)
   - [Docker Compose](https://docs.docker.com/compose/)
-  - [RethinkDB](https://rethinkdb.com/docs/security/) (satisfied if using our Docker Compose file)
+  - [RethinkDB](https://rethinkdb.com/) (satisfied if using our Docker Compose file)
   - [Redis](https://redis.io) (satisfied if using our Docker Compose file)
   - [Requirements file](https://github.com/bloxlink/Bloxlink/blob/master/requirements.txt) (satisfied if using our Dockerfile)
 
@@ -27,6 +27,7 @@ The **Members Privileged Intent** is required for the bot to function. This can 
 ```sh
 $ git clone https://github.com/bloxlink/Bloxlink
 $ cd Bloxlink
+[change the configuration]
 $ docker-compose up --build
 ```
 

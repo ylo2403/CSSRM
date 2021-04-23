@@ -30,3 +30,17 @@ REDIS_PASSWORD = None
 TOKEN = None
 
 BLOXLINK_GUILD = None # your guild ID, used to load nitro boosters and other data
+
+BOTS = {
+	"PRO": 469652514501951518,
+	"MAIN": 426537812993638400,
+	"CANARY": 442912486702710784,
+	"LOCAL": 454053406471094282
+}
+
+RESTRICTIONS_TRELLO = "" # Your Trello board link to load restrictions.
+						 # Board must have 3 lists: "Roblox IDs", "Discord IDs", and "Servers"
+						 # Card format:
+						 	# card name: label:id
+							# card desc: restriction text
+							# The label has no effect on restrictions. It's for visual purposes only.

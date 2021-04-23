@@ -10,16 +10,16 @@ get_user, verify_as, parse_accounts, update_member, get_nickname, verify_member,
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 
 
-@Bloxlink.command
 class SwitchUserCommand(Bloxlink.Module):
     """change your linked Roblox account in a server"""
 
     def __init__(self):
         self.category = "Account"
-
+        self.aliases = ["switch-user"]
+        self.slash_enabled = True
 
     @staticmethod
-    async def validate_server(message, content):
+    async def validate_server(message, content, prompt):
         content = content.lower()
 
         if content in ("skip", "next"):
@@ -39,7 +39,7 @@ class SwitchUserCommand(Bloxlink.Module):
 
 
     async def __main__(self, CommandArgs):
-        author = CommandArgs.message.author
+        author = CommandArgs.author
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
@@ -56,7 +56,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     parsed_args = await CommandArgs.prompt([
                         {
                             "prompt": "This command will allow you to switch into an account you verified as in the past.\n"
-                                    f"If you would like to link __a new account__, then please use ``{prefix}verify add``.\n\n"
+                                    f"If you would like to link __a new account__, then please use `{prefix}verify add`.\n\n"
                                     "**__WARNING:__** This will remove __all of your roles__ in the server and give you "
                                     "new roles depending on the server configuration.",
                             "footer": "Say **next** to continue.",
@@ -66,7 +66,7 @@ class SwitchUserCommand(Bloxlink.Module):
                             "formatting": False
                         },
                         {
-                            "prompt": "Are you trying to change your account for _this_ server? If so, simply say ``next``.\nIf not, please provide "
+                            "prompt": "Are you trying to change your account for _this_ server? If so, simply say `next`.\nIf not, please provide "
                                     "the __Server ID__ of the server to switch as. Please see this article to find the Server ID: "
                                     "[click here](https://support.discordapp.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID->).",
                             "name": "guild",
@@ -77,7 +77,7 @@ class SwitchUserCommand(Bloxlink.Module):
                                     "Please select an account to switch into:```" + parsed_accounts_str + "```",
                             "name": "account",
                             "type": "choice",
-                            "choices": parsed_accounts.keys()
+                            "choices": list(parsed_accounts.keys())
                         },
                         {
                             "prompt": "Would you like to make this your __primary__ account? Please say **yes** or **no**.",
@@ -85,7 +85,7 @@ class SwitchUserCommand(Bloxlink.Module):
                             "type": "choice",
                             "choices": ("yes", "no")
                         }
-                    ])
+                    ], last=True)
 
                     guild = parsed_args["guild"]
                     username = parsed_args["account"]
@@ -107,7 +107,7 @@ class SwitchUserCommand(Bloxlink.Module):
                         chosen_account = guild_accounts.get(str(guild.id))
 
                         if chosen_account and chosen_account != roblox_id:
-                            raise Error("You already selected your account for this server. ``allowReVerify`` must be "
+                            raise Error("You already selected your account for this server. `allowReVerify` must be "
                                         "enabled for you to change it.")
 
                     try:
@@ -144,22 +144,22 @@ class SwitchUserCommand(Bloxlink.Module):
                                     except Forbidden:
                                         pass
                         try:
-                            added, removed, nickname, errors, roblox_user = await update_member(
+                            added, removed, nickname, errors, warnings, roblox_user = await update_member(
                                 member,
                                 guild        = guild,
                                 roles        = True,
                                 nickname     = True,
-                                author_data  = await self.r.db("bloxlink").table("users").get(str(author.id)).run(),
-                                response     = response)
+                                response     = response,
+                                cache        = False)
 
                         except BloxlinkBypass:
-                            await response.info("Since you have the ``Bloxlink Bypass`` role, I was unable to update your roles/nickname; however, your account was still changed.")
+                            await response.info("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname; however, your account was still changed.")
 
                             return
 
                         except Blacklisted as b:
-                            if str(b):
-                                raise Error(f"{author.mention} has an active restriction for: ``{b}``.")
+                            if isinstance(b.message, str):
+                                raise Error(f"{author.mention} has an active restriction for: `{b}`.")
                             else:
                                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
                         else:
@@ -167,16 +167,16 @@ class SwitchUserCommand(Bloxlink.Module):
 
                             welcome_message = await get_nickname(author, welcome_message, guild_data=guild_data, roblox_user=roblox_user, is_nickname=False)
 
-                            await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **switched their user** to ``{username}``.", GREEN_COLOR)
+                            await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **switched their user** to `{username}`.", GREEN_COLOR)
 
                             await CommandArgs.response.send(welcome_message)
 
                 else:
-                    raise Message(f"You only have one account linked! Please use ``{prefix}verify add`` to add another.", type="silly")
+                    raise Message(f"You only have one account linked! Please use `{prefix}verify add` to add another.", type="info")
 
 
             except UserNotVerified:
-                raise Error(f"You're not linked to Bloxlink. Please use ``{prefix}verify add``.")
+                raise Error(f"You're not linked to Bloxlink. Please use `{prefix}verify add`.")
 
         else:
             raise Message(f"{author.mention}, to verify with Bloxlink, please visit our website at " \
