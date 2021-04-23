@@ -28,7 +28,7 @@ class MemberJoinEvent(Bloxlink.Module):
 
                 join_dm = verified_dm or unverified_dm
 
-                if member.pending:
+                if member.pending and "COMMUNITY" in guild.features:
                     if join_dm:
                         try:
                             await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please "
