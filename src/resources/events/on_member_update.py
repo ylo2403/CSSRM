@@ -18,7 +18,7 @@ class MemberUpdateEvent(Bloxlink.Module):
         async def on_member_update(before, after):
             guild = before.guild
 
-            if self.redis and not before.bot and (before.pending and not after.pending):
+            if self.redis and not before.bot and (before.pending and not after.pending) and "COMMUNITY" in guild.features:
                 options = await get_guild_value(guild, ["autoRoles", DEFAULTS.get("autoRoles")], ["autoVerification", DEFAULTS.get("autoVerification")])
 
                 auto_roles = options.get("autoRoles")
