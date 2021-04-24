@@ -242,7 +242,6 @@ class Commands(Bloxlink.Module):
             await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
 
             if command.slash_ack:
-                # ACK the message
                 try:
                     await response.slash_ack()
                 except NotFound:
@@ -618,7 +617,7 @@ class Command:
         self.developer_only = self.permissions.developer_only or self.category == "Developer" or getattr(command, "developer_only", False) or getattr(command, "developer", False)
         self.addon = getattr(command, "addon", None)
         self.slash_enabled = getattr(command, "slash_enabled", False)
-        self.slash_ack = getattr(command, "slash_ack", True)
+        self.slash_ack = getattr(command, "slash_ack", False)
         self.slash_args = getattr(command, "slash_args", None)
 
         self.usage = []

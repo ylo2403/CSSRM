@@ -16,9 +16,21 @@ cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "ge
 
 
 class InteractionWebhook(WebhookMessage):
-    def __init__(self, interaction_token, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, interaction_id, interaction_token, discord_response, state, channel, data):
+        super().__init__(state=state, channel=channel, data={
+            "id": discord_response.get("id", 0) if isinstance(discord_response, dict) else 0,
+            "attachments": discord_response["attachments"] if isinstance(discord_response, dict) else [],
+            "embeds": data.get("embeds", []),
+            "edited_timestamp": discord_response["edited_timestamp"] if isinstance(discord_response, dict) else None,
+            "type": 0,
+            "pinned": False,
+            "mention_everyone": False,
+            "tts": False,
+            "content": data["content"]
+        })
+
         self.interaction_token = interaction_token
+        self.interaction_id = interaction_id
 
     async def edit(self, content=None, embed=None, *args, **kwargs):
         payload = {
@@ -26,17 +38,29 @@ class InteractionWebhook(WebhookMessage):
             "embeds": [embed.to_dict()] if embed else None
         }
 
-        route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
-                      application_id=Bloxlink.user.id,
-                      interaction_token=self.interaction_token, message_id=self.id)
+        if self.id:
+            route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+                          application_id=Bloxlink.user.id,
+                          interaction_token=self.interaction_token, message_id=self.id)
+        else:
+            route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/@original",
+                          application_id=Bloxlink.user.id,
+                          interaction_token=self.interaction_token)
 
         await self._state.http.request(route, json=payload)
 
+        self.content = content
+        self.embeds = payload["embeds"]
 
     async def delete(self):
-        route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
-                      application_id=Bloxlink.user.id,
-                      interaction_token=self.interaction_token, message_id=self.id)
+        if self.id:
+            route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
+                          application_id=Bloxlink.user.id,
+                          interaction_token=self.interaction_token, message_id=self.id)
+        else:
+            route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/@original",
+                          application_id=Bloxlink.user.id,
+                          interaction_token=self.interaction_token)
 
         await self._state.http.request(route)
 
@@ -139,6 +163,7 @@ class Response(Bloxlink.Module):
         self.bot_responses        = []
 
         self.slash_command = slash_command
+        self.sent_first_slash_command = False
 
         if self.command.addon:
             if hasattr(self.command.addon, "whitelabel"):
@@ -174,6 +199,7 @@ class Response(Bloxlink.Module):
             }
 
             await self.channel._state.http.request(route, json=payload)
+            self.sent_first_slash_command = True
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, reply=None, mention_author=None, fail_on_dm=None):
         msg = None
@@ -188,17 +214,35 @@ class Response(Bloxlink.Module):
             msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions)
 
         elif self.slash_command and send_as_slash_command:
-            payload = {
-                "content": content,
-                "embeds": [embed.to_dict()] if embed else None,
-                "flags": 1 << 6 if hidden else None
-            }
-
-            route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
+            if self.sent_first_slash_command:
+                payload = {
+                    "type": 4,
+                    "content": content,
+                    "embeds": [embed.to_dict()] if embed else None,
+                    "flags": 1 << 6 if hidden else None
+                }
+                message_data = payload
+                route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
+            else:
+                payload = {
+                    "type": 4,
+                    "data": {
+                        "content": content,
+                        "embeds": [embed.to_dict()] if embed else None,
+                        "flags": 1 << 6 if hidden else None
+                    }
+                }
+                message_data = payload["data"]
+                route = Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=self.slash_command["id"], interaction_token=self.slash_command["token"])
+                self.sent_first_slash_command = True
 
             response = await self.channel._state.http.request(route, json=payload)
 
-            msg = InteractionWebhook(interaction_token=self.slash_command["token"], data=response, state=self.channel._state, channel=self.channel)
+            msg = InteractionWebhook(interaction_id=self.slash_command["token"], interaction_token=self.slash_command["token"], discord_response=response, state=self.channel._state, channel=self.channel, data=response or {
+                "content": message_data["content"],
+                "embeds":  message_data["embeds"] or [],
+
+            })
 
         else:
             msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author)

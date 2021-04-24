@@ -35,19 +35,18 @@ async def on_socket_response(msg):
 
         user_data = d.get("member") or d.get("user")
 
-        if not guild_id:
-            return
-
         guild   = guild_id and Bloxlink.get_guild(guild_id)
         user    = None
         channel = None
 
         if guild:
-            user = Member(state=guild._state, data=user_data, guild=guild)
+            user    = Member(state=guild._state, data=user_data, guild=guild)
             channel = find(lambda c: c.id == channel_id, guild.text_channels)
         else:
-            user = User(state=Bloxlink._connection, data=user_data)
+            user    = User(state=Bloxlink._connection, data=user_data)
             channel = DMChannel(me=Bloxlink.user, state=Bloxlink._connection, data={"id": channel_id, "recipients": [user_data]})
+
+            return # DM interactions are buggy
 
         try:
             await handle_slash_command(command_name, guild=guild, channel=channel,
