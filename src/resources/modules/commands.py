@@ -285,17 +285,25 @@ class Commands(Bloxlink.Module):
                 trello_options, _ = await get_options(trello_board)
                 guild_data.update(trello_options)
 
-            if e.message:
-                response.delete(await response.send(f"**{locale('prompt.cancelledPrompt')}:** {e}", dm=e.dm, no_dm_post=True))
-            else:
-                response.delete(await response.send(f"**{locale('prompt.cancelledPrompt')}.**", dm=e.dm, no_dm_post=True))
-
             if (e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete")):
                 if message:
                     try:
                         await message.delete()
                     except (Forbidden, NotFound):
                         pass
+
+                if slash_command and response.first_slash_command:
+                    await response.first_slash_command.delete()
+            else:
+                if e.message:
+                    text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
+                else:
+                    text = f"**{locale('prompt.cancelledPrompt')}.**"
+
+                if slash_command and response.first_slash_command:
+                    await response.first_slash_command.edit(content=text)
+                else:
+                    await response.send(text, dm=e.dm, no_dm_post=True)
 
         except Message as e:
             message_type = "send" if e.type == "send" else e.type
@@ -374,6 +382,9 @@ class Commands(Bloxlink.Module):
                     await asyncio.sleep(delete_commands_after)
 
                 if delete_messages:
+                    if slash_command and response.first_slash_command and not arguments.cancelled:
+                        await response.first_slash_command.edit(content="_**Command finished.**_")
+
                     try:
                         await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
                     except (Forbidden, HTTPException):

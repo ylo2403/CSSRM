@@ -164,6 +164,7 @@ class Response(Bloxlink.Module):
 
         self.slash_command = slash_command
         self.sent_first_slash_command = False
+        self.first_slash_command = None
 
         if self.command.addon:
             if hasattr(self.command.addon, "whitelabel"):
@@ -234,15 +235,17 @@ class Response(Bloxlink.Module):
                 }
                 message_data = payload["data"]
                 route = Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=self.slash_command["id"], interaction_token=self.slash_command["token"])
-                self.sent_first_slash_command = True
 
             response = await self.channel._state.http.request(route, json=payload)
 
             msg = InteractionWebhook(interaction_id=self.slash_command["token"], interaction_token=self.slash_command["token"], discord_response=response, state=self.channel._state, channel=self.channel, data=response or {
                 "content": message_data["content"],
-                "embeds":  message_data["embeds"] or [],
-
+                "embeds":  message_data["embeds"] or []
             })
+
+            if not self.sent_first_slash_command:
+                self.first_slash_command = msg
+                self.sent_first_slash_command = True
 
         else:
             msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author)
