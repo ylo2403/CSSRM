@@ -17,6 +17,7 @@ class GetRoleCommand(Bloxlink.Module):
         self.cooldown = 5
         self.aliases = ["getroles", "get-roles", "get-role"]
         self.slash_enabled = True
+        self.slash_ack = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):

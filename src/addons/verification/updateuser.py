@@ -47,8 +47,7 @@ class UpdateUserCommand(Bloxlink.Module):
         self.cooldown = 2
         self.REDIS_COOLDOWN_KEY = "guild_scan:{id}"
         self.slash_enabled = True
-        self.slash_ack = False
-
+        self.slash_ack = True
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response

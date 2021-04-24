@@ -20,6 +20,7 @@ class VerifyCommand(Bloxlink.Module):
         self.cooldown = 5
         self.dm_allowed = True
         self.slash_enabled = True
+        self.slash_ack = True
 
     @staticmethod
     async def validate_username(message, content):

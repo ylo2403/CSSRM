@@ -13,6 +13,7 @@ class VerifyChannelCommand(Bloxlink.Module):
         self.aliases = ["verificationchannel", "verification-channel"]
         self.category = "Administration"
         self.slash_enabled = True
+        self.slash_ack = True
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
