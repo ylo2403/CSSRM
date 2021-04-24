@@ -604,8 +604,8 @@ class Commands(Bloxlink.Module):
                         "slashCompatible": command.slash_enabled
                     }, conflict="replace").run()
 
-            #if command.slash_enabled:
-            #    await self.register_slash_command(command)
+            if command.slash_enabled:
+                await self.register_slash_command(command)
 
 
 class Command:
