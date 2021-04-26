@@ -194,7 +194,7 @@ class Arguments:
                 skipped_arg = self.skipped_args and str(self.skipped_args[0])
                 message = self.message
 
-                if prompt_.get("optional") or (slash_command and prompt_.get("slash_optional")) and not had_args.get(checked_args):
+                if (prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
                         #had_args[checked_args] = True
@@ -313,6 +313,7 @@ class Arguments:
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
+                    #had_args[checked_args] = True
 
             return resolved_args
 
