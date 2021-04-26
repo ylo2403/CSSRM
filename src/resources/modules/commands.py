@@ -258,6 +258,10 @@ class Commands(Bloxlink.Module):
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
             response = Response(CommandArgs, user, channel, guild, None, slash_command={"id": interaction_id, "token": interaction_token})
 
+            if Arguments.in_prompt(user):
+                await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)
+                raise CancelCommand
+
             CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
 
             await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
