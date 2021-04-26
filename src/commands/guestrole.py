@@ -42,6 +42,7 @@ class GuestRoleCommand(Bloxlink.Module):
             {
                 "prompt": "Should any roles be **removed from the user** if they aren't in the group? You can specify multiple roles.\n\n"
                           "Note that this is an **advanced option**, so you most likely should `skip` this.",
+                "slash_desc": "Should any roles be removed from the user?",
                 "name": "remove_roles",
                 "multiple": True,
                 "type": "role",
