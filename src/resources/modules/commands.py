@@ -24,6 +24,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")
 BOT_ID = BOTS[RELEASE]
+COMMANDS_URL          = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
 
 commands = {}
 
@@ -31,6 +32,24 @@ commands = {}
 class Commands(Bloxlink.Module):
     def __init__(self):
         pass
+
+    async def __loaded__(self):
+        if CLUSTER_ID == 0:
+            slash_commands = {k:v for k,v in commands.items() if v.slash_enabled}
+
+            slash_commands_json = [
+                await self.slash_command_to_json(c) for c in slash_commands.values()
+            ]
+
+            text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+
+            if response.status == 200:
+                Bloxlink.log("Successfully synced Slash Commands")
+            elif response.status > 201:
+                print(slash_commands_json, flush=True)
+                print(response.status, text, flush=True)
+
+
 
     async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
         channel_id      = str(channel.id) if channel else None
@@ -500,9 +519,7 @@ class Commands(Bloxlink.Module):
                             pass
 
 
-    async def register_slash_command(self, command):
-        URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
-
+    async def slash_command_to_json(self, command):
         type_enums = {
             "string":  3,
             "number":  4,
@@ -555,11 +572,8 @@ class Commands(Bloxlink.Module):
             elif command.slash_args or command.arguments:
                 json["options"] += prompts_to_json(command.slash_args or command.arguments)
 
-            text, response = await fetch(URL, "POST", json=json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
-            if response.status > 201:
-                print(json, flush=True)
-                print(response.status, text, flush=True)
+            return json
 
 
     def new_command(self, command_structure, addon=None):
@@ -603,10 +617,6 @@ class Commands(Bloxlink.Module):
                         "subcommands": subcommands,
                         "slashCompatible": command.slash_enabled
                     }, conflict="replace").run()
-
-            if command.slash_enabled:
-                await self.register_slash_command(command)
-
 
 class Command:
     def __init__(self, command):

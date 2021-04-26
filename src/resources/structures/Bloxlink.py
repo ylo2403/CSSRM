@@ -139,6 +139,9 @@ class BloxlinkStructure(AutoShardedClient):
 
         Bloxlink.log(f"Loaded {module_name}")
 
+        if hasattr(new_module, "__loaded__"):
+            loop.create_task(new_module.__loaded__())
+
         if loaded_modules.get(module_dir):
             loaded_modules[module_dir][module_name] = new_module
         else:
