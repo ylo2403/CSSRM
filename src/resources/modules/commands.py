@@ -24,7 +24,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")
 BOT_ID = BOTS[RELEASE]
-COMMANDS_URL          = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
+COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
 
 commands = {}
 
@@ -34,6 +34,8 @@ class Commands(Bloxlink.Module):
         pass
 
     async def __loaded__(self):
+        """sync the slash commands"""
+
         if CLUSTER_ID == 0:
             slash_commands = [c for c in commands.values() if c.slash_enabled]
 
