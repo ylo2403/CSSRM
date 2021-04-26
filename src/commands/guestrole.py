@@ -33,7 +33,8 @@ class GuestRoleCommand(Bloxlink.Module):
                 "prompt": "Should these members be given a nickname different from the server-wide `!nickname`? Please specify a nickname, or "
                           "say `skip` to skip this option and default to the server-wide nickname `!nickname` template.\n\nYou may use these templates:"
                           f"```{NICKNAME_TEMPLATES}```",
-                "slash_desc": "Please enter a nickname to give to these members.  Say skip to skip this option.",
+                "slash_desc": "Please enter a nickname to give to these members.",
+                "slash_optional": True,
                 "name": "nickname",
                 "type": "string",
                 "max": 100,
@@ -44,6 +45,7 @@ class GuestRoleCommand(Bloxlink.Module):
                           "Note that this is an **advanced option**, so you most likely should `skip` this.",
                 "slash_desc": "Should any roles be removed from the user?",
                 "name": "remove_roles",
+                "slash_optional": True,
                 "multiple": True,
                 "type": "role",
                 "max": 10,
@@ -65,10 +67,10 @@ class GuestRoleCommand(Bloxlink.Module):
         group_id = str(CommandArgs.parsed_args["groupID"])
         role = CommandArgs.parsed_args["role"]
         nickname = CommandArgs.parsed_args["nickname"]
-        remove_roles = [str(r.id) for r in CommandArgs.parsed_args["remove_roles"]] if CommandArgs.parsed_args["remove_roles"] != "skip" else []
-        remove_roles_trello = [str(r) for r in CommandArgs.parsed_args["remove_roles"]] if CommandArgs.parsed_args["remove_roles"] != "skip" else []
+        remove_roles = [str(r.id) for r in CommandArgs.parsed_args["remove_roles"]] if (CommandArgs.parsed_args["remove_roles"] and CommandArgs.parsed_args["remove_roles"] != "skip") else []
+        remove_roles_trello = [str(r) for r in CommandArgs.parsed_args["remove_roles"]] if remove_roles and CommandArgs.parsed_args["remove_roles"] != "skip" else []
 
-        nickname_lower = nickname.lower()
+        nickname_lower = nickname and nickname.lower()
         role_id = str(role.id)
 
         try:
@@ -114,7 +116,7 @@ class GuestRoleCommand(Bloxlink.Module):
         rank = role_binds["groups"][group_id].get("binds", {}).get(x, {})
 
         if not isinstance(rank, dict):
-            rank = {"nickname": nickname_lower not in ("skip", "done") and nickname or None, "roles": [str(rank)], "removeRoles": remove_roles}
+            rank = {"nickname": nickname if nickname and nickname_lower not in ("skip", "done") else None, "roles": [str(rank)], "removeRoles": remove_roles}
 
             if role_id not in rank["roles"]:
                 rank["roles"].append(role_id)
@@ -123,11 +125,11 @@ class GuestRoleCommand(Bloxlink.Module):
                 rank["roles"] = rank.get("roles") or []
                 rank["roles"].append(role_id)
 
-                if nickname_lower not in ("skip", "done"):
-                    rank["nickname"] = nickname
-                else:
-                    if not rank.get("nickname"):
-                        rank["nickname"] = None
+            if nickname and nickname_lower not in ("skip", "done"):
+                rank["nickname"] = nickname
+            else:
+                if not rank.get("nickname"):
+                    rank["nickname"] = None
 
             rank["removeRoles"] = remove_roles
 
