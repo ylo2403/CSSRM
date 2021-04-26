@@ -1,4 +1,4 @@
-discord.py==1.7.0
+discord.py==1.7.1
 #git+https://github.com/Rapptz/discord.py
 rethinkdb==2.4.7
 aiodns==2.0.0
