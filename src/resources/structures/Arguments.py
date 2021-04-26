@@ -163,7 +163,7 @@ class Arguments:
         checked_args = 0
         err_count = 0
         resolved_args = {}
-        had_args = {x:True for x, y in enumerate(self.skipped_args)}
+        had_args = {x:True for x, _ in enumerate(self.skipped_args)}
 
         if dm:
             if IS_DOCKER:
@@ -194,10 +194,10 @@ class Arguments:
                 skipped_arg = self.skipped_args and str(self.skipped_args[0])
                 message = self.message
 
-                if prompt_.get("optional") and not had_args.get(checked_args):
+                if prompt_.get("optional") or (slash_command and prompt_.get("slash_optional")) and not had_args.get(checked_args):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
-                        had_args[checked_args] = True
+                        #had_args[checked_args] = True
 
                     resolved_args[prompt_["name"]] = None
                     checked_args += 1
@@ -255,7 +255,7 @@ class Arguments:
                 if skipped_arg_lower in prompt_.get("exceptions", []):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
-                        had_args[checked_args] = True
+                        #had_args[checked_args] = True
 
                     checked_args += 1
                     resolved_args[prompt_["name"]] = skipped_arg_lower
@@ -307,13 +307,12 @@ class Arguments:
 
                     if self.skipped_args:
                         self.skipped_args.pop(0)
-                        had_args[checked_args] = True
+                        #had_args[checked_args] = True
 
                     err_count += 1
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
-                    had_args[checked_args] = True
 
             return resolved_args
 
