@@ -35,10 +35,10 @@ class Commands(Bloxlink.Module):
 
     async def __loaded__(self):
         if CLUSTER_ID == 0:
-            slash_commands = {k:v for k,v in commands.items() if v.slash_enabled}
+            slash_commands = [c for c in commands.values() if c.slash_enabled]
 
             slash_commands_json = [
-                await self.slash_command_to_json(c) for c in slash_commands.values()
+                await self.slash_command_to_json(c) for c in slash_commands
             ]
 
             text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
@@ -48,7 +48,6 @@ class Commands(Bloxlink.Module):
             elif response.status > 201:
                 print(slash_commands_json, flush=True)
                 print(response.status, text, flush=True)
-
 
 
     async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
@@ -208,6 +207,7 @@ class Commands(Bloxlink.Module):
 
         else:
             CommandArgs.has_permission = True
+
 
     async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, user, interaction_id, interaction_token, subcommand):
         command = commands.get(command_name)
@@ -595,6 +595,7 @@ class Commands(Bloxlink.Module):
 
         return command_structure
 
+
     async def inject_command(self, command):
         subcommands = []
 
@@ -617,6 +618,7 @@ class Commands(Bloxlink.Module):
                         "subcommands": subcommands,
                         "slashCompatible": command.slash_enabled
                     }, conflict="replace").run()
+
 
 class Command:
     def __init__(self, command):
