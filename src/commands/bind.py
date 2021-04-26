@@ -204,7 +204,7 @@ class BindCommand(Bloxlink.Module):
                                 card = card_data["card"]
 
                                 try:
-                                    await card.edit(desc=card.description.replace(trello_group_bind["nickname"], nickname))
+                                    await card.edit(desc=card.description.replace(trello_group_bind["nickname"], nickname or 'None'))
                                 except TrelloUnauthorized:
                                     await response.error("In order for me to edit your Trello binds, please add `@bloxlink` to your "
                                                          "Trello board.")

@@ -144,7 +144,7 @@ class Paginate:
 
         if success:
             if self.dm:
-                await send_to.send(self.author.mention + ", **check your DMs!**", fail_on_dm=True)
+                await send_to.send(self.author.mention + ", **check your DMs!**")
         else:
             if self.dm:
                 await send_to.send(self.author.mention + ", I was unable to DM you! Please check your privacy settings and try again.")
