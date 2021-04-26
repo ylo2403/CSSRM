@@ -29,6 +29,7 @@ class GetinfoCommand(Bloxlink.Module):
         self.cooldown      = 5
         self.dm_allowed    = True
         self.slash_enabled = True
+        self.slash_ack     = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
