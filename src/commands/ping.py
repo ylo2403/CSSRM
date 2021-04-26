@@ -40,4 +40,4 @@ class PingCommand(Bloxlink.Module):
             else:
                 await response.send(locale("commands.ping.pong", time_delta=time_delta))
         else:
-            await response.send(locale("commands.ping.pong", time_delta=time_delta))
+            await response.send(locale("commands.ping.pong", time_delta=time_delta), hidden=True)
