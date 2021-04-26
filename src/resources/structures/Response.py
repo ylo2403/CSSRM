@@ -355,7 +355,7 @@ class Response(Bloxlink.Module):
                     if not ignore_errors:
                         if dm:
                             try:
-                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", reference=reference, mention_author=mention_author)
+                                await self.send_to(self.channel, "I was unable to DM you! Please check your privacy settings and try again.", reference=reference, mention_author=mention_author, hidden=True)
                             except (Forbidden, NotFound):
                                 pass
                         else:
