@@ -541,7 +541,7 @@ class Commands(Bloxlink.Module):
                     "name": prompt["name"],
                     "type": type_enums.get(prompt.get("type", "string"), type_enums.get("string")),
                     "description": prompt.get("slash_desc", prompt["prompt"]),
-                    "required": not prompt.get("optional")
+                    "required": not (prompt.get("optional") or prompt.get("slash_optional"))
                 }
 
                 return option
