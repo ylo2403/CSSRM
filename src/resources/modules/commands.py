@@ -38,9 +38,8 @@ class Commands(Bloxlink.Module):
 
         if CLUSTER_ID == 0:
             slash_commands = [c for c in commands.values() if c.slash_enabled]
-
             slash_commands_json = [
-                await self.slash_command_to_json(c) for c in slash_commands
+                self.slash_command_to_json(c) for c in slash_commands
             ]
 
             text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
@@ -525,7 +524,7 @@ class Commands(Bloxlink.Module):
                             pass
 
 
-    async def slash_command_to_json(self, command):
+    def slash_command_to_json(self, command):
         type_enums = {
             "string":  3,
             "number":  4,
