@@ -255,7 +255,7 @@ class Arguments:
                 if skipped_arg_lower in prompt_.get("exceptions", []):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
-                        #had_args[checked_args] = True
+                        had_args[checked_args] = True
 
                     checked_args += 1
                     resolved_args[prompt_["name"]] = skipped_arg_lower
@@ -307,7 +307,7 @@ class Arguments:
 
                     if self.skipped_args:
                         self.skipped_args.pop(0)
-                        #had_args[checked_args] = True
+                        had_args[checked_args] = True
 
                     err_count += 1
 
