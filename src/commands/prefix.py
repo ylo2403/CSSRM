@@ -27,6 +27,7 @@ class PrefixCommand(Bloxlink.Module):
 
         self.permissions = permission
         self.category = "Administration"
+        self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
@@ -78,7 +79,7 @@ class PrefixCommand(Bloxlink.Module):
             await response.success("Your prefix was successfully changed!")
 
         else:
-            old_prefix = CommandArgs.prefix
+            old_prefix = CommandArgs.real_prefix
 
             await response.send(f"Your prefix used for Bloxlink: `{old_prefix}`.\n"
                                  "Change it with `@Bloxlink prefix <new prefix>`.")

@@ -236,6 +236,8 @@ class Commands(Bloxlink.Module):
                 guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
                 trello_board = guild and await get_board(guild)
 
+            real_prefix, _    = await get_prefix(guild, trello_board)
+
             CommandArgs = Args(
                 command_name = command_name,
                 real_command_name = command_name,
@@ -243,6 +245,7 @@ class Commands(Bloxlink.Module):
                 guild_data = guild_data,
                 flags = {},
                 prefix = "/",
+                real_prefix = real_prefix,
                 has_permission = False,
                 command = command,
                 guild = guild,
@@ -475,6 +478,7 @@ class Commands(Bloxlink.Module):
                             guild_data = guild_data,
                             flags = {},
                             prefix = prefix,
+                            real_prefix = prefix,
                             has_permission = False,
                             command = command
                         )

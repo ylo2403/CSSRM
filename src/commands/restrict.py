@@ -26,6 +26,7 @@ class RestrictCommand(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.aliases = ["restriction"]
+        self.slash_enabled = True
 
         self._roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
