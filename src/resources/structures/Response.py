@@ -344,9 +344,10 @@ class Response(Bloxlink.Module):
                 mention_author = False
 
                 if isinstance(channel, (User, Member)) and isinstance(original_channel, TextChannel):
-                    content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}!\n{content or ''}"[:2000]
+                    content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}! " \
+                              f"Please make sure I have these permissions: `Read Message History`, `Send Messages`, and `Embed Links`.\n{content or ''}"[:2000]
                 else:
-                    content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content or ''}"[:2000]
+                    content = f"{original_channel.mention}, I was unable to  DM you! Here's the message here instead:\n{content or ''}"[:2000]
 
                 if webhook:
                     await cache_pop(f"webhooks:{channel.id}")
@@ -360,7 +361,7 @@ class Response(Bloxlink.Module):
                                 pass
                         else:
                             try:
-                                await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please double check my permissions and try again.", reference=reference, mention_author=mention_author)
+                                await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please make sure I have these permissions: `Read Message History`, `Send Messages`, and `Embed Links`.", reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
                     return
