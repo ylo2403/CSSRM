@@ -236,7 +236,7 @@ class Commands(Bloxlink.Module):
                 guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
                 trello_board = guild and await get_board(guild)
 
-            real_prefix, _    = await get_prefix(guild, trello_board)
+            real_prefix, _ = await get_prefix(guild, trello_board)
 
             CommandArgs = Args(
                 command_name = command_name,
