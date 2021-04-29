@@ -315,16 +315,20 @@ class SettingsCommand(Bloxlink.Module):
 
         if trello_board:
             try:
-                if card:
-                    if card.name == choice:
-                        await card.edit(desc=str(parsed_value))
-                    else:
-                        await card.edit(name=f"{choice}:{parsed_value}")
+                if parsed_value == "clear":
+                    if card:
+                        await card.archive()
                 else:
-                    trello_settings_list = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings") \
-                                           or await trello_board.create_list(name="Bloxlink Settings")
+                    if card:
+                        if card.name == choice:
+                            await card.edit(desc=str(parsed_value))
+                        else:
+                            await card.edit(name=f"{choice}:{parsed_value}")
+                    else:
+                        trello_settings_list = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings") \
+                                            or await trello_board.create_list(name="Bloxlink Settings")
 
-                    await trello_settings_list.create_card(name=choice, desc=str(parsed_value))
+                        await trello_settings_list.create_card(name=choice, desc=str(parsed_value))
 
                 if trello_binds_list:
                     await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
