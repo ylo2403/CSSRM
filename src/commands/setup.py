@@ -11,7 +11,7 @@ NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
 get_group, generate_code = Bloxlink.get_module("roblox", attrs=["get_group", "generate_code"])
-trello = Bloxlink.get_module("trello", attrs=["trello"])
+trello, get_options = Bloxlink.get_module("trello", attrs=["trello", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 clear_guild_data = Bloxlink.get_module("cache", attrs=["clear_guild_data"])
 
@@ -124,6 +124,15 @@ class SetupCommand(Bloxlink.Module):
                 "embed_title": "Setup Prompt"
             },
             {
+                "prompt": "Should your members be given a nickname? Please create a nickname using these templates. You may "
+                          f"combine templates. The templates MUST match exactly.\n\n**Templates:** ```{NICKNAME_TEMPLATES}```",
+                "name": "nickname",
+                "embed_title": "Setup Prompt",
+                "footer": "Say **disable** to not have a nickname.\nSay **skip** to leave this as the default (`{smart-name}`).",
+                "formatting": False,
+                "exceptions": ("disable", "skip")
+            },
+            {
                 "prompt": "Would you like to link a **Roblox group** to this Discord server? Please provide the **Group URL, or Group ID**.",
                 "name": "group",
                 "footer": "Say **skip** to leave as-is.",
@@ -154,22 +163,14 @@ class SetupCommand(Bloxlink.Module):
 
         group = parsed_args_1["group"]
         verified = parsed_args_1["verified_role"]
+        nickname = parsed_args_1["nickname"] if parsed_args_1["nickname"] != "disable" else "{disable-nicknaming}"
         verified_lower = verified.lower()
-
         trello_board = parsed_args_1["trello_board"]
 
         if group not in ("next", "skip"):
-            group_ids[group.group_id] = {"nickname": nickname, "groupName": group.name}
+            group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
 
             parsed_args_2 = await CommandArgs.prompt([
-                {
-                    "prompt": "Should these members be given a nickname? Please create a nickname using these templates. You may "
-                              f"combine templates. The templates MUST match exactly.\n\n**Templates:** ```{NICKNAME_TEMPLATES}```",
-                    "name": "nickname",
-                    "embed_title": "Setup Prompt",
-                    "footer": "Say **disable** to not have a nickname.\nSay **skip** to leave this as the default.",
-                    "formatting": False
-                },
                 {
                     "prompt": "Would you like to automatically transfer your Roblox group ranks to Discord roles?\nValid choices:\n"
                               "`merge` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
@@ -188,24 +189,11 @@ class SetupCommand(Bloxlink.Module):
             if parsed_args_2["merge_replace"]  == "next":
                 parsed_args_2["merge_replace"] = "skip"
 
-            nickname = parsed_args_2["nickname"]
-            nickname_lower = nickname.lower()
-
-            if nickname_lower == "skip":
-                if group.group_id in group_ids:
-                    nickname = group_ids[group.group_id]["nickname"]
-                else:
-                    nickname = NICKNAME_DEFAULT
-
-            elif nickname_lower == "disable":
-                nickname = None
-
-            group_ids[group.group_id] = {"nickname": nickname, "groupName": group.name}
+            group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
 
         for k, v in parsed_args_2.items():
             if k != "_":
                 settings_buffer.append(f"**{k}** {ARROW} {v}")
-
 
         if trello_board not in ("skip", "disable"):
             trello_code = generate_code()
@@ -289,15 +277,29 @@ class SetupCommand(Bloxlink.Module):
             elif trello_board in ("skip", "next"):
                 trello_board = guild_data.get("trelloID")
             else:
-                trello_board = trello_board.id
                 update_trello = True
 
             if update_trello:
-                guild_data["trelloID"] = trello_board
+                guild_data["trelloID"] = trello_board.id if trello_board else None
 
         if group_ids:
             guild_data["groupIDs"] = group_ids
 
+        if nickname != "skip":
+            guild_data["nicknameTemplate"] = nickname
+
+            if trello_board:
+                options_trello_data, _ = await get_options(trello_board, return_cards=True)
+                options_trello_find = options_trello_data.get("nicknameTemplate")
+
+                if options_trello_find:
+                    card = options_trello_find[1]
+                    await card.edit(name="nicknameTemplate", desc=nickname)
+                else:
+                    trello_settings_list = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings") \
+                                        or await trello_board.create_list(name="Bloxlink Settings")
+
+                    await trello_settings_list.create_card(name="nicknameTemplate", desc=nickname)
 
         await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
