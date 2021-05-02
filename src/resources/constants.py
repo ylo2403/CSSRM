@@ -286,6 +286,6 @@ EMBED_PERKS = {
         "Bloxlink Contractor": ["3587262", 30, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
         "Roblox Admin":        ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
         "Roblox Intern":       ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
-        "Roblox Star":         ["4199740", None, ":star:", ":star:"]
+        "Roblox Star Creator": ["4199740", None, ":star:", ":star:"]
     }
 }
