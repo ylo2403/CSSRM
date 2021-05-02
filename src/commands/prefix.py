@@ -9,7 +9,7 @@ set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
 @Bloxlink.command
 class PrefixCommand(Bloxlink.Module):
-    """change your prefix, or view your prefix"""
+    """change or view your prefix used for commands"""
 
     def __init__(self):
         self.arguments = [
