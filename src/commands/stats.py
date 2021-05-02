@@ -89,7 +89,7 @@ class StatsCommand(Bloxlink.Module):
                              "(https://blox.link/invite)** | **[Premium](https://blox.link/premium)**\n\n**[Repository](https://github.com/bloxlink/Bloxlink)**",
                              inline=False)
 
-        embed.set_footer(text=f"Shards: {self.shard_range} | Node: {CLUSTER_ID}/{clusters-1}")
+        embed.set_footer(text=f"Shards: {self.shard_range} | Node: {CLUSTER_ID}{'/'+(str(clusters-1)) if clusters > 1 else ''}")
 
         await response.send(embed=embed)
 
