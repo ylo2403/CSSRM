@@ -312,25 +312,29 @@ class Commands(Bloxlink.Module):
                 trello_options, _ = await get_options(trello_board)
                 guild_data.update(trello_options)
 
-            if (e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete")):
-                if message:
-                    try:
-                        await message.delete()
-                    except (Forbidden, NotFound):
-                        pass
-
-                if slash_command and response.first_slash_command:
-                    await response.first_slash_command.delete()
+            if e.message:
+                text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
             else:
-                if e.message:
-                    text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
-                else:
-                    text = f"**{locale('prompt.cancelledPrompt')}.**"
+                text = f"**{locale('prompt.cancelledPrompt')}.**"
 
-                if slash_command and response.first_slash_command:
-                    await response.first_slash_command.edit(content=text)
+            if ((e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete"))):
+                if my_permissions and my_permissions.manage_messages:
+                    if message:
+                        try:
+                            await message.delete()
+                        except (Forbidden, NotFound):
+                            pass
+
+                    if slash_command and response.first_slash_command:
+                        await response.first_slash_command.delete()
                 else:
                     await response.send(text, dm=e.dm, no_dm_post=True)
+            else:
+                if my_permissions and my_permissions.manage_messages:
+                    if slash_command and response.first_slash_command:
+                        await response.first_slash_command.edit(content="**_Command finished._**")
+
+                await response.send(text, dm=e.dm, no_dm_post=True)
 
         except Message as e:
             message_type = "send" if e.type == "send" else e.type

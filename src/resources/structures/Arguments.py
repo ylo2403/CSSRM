@@ -34,6 +34,7 @@ class Arguments:
         self.dm_post   = None
         self.cancelled = False
         self.dm_false_override = False
+        self.first_slash = True
         self.skipped_args = []
 
         self.slash_command = slash_command
@@ -45,7 +46,6 @@ class Arguments:
             prompts = self.subcommand[1].get("arguments")
         else:
             prompts = self.command.arguments
-
 
         if self.slash_command:
             if not isinstance(self.slash_command, bool):
@@ -148,6 +148,10 @@ class Arguments:
             return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True)
 
         if msg and not dm:
+            if self.slash_command and self.first_slash:
+                self.first_slash = False
+                return msg
+
             self.messages.append(msg.id)
 
         return msg

@@ -240,8 +240,9 @@ class Response(Bloxlink.Module):
                 "embeds":  message_data["embeds"] or []
             })
 
-            if not self.sent_first_slash_command:
+            if not self.first_slash_command:
                 self.first_slash_command = msg
+            if not self.sent_first_slash_command:
                 self.sent_first_slash_command = True
 
         else:
@@ -364,7 +365,7 @@ class Response(Bloxlink.Module):
                                 await self.send_to(self.author, f"I was unable to post in {channel.mention}! Please make sure I have these permissions: `Read Message History`, `Send Messages`, and `Embed Links`.", reference=reference, mention_author=mention_author)
                             except (Forbidden, NotFound):
                                 pass
-                    return
+                    return None
 
                 try:
                     msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden, reference=reference, mention_author=mention_author)
