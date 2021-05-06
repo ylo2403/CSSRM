@@ -58,11 +58,12 @@ class DisableCommand(Bloxlink.Module):
 
             disable_where = f"for channel {disable_type.mention}"
 
-            if disabled_commands["channels"].get(channel_id):
-                disabled_commands["channels"].pop(channel_id)
+            if disabled_commands["channels"].get(channel_id, {}).get(command_name):
+                disabled_commands["channels"][channel_id].pop(command_name)
                 enable = "enabled"
             else:
-                disabled_commands["channels"][channel_id] = command_name
+                disabled_commands["channels"][channel_id] = disabled_commands["channels"].get(channel_id) or {}
+                disabled_commands["channels"][channel_id][command_name] = True
                 enable = "disabled"
 
         else:

@@ -112,7 +112,7 @@ class Commands(Bloxlink.Module):
 
                     raise CancelCommand
 
-                elif disabled_commands.get("channels", {}).get(channel_id) == command.name:
+                elif disabled_commands.get("channels", {}).get(channel_id, {}).get(command.name):
                     await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
                     if message:
