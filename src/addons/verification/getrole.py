@@ -67,7 +67,7 @@ class GetRoleCommand(Bloxlink.Module):
             raise Error(e.message)
 
         else:
-            welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != author.display_name else None, prefix=prefix, guild_data=guild_data)
+            welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
