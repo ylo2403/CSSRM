@@ -37,17 +37,13 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
-            slash_commands = [c for c in commands.values() if c.slash_enabled]
-            slash_commands_json = [
-                self.slash_command_to_json(c) for c in slash_commands
-            ]
-
-            text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+            slash_commands = [self.slash_command_to_json(c) for c in commands.values() if c.slash_enabled]
+            text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
             if response.status == 200:
                 Bloxlink.log("Successfully synced Slash Commands")
-            elif response.status > 201:
-                print(slash_commands_json, flush=True)
+            else:
+                print(slash_commands, flush=True)
                 print(response.status, text, flush=True)
 
 
@@ -299,8 +295,6 @@ class Commands(Bloxlink.Module):
                 await response.error(e)
             else:
                 await response.error(locale("permissions.genericError"))
-        except NotFound:
-            await response.error("A channel or message which was vital to this command was deleted before the command could finish.")
         except RobloxAPIError:
             await response.error("The Roblox API returned an error; are you supplying the correct ID to this command?")
         except RobloxDown:
