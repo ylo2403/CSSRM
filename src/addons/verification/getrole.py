@@ -71,4 +71,4 @@ class GetRoleCommand(Bloxlink.Module):
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
-            await response.send(content=welcome_message, embed=embed)
+            await response.send(content=welcome_message, embed=embed, mention_author=True)

@@ -94,7 +94,7 @@ class VerifyCommand(Bloxlink.Module):
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
-            await response.send(content=welcome_message, embed=embed)
+            await response.send(content=welcome_message, embed=embed, mention_author=True)
 
 
     @Bloxlink.subcommand()
@@ -117,7 +117,7 @@ class VerifyCommand(Bloxlink.Module):
             response_text = "To verify with Bloxlink, please visit our website at " \
                             f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=hq496NmQ9GU>"
 
-        await CommandArgs.response.send(response_text)
+        await CommandArgs.response.send(response_text, mention_author=True)
 
 
     @Bloxlink.subcommand(permissions=Bloxlink.Permissions().build("BLOXLINK_MANAGER"))
@@ -246,6 +246,6 @@ class VerifyCommand(Bloxlink.Module):
         """unlink an account from Bloxlink"""
 
         if CommandArgs.guild:
-            await CommandArgs.response.reply(f"to manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")
+            await CommandArgs.response.reply(f"to manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>", mention_author=True)
         else:
-            await CommandArgs.response.send(f"To manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>")
+            await CommandArgs.response.send(f"To manage your accounts, please visit our website: <{ACCOUNT_SETTINGS_URL}>", mention_author=True)
