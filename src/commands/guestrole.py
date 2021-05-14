@@ -1,9 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error
-from resources.exceptions import PermissionError, Error, RobloxNotFound, Message  # pylint: disable=import-error
-from resources.constants import NICKNAME_TEMPLATES, ARROW  # pylint: disable=import-error
-from discord import Embed
-from discord.errors import Forbidden, NotFound, HTTPException
-from discord.utils import find
+from resources.exceptions import Error, RobloxNotFound  # pylint: disable=import-error
+from resources.constants import NICKNAME_TEMPLATES  # pylint: disable=import-error
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
 
@@ -20,7 +17,7 @@ class GuestRoleCommand(Bloxlink.Module):
             {
                 "prompt": "Please specify the **Group ID** to integrate with. The group ID is the rightmost numbers on your Group URL.",
                 "slash_desc": "Please enter your Group ID.",
-                "name": "groupID",
+                "name": "group_id",
                 "type": "number",
             },
             {
@@ -64,7 +61,7 @@ class GuestRoleCommand(Bloxlink.Module):
         response = CommandArgs.response
         trello_board = CommandArgs.trello_board
 
-        group_id = str(CommandArgs.parsed_args["groupID"])
+        group_id = str(CommandArgs.parsed_args["group_id"])
         role = CommandArgs.parsed_args["role"]
         nickname = CommandArgs.parsed_args["nickname"]
         remove_roles = [str(r.id) for r in CommandArgs.parsed_args["remove_roles"]] if (CommandArgs.parsed_args["remove_roles"] and CommandArgs.parsed_args["remove_roles"] != "skip") else []
