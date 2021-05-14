@@ -3,7 +3,6 @@ from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO #
 from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error
 from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
 from discord.errors import Forbidden, HTTPException
-from discord import Embed
 from discord.utils import find
 import re
 
@@ -146,14 +145,6 @@ class SetupCommand(Bloxlink.Module):
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
                 "max": 50
-            },
-            {
-                "prompt": "Would you like to link a **Trello.com board** to this server? You'll be able to change Bloxlink settings and binds from "
-                          "the board. Please either provide the **Trello board ID, or the board URL.**",
-                "name": "trello_board",
-                "footer": "Say **disable** to disable/clear a saved board.\nSay **skip** to leave as-is.",
-                "embed_title": "Setup Prompt",
-                "validation": self.validate_trello_board
             }
         ], dm=True, no_dm_post=False)
 
@@ -165,7 +156,6 @@ class SetupCommand(Bloxlink.Module):
         verified = parsed_args_1["verified_role"]
         nickname = parsed_args_1["nickname"] if parsed_args_1["nickname"] != "disable" else "{disable-nicknaming}"
         verified_lower = verified.lower()
-        trello_board = parsed_args_1["trello_board"]
 
         if group not in ("next", "skip"):
             group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
@@ -195,32 +185,26 @@ class SetupCommand(Bloxlink.Module):
             if k != "_":
                 settings_buffer.append(f"**{k}** {ARROW} {v}")
 
-        if trello_board not in ("skip", "disable"):
-            trello_code = generate_code()
-
-            parsed_args_3 = await CommandArgs.prompt([
+        if CommandArgs.trello_board:
+            parsed_args_3 = (await CommandArgs.prompt([
                 {
-                    "prompt": "We'll now attempt to verify that you own this Trello board. To begin, please add `trello@blox.link` (@bloxlink) "
-                              "to your Trello board. Then, say `next` to continue.",
-                    "name": "trello_continue",
+                    "prompt": "We've detected that you have a **Trello board** linked to this server!\n"
+                              "Trello functionality on Bloxlink is **deprecated** and **will be removed** "
+                              "in a future update in favor of our upcoming **Server Dashboard**.\n\n"
+                              "You may unlink Trello from your server by saying `disable`.\nIf you're "
+                              "not ready to unlink Trello yet, say `skip`.",
+                    "name": "trello_choice",
                     "type": "choice",
-                    "choices": ["next"],
-                    "footer": "Say **next** to continue.",
-                    "embed_title": "Trello Verification"
+                    "choices": ["disable", "skip"],
+                    "footer": "Say **disable** to unlink your server.\nSay **skip** to skip this.",
+                    "embed_title": "Trello Deprecation"
 
-                },
-                {
-                    "prompt": f"Now, please make a card _anywhere_ on your Trello board with this code as the card name or description:```{trello_code}```\n"
-                               "Please note that up to **100** cards will be loaded from your Trello board, and up to **10** lists will be "
-                               "loaded. So, if you have more cards or lists, you'll need to archive some or use a different Trello board.",
-                    "name": "trello_continue",
-                    "type": "choice",
-                    "choices": ["next", "done"],
-                    "footer": "Say **done** after the code is on your Trello board.",
-                    "embed_title": "Trello Verification",
-                    "validation": await self.verify_trello_board(trello_board, trello_code)
                 }
-            ], dm=True, no_dm_post=True)
+            ], dm=True, no_dm_post=True))["trello_choice"]
+
+            if parsed_args_3 == "disable":
+                guild_data.pop("trelloID")
+
 
         parsed_args_4 = await CommandArgs.prompt([
             {
@@ -268,38 +252,12 @@ class SetupCommand(Bloxlink.Module):
                 guild_data["verifiedRoleName"] = verified
                 guild_data["verifiedRoleEnabled"] = True
 
-        if trello_board:
-            update_trello = False
-
-            if trello_board == "disable":
-                trello_board = None
-                update_trello = True
-            elif trello_board in ("skip", "next"):
-                trello_board = guild_data.get("trelloID")
-            else:
-                update_trello = True
-
-            if update_trello:
-                guild_data["trelloID"] = trello_board.id if trello_board else None
-
         if group_ids:
             guild_data["groupIDs"] = group_ids
 
-        if nickname != "skip":
+        if nickname not in ("skip", "next"):
             guild_data["nicknameTemplate"] = nickname
 
-            if trello_board:
-                options_trello_data, _ = await get_options(trello_board, return_cards=True)
-                options_trello_find = options_trello_data.get("nicknameTemplate")
-
-                if options_trello_find:
-                    card = options_trello_find[1]
-                    await card.edit(name="nicknameTemplate", desc=nickname)
-                else:
-                    trello_settings_list = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings") \
-                                        or await trello_board.create_list(name="Bloxlink Settings")
-
-                    await trello_settings_list.create_card(name="nicknameTemplate", desc=nickname)
 
         await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
@@ -308,13 +266,3 @@ class SetupCommand(Bloxlink.Module):
         await clear_guild_data(guild)
 
         await response.success("Your server is now **configured** with Bloxlink!", dm=True, no_dm_post=True)
-
-        if trello_board and update_trello:
-            trello_info_embed = Embed(title="Trello Information")
-            trello_info_embed.description = "Now that you've linked your Trello board, you may now modify Bloxlink settings and Role Binds from " \
-                                            "the board. **No cards will be created right away;** cards are created **as you use commands**. For " \
-                                            f"example, if you use `{prefix}settings` or `{prefix}bind`, then cards will be created/edited.\n\n" \
-                                            "Any pre-existing settings or binds will be simply be **merged** with any Trello settings/binds **unless " \
-                                            f"you switch \"`trelloBindMode`\" to `replace` through the `{prefix}settings` command.**"
-
-            await response.send(embed=trello_info_embed, dm=True, no_dm_post=True)
