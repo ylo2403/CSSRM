@@ -362,7 +362,7 @@ class Commands(Bloxlink.Module):
             """
 
             await response.error(locale("errors.commandError"))
-            Bloxlink.error(traceback.format_exc(), title=f"Error source: {command.name}.py")
+            Bloxlink.error(traceback.format_exc(), title=f"Error source: {command.name}.py\n{f'Guild ID: {guild.id}' if guild else ''}")
 
         finally:
             delete_messages = response.delete_message_queue
