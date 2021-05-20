@@ -26,6 +26,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 "name": "users",
                 "multiple": True,
                 "optional": True,
+                "guild_members_only": True,
                 "create_missing_role": False
             }
         ]

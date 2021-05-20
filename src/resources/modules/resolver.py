@@ -90,11 +90,15 @@ class Resolver(Bloxlink.Module):
 
                         if user_id != self.client.user.id:
                             try:
-                                user = await self.client.fetch_user(user_id)
+                                if guild and arg.get("guild_members_only"):
+                                    user = await guild.fetch_member(user_id)
+                                else:
+                                    user = await self.client.fetch_user(user_id)
+
                                 return user, None
+
                             except NotFound:
                                 return False, "A user with this discord ID does not exist"
-
 
             is_int, is_id = None, None
 
@@ -111,7 +115,10 @@ class Resolver(Bloxlink.Module):
                     return user, None
                 else:
                     try:
-                        user = await self.client.fetch_user(int(is_int))
+                        if guild and arg.get("guild_members_only"):
+                            user = await guild.fetch_member(int(is_int))
+                        else:
+                            user = await self.client.fetch_user(int(is_int))
 
                         return user, None
 
@@ -157,11 +164,14 @@ class Resolver(Bloxlink.Module):
 
                     if lookup_string.isdigit():
                         try:
-                            member = guild and await guild.fetch_member(int(lookup_string))
+                            if guild and arg.get("guild_members_only"):
+                                user = await guild.fetch_member(int(lookup_string))
+                            else:
+                                user = await Bloxlink.fetch_user(int(lookup_string))
                         except NotFound:
                             pass
                         else:
-                            users.append(member)
+                            users.append(user)
 
                     else:
                         member = guild and await guild.query_members(lookup_string, limit=1)
