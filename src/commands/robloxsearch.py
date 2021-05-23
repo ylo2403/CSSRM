@@ -42,7 +42,7 @@ class RobloxSearchCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
 
         if message and message.mentions:
-            message.content = f"{prefix}getinfo {message.mentions[0].id}"
+            message.content = f"{prefix}getinfo {CommandArgs.string_args[0]}"
             return await parse_message(message)
 
         valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
