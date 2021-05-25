@@ -42,7 +42,7 @@ class Premium(Bloxlink.Module):
     async def is_staff(self, author):
         return await cache_get(f"bloxlink_staff:{author.id}", primitives=True)
 
-    async def add_features(self, user, features, *, days=-1, code=None, premium_anywhere=None, guild=None,):
+    async def add_features(self, user, features, *, days=-1, code=None, premium_anywhere=False, guild=None,):
         user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
         user_data_premium = user_data.get("premium") or {}
         prem_expiry = user_data_premium.get("expiry", 1)

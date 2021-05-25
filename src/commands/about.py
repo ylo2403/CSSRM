@@ -1,5 +1,4 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import ARROW, LIMITS, RED_COLOR # pylint: disable=import-error
 from discord import Embed
 
 

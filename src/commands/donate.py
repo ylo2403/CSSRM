@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import ARROW, LIMITS # pylint: disable=import-error
+from resources.constants import LIMITS # pylint: disable=import-error
 from discord import Embed
 
 PREMIUM_PERKS = "\n".join([

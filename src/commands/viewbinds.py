@@ -2,7 +2,6 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from discord import Embed
 from resources.exceptions import Message, RobloxNotFound # pylint: disable=import-error
 from resources.constants import ARROW # pylint: disable=import-error
-import asyncio
 
 get_binds, get_group, count_binds = Bloxlink.get_module("roblox", attrs=["get_binds", "get_group", "count_binds"])
 

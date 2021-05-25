@@ -1,9 +1,8 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from discord import Embed
 from resources.exceptions import Error, Message # pylint: disable=import-error
-from resources.constants import ARROW, BLURPLE_COLOR # pylint: disable=import-error
+from resources.constants import BLURPLE_COLOR # pylint: disable=import-error
 from aiotrello.exceptions import TrelloException
-import asyncio
 
 get_binds, get_group, count_binds = Bloxlink.get_module("roblox", attrs=["get_binds", "get_group", "count_binds"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])

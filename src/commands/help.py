@@ -1,6 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.modules.commands import commands # pylint: disable=import-error
-from resources.exceptions import CancelCommand, Error # pylint: disable=import-error
+from resources.exceptions import Error # pylint: disable=import-error
 from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error
 from discord import Embed
 

@@ -937,8 +937,8 @@ class Roblox(Bloxlink.Module):
                                     except (NotFound, Forbidden):
                                         pass
                                     else:
-                                        action = disallow_ban_evaders == "kick" and "kick" or "ban"
-                                        action_participle = action == "kick" and "kicked" or "banned"
+                                        action = disallow_ban_evaders == "kick" and "kick"   or "ban"
+                                        action_participle    = action == "kick" and "kicked" or "banned"
 
                                         try:
                                             await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))

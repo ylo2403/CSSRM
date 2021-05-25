@@ -1,6 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import UserNotVerified, Message, Error # pylint: disable=import-error
-from discord import Embed
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 

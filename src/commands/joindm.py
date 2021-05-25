@@ -1,7 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.constants import NICKNAME_TEMPLATES, DEFAULTS, UNVERIFIED_TEMPLATES, BROWN_COLOR # pylint: disable=import-error
 from resources.exceptions import Message # pylint: disable=import-error
-from discord.errors import NotFound, HTTPException, Forbidden
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])

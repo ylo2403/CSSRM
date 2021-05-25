@@ -1,5 +1,4 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from discord import Embed
 from resources.exceptions import Message, UserNotVerified, Error, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
 from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error
 
