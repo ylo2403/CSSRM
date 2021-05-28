@@ -32,7 +32,6 @@ loop = asyncio.get_event_loop()
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 is_booster = Bloxlink.get_module("nitro_boosters", attrs=["is_booster"], name_override="NitroBoosters")
-is_partner = Bloxlink.get_module("partners", attrs=["is_partner"])
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
@@ -2150,7 +2149,7 @@ class Roblox(Bloxlink.Module):
             return
 
         user_tags = []
-        notable_groups = []
+        user_notable_groups = {}
         username_emotes_ = set()
         username_emotes = ""
 
@@ -2185,22 +2184,24 @@ class Roblox(Bloxlink.Module):
                         break
 
             if groups:
-                partners = await cache_get("partners:guilds") or {}
-                notable_groups = {}
+                all_notable_groups = await cache_get("partners:notable_groups", primitives=True, redis_hash=True) or {}
+                user_notable_groups = {}
 
-                for partner_server_id, partner_group in partners.items():
-                    if partner_group[0] == "notable_group":
-                        group = roblox_user.groups.get(partner_group[1])
+                for notable_group_id, notable_title in all_notable_groups.items():
+                    notable_group_id = notable_group_id.decode('utf-8')
+                    notable_title    = notable_title.decode('utf-8')
 
-                        if group:
-                            notable_groups[group.group_id] = (group, partner_group[2])
+                    group = roblox_user.groups.get(notable_group_id)
+
+                    if group:
+                        user_notable_groups[group.group_id] = (group, notable_title)
 
         if guild and embed:
-            cache_partner = await cache_get(f"partners:guilds:{guild.id}")
+            cache_partner = await cache_get(f"partners:guilds:{guild.id}", primitives=True, redis_hash=True)
             verified_reaction = guild.default_role.permissions.external_emojis and REACTIONS["VERIFIED"] or ":white_check_mark:"
 
             if cache_partner:
-                embed.description = f"{verified_reaction} This is an **official server** of [{cache_partner[2]}](https://www.roblox.com/groups/{cache_partner[1]}/-)"
+                embed.description = f"{verified_reaction} This is an **official server** of [{cache_partner.get(b'group_name', 'N/A').decode('utf-8')}](https://www.roblox.com/groups/{cache_partner.get(b'group_id').decode('utf-8')}/-)"
                 embed.colour = PARTNERED_SERVER
 
         if tags and author:
@@ -2208,11 +2209,11 @@ class Roblox(Bloxlink.Module):
                 user_tags.append("Bloxlink Nitro Booster")
                 embed.colour = PINK_COLOR
 
-            if await is_partner(author):
+            if await cache_get(f"partners:users:{author.id}", primitives=True):
                 user_tags.append("Bloxlink Partner")
                 embed.colour = PARTNERS_COLOR
 
-        return user_tags, notable_groups
+        return user_tags, user_notable_groups
 
 
 @Bloxlink.module

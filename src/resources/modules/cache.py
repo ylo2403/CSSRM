@@ -12,15 +12,21 @@ class Cache(Bloxlink.Module):
     async def __setup__(self):
         self.get_options, self.get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 
-    async def get(self, k, primitives=False):
+    async def get(self, k, primitives=False, redis_hash=False, redis_hash_exists=False):
         if primitives and self.cache and k:
-            return await self.cache.get(k)
+            if redis_hash:
+                if redis_hash_exists:
+                    return bool(await self.redis.hlen(k))
+                else:
+                    return await self.redis.hgetall(k)
+            else:
+                return await self.cache.get(k)
 
         return self._cache.get(k)
 
 
     async def set(self, k, v, expire=CACHE_CLEAR*60, check_primitives=True):
-        if check_primitives and self.cache and isinstance(v, (str, int, bool)):
+        if check_primitives and self.cache and isinstance(v, (str, int, bool, list)):
             await self.cache.set(k, v, expire_time=expire)
         else:
             self._cache[k] = v

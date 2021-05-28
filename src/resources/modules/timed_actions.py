@@ -9,7 +9,6 @@ from discord import Embed, AllowedMentions
 coro_async = Bloxlink.get_module("utils", attrs=["coro_async"])
 get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
 cache_clear = Bloxlink.get_module("cache", attrs=["clear"])
-load_partners = Bloxlink.get_module("partners", attrs=["load_data"])
 load_blacklist = Bloxlink.get_module("blacklist", attrs=["load_blacklist"])
 load_boosters = Bloxlink.get_module("nitro_boosters", attrs=["load_boosters"], name_override="NitroBoosters")
 load_staff_members = Bloxlink.get_module("premium", attrs=["load_staff_members"])
@@ -29,10 +28,7 @@ class TimedActions(Bloxlink.Module):
 
     async def timed_actions(self):
         while True:
-            await cache_clear("partners")
-
             try:
-                await load_partners()
                 await load_blacklist() # redis
                 await load_boosters() # redis
                 await load_staff_members() # redis

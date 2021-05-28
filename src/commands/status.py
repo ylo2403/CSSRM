@@ -32,7 +32,7 @@ class StatusCommand(Bloxlink.Module):
         embed.set_author(name=user, icon_url=user.avatar_url)
 
         partner_check = guild and user.id == guild.owner_id
-        profile, transfer_to = await get_features(user, partner_check=partner_check)
+        profile, transfer_to = await get_features(user, partner_check=partner_check, guild=guild)
 
         attributes, features = profile.attributes, profile.features
         has_premium = features.get("premium")

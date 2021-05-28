@@ -243,7 +243,7 @@ class Premium(Bloxlink.Module):
                     profile.add_features("pro")
 
             if guild and partner_check:
-                partners_cache = await cache_get(f"partners:guilds:{guild.id}")
+                partners_cache = await cache_get(f"partners:guilds:{guild.id}", primitives=True, redis_hash=True, redis_hash_exists=True)
 
                 if partners_cache:
                     profile.add_features("premium")
