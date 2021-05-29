@@ -28,6 +28,8 @@ class TimedActions(Bloxlink.Module):
 
     async def timed_actions(self):
         while True:
+            await cache_clear()
+
             try:
                 await load_blacklist() # redis
                 await load_boosters() # redis

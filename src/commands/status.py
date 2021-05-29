@@ -25,14 +25,12 @@ class StatusCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         user = CommandArgs.parsed_args.get("user") or CommandArgs.author
-        guild = CommandArgs.guild
         response = CommandArgs.response
 
         embed = Embed()
         embed.set_author(name=user, icon_url=user.avatar_url)
 
-        partner_check = guild and user.id == guild.owner_id
-        profile, transfer_to = await get_features(user, partner_check=partner_check, guild=guild)
+        profile, transfer_to = await get_features(user)
 
         attributes, features = profile.attributes, profile.features
         has_premium = features.get("premium")
