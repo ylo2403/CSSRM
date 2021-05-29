@@ -189,7 +189,8 @@ class Response(Bloxlink.Module):
 
     def delete(self, *messages):
         for message in messages:
-            self.delete_message_queue.append(message.id)
+            if message:
+                self.delete_message_queue.append(message.id)
 
     async def slash_ack(self):
         if self.slash_command:
