@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from discord import Embed
+import discord
 from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
 from resources.constants import (NICKNAME_TEMPLATES, GREEN_COLOR, BROWN_COLOR, ARROW, VERIFY_URL, # pylint: disable=import-error
                                 ACCOUNT_SETTINGS_URL, TRELLO)
@@ -101,8 +101,6 @@ class VerifyCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """link a new account to Bloxlink"""
 
-        author = CommandArgs.author
-
         if CommandArgs.guild:
             guild_data = CommandArgs.guild_data
 
@@ -111,13 +109,12 @@ class VerifyCommand(Bloxlink.Module):
 
                 await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
-            response_text = f"{author.mention}, to verify with Bloxlink, please visit our website at " \
-                            f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=hq496NmQ9GU>"
-        else:
-            response_text = "To verify with Bloxlink, please visit our website at " \
-                            f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=hq496NmQ9GU>"
+        view = discord.ui.View()
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial",
+                                            url="https://www.youtube.com/watch?v=hq496NmQ9GU"))
 
-        await CommandArgs.response.send(response_text, mention_author=True)
+        await CommandArgs.response.send("To verify with Bloxlink, click the link below.", mention_author=True, view=view)
 
 
     @Bloxlink.subcommand(permissions=Bloxlink.Permissions().build("BLOXLINK_MANAGER"))
@@ -233,10 +230,10 @@ class VerifyCommand(Bloxlink.Module):
             parsed_accounts_str = "\n".join(parsed_accounts_str)
 
 
-            embed = Embed(title="Linked Roblox Accounts")
+            embed = discord.Embed(title="Linked Roblox Accounts")
             embed.add_field(name="Primary Account", value=primary_account_str)
             embed.add_field(name="Secondary Accounts", value=parsed_accounts_str or "No secondary account saved")
-            embed.set_author(name=author, icon_url=author.avatar_url)
+            embed.set_author(name=author, icon_url=author.avatar.url)
 
             await response.send(embed=embed, dm=True, strict_post=True)
 
