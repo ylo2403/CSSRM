@@ -1,6 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.constants import LIMITS # pylint: disable=import-error
-from discord import Embed
+import discord
 
 PREMIUM_PERKS = "\n".join([
     f"- More role bindings allowed (from {LIMITS['BINDS']['FREE']} to {LIMITS['BINDS']['PREMIUM']}).",
@@ -28,7 +28,7 @@ class DonateCommand(Bloxlink.Module):
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
-        embed = Embed(title="Bloxlink Premium")
+        embed = discord.Embed(title="Bloxlink Premium")
         embed.description = "We appreciate all donations!\nBy donating a certain amount, you will receive **[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** " \
                             f"on __every server you own__ and receive these perks:\n{PREMIUM_PERKS.format(prefix=prefix)}" \
 
@@ -41,8 +41,9 @@ class DonateCommand(Bloxlink.Module):
                                                                  "minutes and your perks should be activated. Feel free to ask "
                                                                  "in our support server if you need more help: <https://blox.link/support>.", inline=False)
 
-        embed.add_field(name="Premium Monthly/Annual", value="[click here](https://www.patreon.com/join/bloxlink?)")
+        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
 
-        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)
+        view = discord.ui.View()
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.primary, label="Click to Subscribe ($6)", url="https://www.patreon.com/join/bloxlink?"))
 
-        await response.send(embed=embed)
+        await response.send(embed=embed, view=view)
