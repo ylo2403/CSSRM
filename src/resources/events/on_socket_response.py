@@ -1,7 +1,7 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from ..exceptions import CancelCommand # pylint: disable=import-error
 from discord.utils import find
-from discord import Member, User, DMChannel
+from discord import Member, User, DMChannel, Interaction
 
 
 
@@ -47,6 +47,21 @@ async def on_socket_response(msg):
             channel = DMChannel(me=Bloxlink.user, state=Bloxlink._connection, data={"id": channel_id, "recipients": [user_data]})
 
             return # DM interactions are buggy
+
+        """ TODO: remove
+        interaction = Interaction(data = {
+            "id": interaction_id,
+            "token": interaction_token,
+            "channel_id": channel_id,
+            "guild_id": guild_id,
+            "application_id": Bloxlink.user.id,
+            "type": discord.InteractionType.application_command,
+            "version": None
+        }, state=Bloxlink._connection)
+
+        await interaction.response.send_message("test")
+        await interaction.response.send_message("test")
+        """
 
         try:
             await handle_slash_command(command_name, guild=guild, channel=channel,

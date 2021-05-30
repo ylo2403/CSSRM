@@ -203,14 +203,14 @@ class Response(Bloxlink.Module):
             await self.channel._state.http.request(route, json=payload)
             self.sent_first_slash_command = True
 
-    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None):
+    async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
         msg = None
 
         if fail_on_dm and isinstance(dest, (DMChannel, User, Member)):
             return None
 
         if isinstance(dest, Webhook):
-            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions)
+            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view)
 
         elif self.slash_command and send_as_slash_command:
             if self.sent_first_slash_command:
@@ -218,7 +218,8 @@ class Response(Bloxlink.Module):
                     "type": 4,
                     "content": content,
                     "embeds": [embed.to_dict()] if embed else None,
-                    "flags": 1 << 6 if hidden else None
+                    "flags": 1 << 6 if hidden else None,
+                    "components": view.to_components() if view else None
                 }
                 message_data = payload
                 route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
@@ -228,7 +229,8 @@ class Response(Bloxlink.Module):
                     "data": {
                         "content": content,
                         "embeds": [embed.to_dict()] if embed else None,
-                        "flags": 1 << 6 if hidden else None
+                        "flags": 1 << 6 if hidden else None,
+                        "components": view.to_components() if view else None
                     }
                 }
                 message_data = payload["data"]
@@ -247,14 +249,14 @@ class Response(Bloxlink.Module):
                 self.sent_first_slash_command = True
 
         else:
-            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author)
+            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
 
 
         self.bot_responses.append(msg.id)
 
         return msg
 
-    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False, reply=True, reference=None, mention_author=False, fail_on_dm=False):
+    async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False, reply=True, reference=None, mention_author=False, fail_on_dm=False, view=None):
         if (dm and not IS_DOCKER) or (self.slash_command and hidden):
             dm = False
 
@@ -334,7 +336,7 @@ class Response(Bloxlink.Module):
 
         if not paginate:
             try:
-                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reference=reference, mention_author=mention_author)
+                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reference=reference, mention_author=mention_author, view=view)
 
                 if dm and not (no_dm_post or isinstance(self.channel, (DMChannel, User, Member))):
                     await self.send_to(self.channel, "**Please check your DMs!**", reference=reference, mention_author=mention_author)
@@ -369,7 +371,7 @@ class Response(Bloxlink.Module):
                     return None
 
                 try:
-                    msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden, reference=reference, mention_author=mention_author)
+                    msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, hidden=hidden, reference=reference, mention_author=mention_author, view=view)
                 except (Forbidden, NotFound):
                     if not no_dm_post:
                         if channel == self.author:
