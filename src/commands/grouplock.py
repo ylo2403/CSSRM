@@ -189,7 +189,7 @@ class GroupLockCommand(Bloxlink.Module):
                 raise Message("You have no groups added to your Server-Lock!", type="info")
 
             embed = Embed(title="Bloxlink Server-Lock")
-            embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)
+            embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
             embed.set_author(name=guild.name, icon_url=guild.icon_url)
 
             for group_id, data in groups.items():

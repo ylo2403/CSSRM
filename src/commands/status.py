@@ -28,7 +28,7 @@ class StatusCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         embed = Embed()
-        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.set_author(name=user, icon_url=user.avatar.url)
 
         profile, transfer_to = await get_features(user)
 

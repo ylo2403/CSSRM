@@ -366,7 +366,7 @@ class Roblox(Bloxlink.Module):
 
         if added or removed or errors or nickname:
             embed = Embed(title=f":man_office_worker: Role data for {roblox_user.username}")
-            embed.set_author(name=str(author), icon_url=author.avatar_url, url=roblox_user.profile_link)
+            embed.set_author(name=str(author), icon_url=author.avatar.url, url=roblox_user.profile_link)
             embed.set_thumbnail(url=roblox_user.avatar)
 
             if nickname:
@@ -2280,10 +2280,10 @@ class RobloxProfile(Bloxlink.Module):
         if roblox_user:
             ending = roblox_user.username.endswith("s") and "'" or "'s"
             embed = Embed(title=f"{roblox_user.username}{ending} Bloxlink Profile")
-            embed.set_author(name=user, icon_url=user.avatar_url, url=roblox_user.profile_link)
+            embed.set_author(name=user, icon_url=user.avatar.url, url=roblox_user.profile_link)
         else:
             embed = Embed(title="Bloxlink User Profile")
-            embed.set_author(name=user, icon_url=user.avatar_url)
+            embed.set_author(name=user, icon_url=user.avatar.url)
 
         if not profile_data:
             await self.handle_inactive_role(inactive_role, user, False)
@@ -2672,27 +2672,27 @@ class RobloxUser(Bloxlink.Module):
 
         async def avatar():
             if roblox_data["avatar"] is not None:
-                avatar_url = roblox_data["avatar"]
+                avatar.url = roblox_data["avatar"]
             else:
-                avatar_url, _ = await fetch(f"{BASE_URL}/bust-thumbnail/json?userId={roblox_data['id']}&height=180&width=180")
+                avatar.url, _ = await fetch(f"{BASE_URL}/bust-thumbnail/json?userId={roblox_data['id']}&height=180&width=180")
 
                 try:
-                    avatar_url = json.loads(avatar_url)
+                    avatar.url = json.loads(avatar.url)
                 except json.decoder.JSONDecodeError:
                     raise RobloxAPIError
                 else:
-                    avatar_url = avatar_url.get("Url")
+                    avatar.url = avatar.url.get("Url")
 
                     if roblox_user:
-                        roblox_user.avatar = avatar_url
+                        roblox_user.avatar = avatar.url
 
-                    roblox_data["avatar"] = avatar_url
+                    roblox_data["avatar"] = avatar.url
 
             if embed:
-                embed[0].set_thumbnail(url=avatar_url)
+                embed[0].set_thumbnail(url=avatar.url)
 
                 if author:
-                    embed[0].set_author(name=str(author), icon_url=author.avatar_url, url=roblox_data.get("profile_link"))
+                    embed[0].set_author(name=str(author), icon_url=author.avatar.url, url=roblox_data.get("profile_link"))
 
         async def membership_and_badges():
             if roblox_data["premium"] is not None and roblox_data["badges"] is not None:
@@ -2708,14 +2708,6 @@ class RobloxUser(Bloxlink.Module):
                     data = json.loads(data)
                 except json.decoder.JSONDecodeError:
                     raise RobloxAPIError
-
-                """
-                for badge in data.get("RobloxBadges", []):
-                    if "Builders Club" in badge["Name"]:
-                        premium = True
-                    else:
-                        badges.add(badge["Name"])
-                """
 
                 roblox_data["badges"] = badges
                 roblox_data["premium"] = premium

@@ -107,7 +107,7 @@ class SettingsCommand(Bloxlink.Module):
             text_buffer.append(f"**{option_name}** {ARROW} {value}")
 
         embed.description = "\n".join(text_buffer)
-        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)
+        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
         embed.set_author(name=guild.name, icon_url=guild.icon_url)
 
         await response.send(embed=embed)
@@ -164,6 +164,12 @@ class SettingsCommand(Bloxlink.Module):
                 return await parse_message(message)
             else:
                 await response.send(f"You can change this with `{prefix}whitelabel`!")
+        elif choice == "magicRoles":
+            if message:
+                message.content = f"{prefix}magicroles"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}magicroles`!")
 
         option_find = OPTIONS.get(choice)
 
@@ -519,7 +525,7 @@ class SettingsCommand(Bloxlink.Module):
         guild = CommandArgs.guild
 
         embed = Embed(title="Bloxlink Settings Help")
-        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)
+        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
         embed.set_author(name=guild.name, icon_url=guild.icon_url)
 
         for option_name, option_data in OPTIONS.items():

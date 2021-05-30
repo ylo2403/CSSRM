@@ -65,7 +65,7 @@ async def handle_signal(sig):
     Bloxlink.log(f"Handling signal {sig}")
 
     await Bloxlink.close_db()
-    await Bloxlink.logout()
+    await Bloxlink.close()
 
     loop.stop()
 

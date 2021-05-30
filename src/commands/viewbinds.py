@@ -176,7 +176,7 @@ class ViewBindsCommand(Bloxlink.Module):
 
 
 
-        embed.set_author(name="Powered by Bloxlink", icon_url=Bloxlink.user.avatar_url)
+        embed.set_author(name="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
         embed.set_footer(text=f"Use {prefix}bind to make a new bind, or {prefix}delbind to delete a bind")
 
         await CommandArgs.response.send(embed=embed)

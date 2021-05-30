@@ -79,7 +79,7 @@ class StatsCommand(Bloxlink.Module):
         mem = IS_DOCKER and f"{total_mem} ({process_mem})" or process_mem
 
         embed = Embed(description=f"Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.")
-        embed.set_author(name=Bloxlink.user.name, icon_url=Bloxlink.user.avatar_url)
+        embed.set_author(name=Bloxlink.user.name, icon_url=Bloxlink.user.avatar.url)
 
         embed.add_field(name="Servers", value=guilds)
         embed.add_field(name="Node Uptime", value=uptime)

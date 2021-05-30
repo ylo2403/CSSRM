@@ -35,7 +35,7 @@ class HelpCommand(Bloxlink.Module):
             for name, command in commands.items():
                 if name == command_name or command_name in command.aliases:
                     embed = Embed(title=f"{prefix}{name}", description=command.full_description or "N/A")
-                    embed.set_author(name="Bloxlink", icon_url=Bloxlink.user.avatar_url)
+                    embed.set_author(name="Bloxlink", icon_url=Bloxlink.user.avatar.url)
                     embed.add_field(name="Category", value=command.category)
 
                     if command.usage:

@@ -23,6 +23,6 @@ class InviteCommand(Bloxlink.Module):
                                                                 "go to <https://discord.com> and log out.")
 
 
-        embed.set_footer(text="Thanks for choosing Bloxlink!", icon_url=Bloxlink.user.avatar_url)
+        embed.set_footer(text="Thanks for choosing Bloxlink!", icon_url=Bloxlink.user.avatar.url)
 
         await response.send(embed=embed)
