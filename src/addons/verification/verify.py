@@ -110,8 +110,8 @@ class VerifyCommand(Bloxlink.Module):
                 await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
         view = discord.ui.View()
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL))
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial",
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL, emoji="🔗"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial", emoji="❔",
                                             url="https://www.youtube.com/watch?v=hq496NmQ9GU"))
 
         await CommandArgs.response.send("To verify with Bloxlink, click the link below.", mention_author=True, view=view)
