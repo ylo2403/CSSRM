@@ -44,6 +44,6 @@ class DonateCommand(Bloxlink.Module):
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
 
         view = discord.ui.View()
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.primary, label="Click to Subscribe ($6)", url="https://www.patreon.com/join/bloxlink?"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click to Subscribe ($6)", url="https://www.patreon.com/join/bloxlink?"))
 
         await response.send(embed=embed, view=view)
