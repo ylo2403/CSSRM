@@ -137,7 +137,7 @@ class LogChannelCommand(Bloxlink.Module):
 
         embed = Embed(title="Bloxlink Log Channels")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-        embed.set_author(name=guild.name, icon_url=guild.icon_url)
+        embed.set_author(name=guild.name, icon_url=guild.icon.url)
 
         description = []
 
