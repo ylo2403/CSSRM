@@ -2,9 +2,7 @@ from ..structures.Bloxlink import Bloxlink # pylint: disable=no-name-in-module, 
 from ..exceptions import (BadUsage, RobloxAPIError, Error, CancelCommand, UserNotVerified,# pylint: disable=no-name-in-module, import-error
                            RobloxNotFound, PermissionError, BloxlinkBypass, RobloxDown, Blacklisted)
 from typing import Tuple
-from discord.errors import Forbidden, NotFound, HTTPException
-from discord.utils import find
-from discord import Embed, Member, Object
+import discord
 from datetime import datetime
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
@@ -136,7 +134,7 @@ class Roblox(Bloxlink.Module):
                 for discord_id in discord_ids:
                     try:
                         user = await Bloxlink.fetch_user(int(discord_id))
-                    except NotFound:
+                    except discord.errors.NotFound:
                         pass
                     else:
                         discord_accounts.append(user)
@@ -190,7 +188,7 @@ class Roblox(Bloxlink.Module):
                     for discord_id in discord_ids:
                         try:
                             user = await Bloxlink.fetch_user(int(discord_id))
-                        except NotFound:
+                        except discord.errors.NotFound:
                             pass
                         else:
                             discord_accounts.append(user)
@@ -284,19 +282,19 @@ class Roblox(Bloxlink.Module):
             if v == roblox_id:
                 try:
                     guild = await Bloxlink.fetch_guild(int(i))
-                except (Forbidden, HTTPException):
+                except (discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
                 else:
                     try:
                         member = await guild.fetch_member(author.id)
-                    except (Forbidden, NotFound):
+                    except (discord.errors.Forbidden, discord.errors.NotFound):
                         pass
                     else:
                         for role in member.roles:
                             if role != guild.default_role and role.name != "Muted":
                                 try:
                                     await member.remove_roles(role, reason="Unlinked")
-                                except Forbidden:
+                                except discord.errors.Forbidden:
                                     pass
 
                 guilds.pop(i, None)
@@ -365,7 +363,7 @@ class Roblox(Bloxlink.Module):
         embed = None
 
         if added or removed or errors or nickname:
-            embed = Embed(title=f":man_office_worker: Role data for {roblox_user.username}")
+            embed = discord.Embed(title=f":man_office_worker: Role data for {roblox_user.username}")
             embed.set_author(name=str(author), icon_url=author.avatar.url, url=roblox_user.profile_link)
             embed.set_thumbnail(url=roblox_user.avatar)
 
@@ -378,7 +376,7 @@ class Roblox(Bloxlink.Module):
             if errors:
                 embed.add_field(name="Errors", value=", ".join(errors))
         else:
-            embed = Embed(description="This user is all up-to-date; no changes were made.")
+            embed = discord.Embed(description="This user is all up-to-date; no changes were made.")
 
         if warnings:
             embed.set_footer(text=" | ".join(warnings))
@@ -855,7 +853,7 @@ class Roblox(Bloxlink.Module):
         added, removed, errored, warnings, chosen_nickname = [], [], [], [], None
 
         if RELEASE == "PRO":
-            donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
             if not donator_profile.features.get("pro"):
                 raise CancelCommand
@@ -895,7 +893,7 @@ class Roblox(Bloxlink.Module):
 
         if disallow_alts or disallow_ban_evaders:
             if not donator_profile:
-                donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
             if donator_profile.features.get("premium"):
                 accounts = set(accounts)
@@ -916,12 +914,12 @@ class Roblox(Bloxlink.Module):
 
                                     try:
                                         user_find = await guild.fetch_member(discord_id)
-                                    except NotFound:
+                                    except discord.errors.NotFound:
                                         pass
                                     else:
                                         try:
                                             await user_find.kick(reason=f"disallowAlts is enabled - alt of {member} ({member.id})")
-                                        except Forbidden:
+                                        except discord.errors.Forbidden:
                                             pass
                                         else:
                                             await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
@@ -932,8 +930,8 @@ class Roblox(Bloxlink.Module):
                                     # check the bans
 
                                     try:
-                                        ban_entry = await guild.fetch_ban(Object(discord_id))
-                                    except (NotFound, Forbidden):
+                                        ban_entry = await guild.fetch_ban(discord.Object(discord_id))
+                                    except (discord.errors.NotFound, discord.errors.Forbidden):
                                         pass
                                     else:
                                         action = disallow_ban_evaders == "kick" and "kick"   or "ban"
@@ -941,7 +939,7 @@ class Roblox(Bloxlink.Module):
 
                                         try:
                                             await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))
-                                        except (Forbidden, HTTPException):
+                                        except (discord.errors.Forbidden, discord.errors.HTTPException):
                                             pass
                                         else:
                                             await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
@@ -963,7 +961,7 @@ class Roblox(Bloxlink.Module):
                 dm                      = dm,
                 response                = response)
 
-        except NotFound as e:
+        except discord.errors.NotFound as e:
             if "NotFound" in exceptions:
                 raise e from None
         except RobloxAPIError as e:
@@ -990,7 +988,7 @@ class Roblox(Bloxlink.Module):
             if "PermissionError" in exceptions:
                 raise e from None
 
-        except (UserNotVerified, HTTPException):
+        except (UserNotVerified, discord.errors.HTTPException):
             pass
 
         required_groups = options.get("groupLock") # TODO: integrate with Trello
@@ -1007,12 +1005,12 @@ class Roblox(Bloxlink.Module):
                                               f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
                                               f"then please join {SERVER_INVITE} and link a different account with `{PREFIX}verify add`. "
                                               f"Finally, use the `{PREFIX}switchuser` command and provide this ID to the command: `{guild.id}`")
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             pass
 
                     try:
                         await member.kick(reason=f"AGE-LIMIT: user age {roblox_user.age} < {age_limit}")
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         pass
                     else:
                         raise CancelCommand
@@ -1050,11 +1048,11 @@ class Roblox(Bloxlink.Module):
                                                 f"provide this ID to the command: `{guild.id}`.")
                                     try:
                                         await member.send(text)
-                                    except Forbidden:
+                                    except discord.errors.Forbidden:
                                         pass
                                 try:
                                     await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
-                                except Forbidden:
+                                except discord.errors.Forbidden:
                                     pass
                                 else:
                                     raise CancelCommand
@@ -1079,11 +1077,11 @@ class Roblox(Bloxlink.Module):
 
                             try:
                                 await member.send(text)
-                            except Forbidden:
+                            except discord.errors.Forbidden:
                                 pass
                         try:
                             await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             pass
                         else:
                             raise CancelCommand
@@ -1098,13 +1096,13 @@ class Roblox(Bloxlink.Module):
 
                 try:
                     await member.send(verified_dm)
-                except (Forbidden, HTTPException):
+                except (discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
 
         else:
             if age_limit:
                 if not donator_profile:
-                    donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
                 if donator_profile.features.get("premium"):
                     if dm:
@@ -1116,12 +1114,12 @@ class Roblox(Bloxlink.Module):
                                 await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
                                                   f"You may link your account by joining {SERVER_INVITE} and running the `{PREFIX}switchuser` command "
                                                   f"and provide this ID to the command: `{guild.id}`, or run `{PREFIX}verify add` and set a primary account for any server.")
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             pass
 
                     try:
                         await member.kick(reason=f"AGE-LIMIT: user not linked to Bloxlink")
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         pass
                     else:
                         raise CancelCommand
@@ -1138,12 +1136,12 @@ class Roblox(Bloxlink.Module):
                             await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
                                               f"You may link your account by joining {SERVER_INVITE} and running the `{PREFIX}switchuser` command "
                                               f"and provide this ID to the command: `{guild.id}`, or run `{PREFIX}verify add` and set a primary account for any server.")
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         pass
 
                 try:
                     await member.kick(reason="SERVER-LOCK: not linked to Bloxlink")
-                except Forbidden:
+                except discord.errors.Forbidden:
                     pass
                 else:
                     raise CancelCommand
@@ -1155,7 +1153,7 @@ class Roblox(Bloxlink.Module):
 
                 try:
                     await member.send(unverified_dm)
-                except (Forbidden, HTTPException):
+                except (discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
 
         if not unverified:
@@ -1194,7 +1192,7 @@ class Roblox(Bloxlink.Module):
         top_role_nickname = None
         trello_options = {}
 
-        if not isinstance(author, Member):
+        if not isinstance(author, discord.Member):
             author = await guild.fetch_member(author.id)
 
             if not author:
@@ -1206,7 +1204,7 @@ class Roblox(Bloxlink.Module):
             if not guild:
                 raise Error("Unable to resolve a guild from author.")
 
-        if find(lambda r: r.name == "Bloxlink Bypass", author.roles):
+        if discord.utils.find(lambda r: r.name == "Bloxlink Bypass", author.roles):
             raise BloxlinkBypass
 
         guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
@@ -1228,10 +1226,10 @@ class Roblox(Bloxlink.Module):
         allow_old_roles = guild_data.get("allowOldRoles", DEFAULTS.get("allowOldRoles"))
 
         if unverify_role:
-            unverified_role = find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
+            unverified_role = discord.utils.find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
 
         if verify_role:
-            verified_role = find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
+            verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
 
         inactive_role = await RobloxProfile.get_inactive_role(guild, guild_data, trello_board)
 
@@ -1248,10 +1246,10 @@ class Roblox(Bloxlink.Module):
                     if not unverified_role:
                         try:
                             unverified_role = await guild.create_role(name=unverified_role_name)
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             raise PermissionError("I was unable to create the Unverified Role. Please "
                                                   "ensure I have the `Manage Roles` permission.")
-                        except HTTPException:
+                        except discord.errors.HTTPException:
                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
                     add_roles.add(unverified_role)
@@ -1279,7 +1277,7 @@ class Roblox(Bloxlink.Module):
                         remove_roles.add(unverified_role)
 
                 if verify_role:
-                    verified_role = find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
+                    verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
 
                     if not verified_role:
                         try:
@@ -1287,10 +1285,10 @@ class Roblox(Bloxlink.Module):
                                 name   = verified_role_name,
                                 reason = "Creating missing Verified role"
                             )
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             raise PermissionError("Sorry, I wasn't able to create the Verified role. "
                                                   "Please ensure I have the `Manage Roles` permission.")
-                        except HTTPException:
+                        except discord.errors.HTTPException:
                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
 
@@ -1352,16 +1350,16 @@ class Roblox(Bloxlink.Module):
 
                                     for role_id in bound_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                         if not role:
                                             if bind_data.get("trello"):
                                                 try:
                                                     role = await guild.create_role(name=role_id)
-                                                except Forbidden:
+                                                except discord.errors.Forbidden:
                                                     raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
                                                                            "Please ensure I have the `Manage Roles` permission.")
-                                                except HTTPException:
+                                                except discord.errors.HTTPException:
                                                     raise Error("Unable to create role: this server has reached the max amount of roles!")
 
                                                 else:
@@ -1381,14 +1379,14 @@ class Roblox(Bloxlink.Module):
 
                                     for role_id in bind_remove_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                         if role:
                                             remove_roles.add(role)
                                 else:
                                     for role_id in bound_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                         if not allow_old_roles and role and role in author.roles:
                                             remove_roles.add(role)
@@ -1415,7 +1413,7 @@ class Roblox(Bloxlink.Module):
                                             if bound_roles:
                                                 for role_id in bound_roles:
                                                     int_role_id = role_id.isdigit() and int(role_id)
-                                                    role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                                    role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                     if role and not allow_old_roles:
                                                         remove_roles.add(role)
@@ -1426,16 +1424,16 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                 if not role:
                                                     if bind_data.get("trello"):
                                                         try:
                                                             role = await guild.create_role(name=role_id)
-                                                        except Forbidden:
+                                                        except discord.errors.Forbidden:
                                                             raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
                                                                                    "Please ensure I have the `Manage Roles` permission.")
-                                                        except HTTPException:
+                                                        except discord.errors.HTTPException:
                                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
                                                         else:
@@ -1454,7 +1452,7 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
@@ -1462,7 +1460,7 @@ class Roblox(Bloxlink.Module):
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                 if not allow_old_roles and role and role in author.roles:
                                                     remove_roles.add(role)
@@ -1471,17 +1469,17 @@ class Roblox(Bloxlink.Module):
                                             if bound_roles:
                                                 for role_id in bound_roles:
                                                     int_role_id = role_id.isdigit() and int(role_id)
-                                                    role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                    role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                     if not role:
                                                         if bind_data.get("trello"):
                                                             try:
                                                                 role = await guild.create_role(name=role_id)
-                                                            except Forbidden:
+                                                            except discord.errors.Forbidden:
                                                                 raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
                                                                                        "Please ensure I have the `Manage Roles` permission.")
 
-                                                            except HTTPException:
+                                                            except discord.errors.HTTPException:
                                                                 raise Error("Unable to create role: this server has reached the max amount of roles!")
 
                                                             else:
@@ -1500,14 +1498,14 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                 if not allow_old_roles and role and role in author.roles:
                                                     remove_roles.add(role)
@@ -1526,16 +1524,16 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                 if not role:
                                                     if bind_range.get("trello"):
                                                         try:
                                                             role = await guild.create_role(name=role_id)
-                                                        except Forbidden:
+                                                        except discord.errors.Forbidden:
                                                             raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
                                                                                     "Please ensure I have the `Manage Roles` permission.")
-                                                        except HTTPException:
+                                                        except discord.errors.HTTPException:
                                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
                                                 if role:
                                                     if roles:
@@ -1552,21 +1550,21 @@ class Roblox(Bloxlink.Module):
 
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                                 if role:
                                                     remove_roles.add(role)
                                         else:
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
-                                                role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                 if not allow_old_roles and role and role in author.roles:
                                                     remove_roles.add(role)
                                     else:
                                         for role_id in bound_roles:
                                             int_role_id = role_id.isdigit() and int(role_id)
-                                            role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                            role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                             if not allow_old_roles and role and role in author.roles:
                                                 remove_roles.add(role)
@@ -1581,21 +1579,21 @@ class Roblox(Bloxlink.Module):
 
                             if group:
                                 await group.apply_rolesets()
-                                group_role = find(lambda r: r.name == group.user_rank_name and not r.managed, guild.roles)
+                                group_role = discord.utils.find(lambda r: r.name == group.user_rank_name and not r.managed, guild.roles)
 
                                 if not group_role:
                                     if guild_data.get("dynamicRoles", DEFAULTS.get("dynamicRoles")):
                                         try:
                                             group_role = await guild.create_role(name=group.user_rank_name)
-                                        except Forbidden:
+                                        except discord.errors.Forbidden:
                                             raise PermissionError(f"Sorry, I wasn't able to create the role {group.user_rank_name}."
                                                                    "Please ensure I have the `Manage Roles` permission.")
 
-                                        except HTTPException:
+                                        except discord.errors.HTTPException:
                                             raise Error("Unable to create role: this server has reached the max amount of roles!")
 
                                 for _, roleset_data in group.rolesets.items():
-                                    has_role = find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
+                                    has_role = discord.utils.find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
 
                                     if has_role:
                                         if not allow_old_roles and group.user_rank_name != roleset_data[0]:
@@ -1606,7 +1604,7 @@ class Roblox(Bloxlink.Module):
 
                                     for role_id in bind_remove_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
-                                        role = find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
 
                                         if role:
                                             remove_roles.add(role)
@@ -1627,7 +1625,7 @@ class Roblox(Bloxlink.Module):
                                     raise Error(f"Error for linked group bind: group `{group_id}` not found")
 
                                 for _, roleset_data in group.rolesets.items():
-                                    group_role = find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
+                                    group_role = discord.utils.find(lambda r: r.name == roleset_data[0] and not r.managed, author.roles)
 
                                     if not allow_old_roles and group_role:
                                         remove_roles.add(group_role)
@@ -1643,12 +1641,12 @@ class Roblox(Bloxlink.Module):
                 if remove_roles:
                     await author.remove_roles(*remove_roles, reason="Removing old roles")
 
-            except Forbidden:
+            except discord.errors.Forbidden:
                 raise PermissionError("I was unable to sufficiently add roles to the user. Please ensure that "
                                       "I have the `Manage Roles` permission, and drag my role above the other roles. "
                                       f"{BIND_ROLE_BUG}")
 
-            except NotFound:
+            except discord.errors.NotFound:
                 raise CancelCommand
 
         if nickname:
@@ -1671,12 +1669,12 @@ class Roblox(Bloxlink.Module):
             if nickname and nickname != author.display_name:
                 try:
                     await author.edit(nick=nickname)
-                except Forbidden:
+                except discord.errors.Forbidden:
                     if guild.owner_id == author.id:
                         warnings.append("Since you're the Server Owner, I cannot edit your nickname. You may ignore this message; verification will work for normal users.")
                     else:
                         errors.append(f"I was unable to edit your nickname. Please ensure I have the `Manage Nickname` permission, and drag my role above the other roles. See: {BIND_ROLE_BUG}")
-                except NotFound:
+                except discord.errors.NotFound:
                     raise CancelCommand
 
         if unverified:
@@ -1863,7 +1861,7 @@ class Roblox(Bloxlink.Module):
             if not response:
                 raise BadUsage("Must supply response object for embed sending")
 
-            embed = [Embed(title="Loading..."), response]
+            embed = [discord.Embed(title="Loading..."), response]
 
         if author:
             author_id = str(author.id)
@@ -2223,7 +2221,7 @@ class RobloxProfile(Bloxlink.Module):
 
     @staticmethod
     async def get_inactive_role(guild, guild_data, trello_board):
-        donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+        donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
         is_prem = donator_profile.features.get("premium")
         inactive_role = None
 
@@ -2234,13 +2232,13 @@ class RobloxProfile(Bloxlink.Module):
 
                 if inactive_role_trello:
                     inactive_role_id = inactive_role_trello.isdigit() and int(inactive_role_trello)
-                    inactive_role = find(lambda r: ((inactive_role_id and r.id == inactive_role_id) or (r.name == inactive_role_trello)) and not r.managed, guild.roles)
+                    inactive_role = discord.utils.find(lambda r: ((inactive_role_id and r.id == inactive_role_id) or (r.name == inactive_role_trello)) and not r.managed, guild.roles)
             else:
                 inactive_role_id = guild_data.get("inactiveRole")
 
                 if inactive_role_id:
                     inactive_role_id = int(inactive_role_id)
-                    inactive_role = find(lambda r: r.id == inactive_role_id and not r.managed, guild.roles)
+                    inactive_role = discord.utils.find(lambda r: r.id == inactive_role_id and not r.managed, guild.roles)
 
         return inactive_role
 
@@ -2253,19 +2251,19 @@ class RobloxProfile(Bloxlink.Module):
             if inactive_role not in user.roles:
                 try:
                     await user.add_roles(inactive_role, reason="Adding inactive role")
-                except Forbidden:
+                except discord.errors.Forbidden:
                     raise Error("I was unable to add the inactivity role! Please ensure I have the "
                                 f"`Manage Roles` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
-                except NotFound:
+                except discord.errors.NotFound:
                     pass
         else:
             if inactive_role in user.roles:
                 try:
                     await user.remove_roles(inactive_role, reason="Removing inactive role")
-                except Forbidden:
+                except discord.errors.Forbidden:
                     raise Error("I was unable to remove the inactivity role! Please ensure I have the "
                                 f"`Manage Roles` permission, and drag my roles above the other roles. {BIND_ROLE_BUG}")
-                except NotFound:
+                except discord.errors.NotFound:
                     pass
 
     async def get_profile(self, author, user, roblox_user=None, prefix=None, guild=None, guild_data=None, inactive_role=None):
@@ -2279,10 +2277,10 @@ class RobloxProfile(Bloxlink.Module):
 
         if roblox_user:
             ending = roblox_user.username.endswith("s") and "'" or "'s"
-            embed = Embed(title=f"{roblox_user.username}{ending} Bloxlink Profile")
+            embed = discord.Embed(title=f"{roblox_user.username}{ending} Bloxlink Profile")
             embed.set_author(name=user, icon_url=user.avatar.url, url=roblox_user.profile_link)
         else:
-            embed = Embed(title="Bloxlink User Profile")
+            embed = discord.Embed(title="Bloxlink User Profile")
             embed.set_author(name=user, icon_url=user.avatar.url)
 
         if not profile_data:
@@ -2900,8 +2898,7 @@ class RobloxUser(Bloxlink.Module):
 
             if embed and (everything or "dev_forum" in args or "devforum" in args):
                 if dev_forum_profile and dev_forum_profile.get("trust_level"):
-                    dev_forum_desc = (f"[Profile Link](https://devforum.roblox.com/u/{dev_forum_profile['username']})\n"
-                                     f"Trust Level: {trust_levels.get(dev_forum_profile['trust_level'], 'No Access')}\n"
+                    dev_forum_desc = (f"Trust Level: {trust_levels.get(dev_forum_profile['trust_level'], 'No Access')}\n"
                                      f"""{dev_forum_profile.get('title') and f'Title: {dev_forum_profile["title"]}' or ''}""")
                 else:
                     dev_forum_desc = "This user isn't in the DevForums."
@@ -2936,6 +2933,12 @@ class RobloxUser(Bloxlink.Module):
             else:
                 embed[0].title = username
 
+            view = discord.ui.View()
+            view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_data["profile_link"], emoji="👥"))
+
+            if roblox_data["dev_forum"]:
+                view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit DevForum Profile", url=f"https://devforum.roblox.com/u/{roblox_data['dev_forum']['username']}", emoji="🧑‍💻"))
+
             if not args:
                 user_tags, _ = await Roblox.apply_perks(roblox_user, author=author, tags=True, guild=guild, embed=embed and embed[0])
 
@@ -2944,9 +2947,9 @@ class RobloxUser(Bloxlink.Module):
 
             if response:
                 if response.webhook_only:
-                    await response.send(embed=embed[0])
+                    await response.send(embed=embed[0], view=view)
                 else:
-                    await embed[2].edit(embed=embed[0])
+                    await embed[2].edit(embed=embed[0], view=view)
 
         return roblox_data
 
