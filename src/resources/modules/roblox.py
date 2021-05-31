@@ -7,10 +7,10 @@ from datetime import datetime
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
 from config import REACTIONS, PREFIX # pylint: disable=no-name-in-module
-from ..constants import (RELEASE, DEFAULTS, STAFF_COLOR, DEV_COLOR, COMMUNITY_MANAGER_COLOR, # pylint: disable=no-name-in-module, import-error
-                         VIP_MEMBER_COLOR, ORANGE_COLOR, PARTNERED_SERVER, ARROW,
+from ..constants import (RELEASE, DEFAULTS, ORANGE_COLOR, PARTNERED_SERVER, ARROW,
                          SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR,
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS)
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS,
+                         ACCOUNT_SETTINGS_URL, VERIFY_URL)
 import json
 import random
 import re
@@ -381,7 +381,11 @@ class Roblox(Bloxlink.Module):
         if warnings:
             embed.set_footer(text=" | ".join(warnings))
 
-        return welcome_message, embed
+        view = discord.ui.View()
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Add/Change Account", url=VERIFY_URL, emoji="🔗"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Remove Account", emoji="🧑‍🔧", url=ACCOUNT_SETTINGS_URL))
+
+        return welcome_message, embed, view
 
     async def get_nickname(self, author, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, guild_data=None, user_data=None, roblox_user=None, dm=False, prefix=None):
         template = template or ""

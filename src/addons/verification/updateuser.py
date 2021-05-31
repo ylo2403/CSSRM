@@ -186,9 +186,9 @@ class UpdateUserCommand(Bloxlink.Module):
                         event             = True,
                         exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError", "RobloxDown", "RobloxAPIError"))
 
-                    _, embed = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
+                    _, embed, view = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
 
-                    await response.send(embed=embed)
+                    await response.send(embed=embed, view=view)
 
                 except BloxlinkBypass:
                     raise Message("Since this user has the Bloxlink Bypass role, I was unable to update their roles/nickname.", type="info")

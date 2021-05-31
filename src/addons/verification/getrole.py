@@ -1,6 +1,7 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from resources.exceptions import Message, UserNotVerified, Error, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
 from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error
+import discord
 
 format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["format_update_embed", "guild_obligations"])
 get_options = Bloxlink.get_module("trello", attrs="get_options")
@@ -59,15 +60,19 @@ class GetRoleCommand(Bloxlink.Module):
                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
 
         except UserNotVerified:
-            await response.reply("To verify with Bloxlink, please visit our website at "
-                                f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=hq496NmQ9GU>", hidden=True)
+            view = discord.ui.View()
+            view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL, emoji="🔗"))
+            view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial", emoji="❔",
+                                                url="https://www.youtube.com/watch?v=hq496NmQ9GU"))
+
+            await response.send("To verify with Bloxlink, click the link below.", mention_author=True, view=view)
 
         except PermissionError as e:
             raise Error(e.message)
 
         else:
-            welcome_message, embed = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
+            welcome_message, embed, view = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
-            await response.send(content=welcome_message, embed=embed, mention_author=True)
+            await response.send(content=welcome_message, embed=embed, view=view, mention_author=True)
