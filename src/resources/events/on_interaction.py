@@ -27,9 +27,9 @@ async def on_interaction(interaction):
     interaction_id    = interaction.id
     interaction_token = interaction.token
 
-    guild = interaction.guild
+    guild   = interaction.guild
     channel = interaction.channel
-    user = interaction.user
+    user    = interaction.user
 
     if not guild:
         return

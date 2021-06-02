@@ -1,5 +1,4 @@
-from discord.utils import find
-from discord.errors import Forbidden, NotFound
+import discord
 from re import compile
 
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
@@ -94,11 +93,11 @@ class Resolver(Bloxlink.Module):
                                 if guild and arg.get("guild_members_only"):
                                     user = guild.get_member(user_id) or await guild.fetch_member(user_id)
                                 else:
-                                    user = find(lambda u: u.id == user_id, message.mentions) or await self.client.fetch_user(user_id)
+                                    user = discord.utils.find(lambda u: u.id == user_id, message.mentions) or await self.client.fetch_user(user_id)
 
                                 return user, None
 
-                            except NotFound:
+                            except discord.errors.NotFound:
                                 return False, "A user with this discord ID does not exist"
 
             is_int, is_id = None, None
@@ -123,7 +122,7 @@ class Resolver(Bloxlink.Module):
 
                         return user, None
 
-                    except NotFound:
+                    except discord.errors.NotFound:
                         return False, "A user with this discord ID does not exist"
             else:
                 member = guild and guild.get_member(content)
@@ -155,7 +154,7 @@ class Resolver(Bloxlink.Module):
                         else:
                             count += 1
 
-                    user = find(lambda u: u.id == int(user_search.group(1)), message.mentions)
+                    user = discord.utils.find(lambda u: u.id == int(user_search.group(1)), message.mentions)
 
                     if user:
                         users.add(user)
@@ -172,7 +171,7 @@ class Resolver(Bloxlink.Module):
                                 user = guild.get_member(int(lookup_string)) or await guild.fetch_member(int(lookup_string))
                             else:
                                 user = await Bloxlink.fetch_user(int(lookup_string))
-                        except NotFound:
+                        except discord.errors.NotFound:
                             pass
                         else:
                             users.add(user)
@@ -215,15 +214,15 @@ class Resolver(Bloxlink.Module):
                     channel = None
 
                     if lookup_string.isdigit():
-                        channel = find(lambda c: c.id == int(lookup_string), guild.text_channels)
+                        channel = discord.utils.find(lambda c: c.id == int(lookup_string), guild.text_channels)
                     else:
-                        channel = find(lambda c: c.name == lookup_string, guild.text_channels)
+                        channel = discord.utils.find(lambda c: c.name == lookup_string, guild.text_channels)
 
                     if not channel:
                         if create_missing_channel:
                             try:
                                 channel = await guild.create_text_channel(name=lookup_string.replace(" ", "-"))
-                            except Forbidden:
+                            except discord.errors.Forbidden:
                                 return None, "I was unable to create the channel. Please ensure I have the `Manage Channels` permission."
                             else:
                                 channels.append(channel)
@@ -262,15 +261,15 @@ class Resolver(Bloxlink.Module):
                 category = None
 
                 if lookup_string.isdigit():
-                    category = find(lambda c: c.id == int(lookup_string), guild.categories)
+                    category = discord.utils.find(lambda c: c.id == int(lookup_string), guild.categories)
                 else:
-                    category = find(lambda c: c.name == lookup_string, guild.categories)
+                    category = discord.utils.find(lambda c: c.name == lookup_string, guild.categories)
 
                 if not category:
                     if create_missing_category:
                         try:
                             category = await guild.create_category(name=lookup_string)
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             return None, "I was unable to create the category. Please ensure I have the `Manage Channels` permission."
                         else:
                             categories.append(category)
@@ -318,13 +317,13 @@ class Resolver(Bloxlink.Module):
                     if lookup_string.isdigit():
                         role = guild.get_role(int(lookup_string))
                     else:
-                        role = find(lambda r: r.name == lookup_string, guild.roles)
+                        role = discord.utils.find(lambda r: r.name == lookup_string, guild.roles)
 
                     if not role:
                         if create_missing_role:
                             try:
                                 role = await guild.create_role(name=lookup_string)
-                            except Forbidden:
+                            except discord.errors.Forbidden:
                                 return None, "I was unable to create the role. Please ensure I have the `Manage Roles` permission."
                             else:
                                 roles.append(role)
