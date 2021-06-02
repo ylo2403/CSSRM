@@ -1,12 +1,14 @@
 from asyncio import TimeoutError
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord import Embed
+import discord
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
 from ..exceptions import CancelledPrompt, CancelCommand, Error # pylint: disable=import-error
 from ..constants import RED_COLOR, INVISIBLE_COLOR # pylint: disable=import-error
 from config import RELEASE # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, TIP_CHANCES, SERVER_INVITE, PROMPT # pylint: disable=import-error
 import random
+import asyncio
 
 get_resolver = Bloxlink.get_module("resolver", attrs="get_resolver")
 broadcast = Bloxlink.get_module("ipc", attrs="broadcast")
@@ -104,8 +106,16 @@ class Arguments:
         self.command_args.add(parsed_args=self.parsed_args, string_args=text_after and text_after.split(" ") or [])
 
 
-    async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False):
+    async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False, components=None):
         embed_color = embed_color or INVISIBLE_COLOR
+        view = discord.ui.View()
+
+        if components:
+            for component in components:
+                component.custom_id = component.label
+                view.add_item(item=component)
+
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.secondary, label="Cancel", custom_id="cancel"))
 
         if self.dm_false_override:
             dm = False
@@ -117,11 +127,11 @@ class Arguments:
 
         if not embed:
             if is_prompt:
-                text = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
+                text = f"{text}\n\n{footer}\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True)
+            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True, view=view)
 
-        description = f"{text}\n\n{footer}{self.locale('prompt.toCancel')}"
+        description = f"{text}\n\n{footer}"
 
         if type == "error":
             new_embed = Embed(title=embed_title or self.locale("prompt.errors.title"))
@@ -139,13 +149,13 @@ class Arguments:
 
         new_embed.set_footer(text=self.locale("prompt.timeoutWarning", timeout=PROMPT["PROMPT_TIMEOUT"]))
 
-        msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True, strict_post=True, ignore_errors=True)
+        msg = await self.response.send(embed=new_embed, dm=dm, no_dm_post=True, strict_post=True, ignore_errors=True, view=view)
 
         if not msg:
             if is_prompt:
                 text = f"{text}\n\n{self.locale('prompt.toCancel')}\n\n{self.locale('prompt.timeoutWarning', timeout=PROMPT['PROMPT_TIMEOUT'])}"
 
-            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True)
+            return await self.response.send(text, dm=dm, no_dm_post=True, strict_post=True, view=view)
 
         if msg and not dm:
             if self.slash_command and self.first_slash:
@@ -196,7 +206,10 @@ class Arguments:
 
                 prompt_ = arguments[checked_args]
                 skipped_arg = self.skipped_args and str(self.skipped_args[0])
-                message = self.message
+                message     = None
+                interaction = None
+
+                custom_id = None
 
                 if (prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args):
                     if self.skipped_args:
@@ -216,7 +229,7 @@ class Arguments:
                         if formatting:
                             prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
 
-                        await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm)
+                        await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
 
                         if dm and IS_DOCKER:
                             message_content = await broadcast(self.author.id, type="DM", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
@@ -238,15 +251,37 @@ class Arguments:
                                 skipped_arg = "cancel (timeout)"
 
                         else:
-                            message = await Bloxlink.wait_for("message", check=self._check_prompt(dm), timeout=PROMPT["PROMPT_TIMEOUT"])
+                            task_1 = asyncio.create_task(Bloxlink.wait_for("message", check=self._check_prompt(dm)))
+                            task_2 = asyncio.create_task(Bloxlink.wait_for("interaction", check=self._check_interaction()))
 
-                            skipped_arg = message.content
+                            result_set, pending = await asyncio.wait({task_1, task_2}, return_when=asyncio.FIRST_COMPLETED, timeout=PROMPT["PROMPT_TIMEOUT"])
 
-                            if prompt_.get("delete_original", True):
-                                self.messages.append(message.id)
+                            if not result_set:
+                                raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
 
-                        skipped_arg_lower = skipped_arg.lower()
-                        if skipped_arg_lower == "cancel":
+                            result = next(iter(result_set)).result()
+
+                            if isinstance(result, discord.Interaction):
+                                interaction = result
+                                message = None
+                                custom_id = interaction.data["custom_id"]
+                            else:
+                                interaction = None
+                                message = result
+
+                            if message:
+                                skipped_arg = message.content
+
+                                if prompt_.get("delete_original", True):
+                                    self.messages.append(message.id)
+                            else:
+                                skipped_arg = custom_id
+
+                        skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
+
+                        if custom_id == "cancel":
+                            raise CancelledPrompt()
+                        elif skipped_arg_lower == "cancel":
                             raise CancelledPrompt(type="delete", dm=dm)
                         elif skipped_arg_lower == "cancel (timeout)":
                             raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
@@ -334,5 +369,12 @@ class Arguments:
                     return message.channel.id == self.channel.id
             else:
                 return False
+
+        return wrapper
+
+    def _check_interaction(self):
+        def wrapper(interaction):
+            if interaction.user.id == self.author.id and interaction.data.get("custom_id"):
+                return True
 
         return wrapper

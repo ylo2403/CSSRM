@@ -3,7 +3,6 @@
 		"title": "Prompt",
 		"cancelledPrompt": "Cancelled prompt",
 		"timeoutWarning": "This prompt will automatically cancel in {timeout} seconds.",
-		"toCancel": "Say **cancel** to cancel.",
 		"errors": {
 			"title": "Prompt Error",
 			"invalidArgument": "Invalid {arg} argument"
