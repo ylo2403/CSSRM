@@ -1,4 +1,3 @@
-from asyncio import TimeoutError
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord import Embed
 import discord
@@ -14,7 +13,6 @@ get_resolver = Bloxlink.get_module("resolver", attrs="get_resolver")
 broadcast = Bloxlink.get_module("ipc", attrs="broadcast")
 
 prompts = {}
-
 
 
 class Arguments:
@@ -115,7 +113,8 @@ class Arguments:
                 component.custom_id = component.label
                 view.add_item(item=component)
 
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.secondary, label="Cancel", custom_id="cancel"))
+        if type != "error":
+            view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.secondary, label="Cancel", custom_id="cancel"))
 
         if self.dm_false_override:
             dm = False
@@ -232,7 +231,7 @@ class Arguments:
                         await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
 
                         if dm and IS_DOCKER:
-                            message_content = await broadcast(self.author.id, type="DM", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
+                            message_content = await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
                             skipped_arg = message_content[0]
 
                             if not skipped_arg:
@@ -251,8 +250,8 @@ class Arguments:
                                 skipped_arg = "cancel (timeout)"
 
                         else:
-                            task_1 = asyncio.create_task(Bloxlink.wait_for("message", check=self._check_prompt(dm)))
-                            task_2 = asyncio.create_task(Bloxlink.wait_for("interaction", check=self._check_interaction()))
+                            task_1 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("message", check=self._check_prompt(dm), timeout=PROMPT["PROMPT_TIMEOUT"])))
+                            task_2 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("interaction", check=self._check_interaction(), timeout=PROMPT["PROMPT_TIMEOUT"])))
 
                             result_set, pending = await asyncio.wait({task_1, task_2}, return_when=asyncio.FIRST_COMPLETED, timeout=PROMPT["PROMPT_TIMEOUT"])
 
@@ -286,7 +285,7 @@ class Arguments:
                         elif skipped_arg_lower == "cancel (timeout)":
                             raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
 
-                    except TimeoutError:
+                    except asyncio.TimeoutError:
                         raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
 
                 skipped_arg_lower = str(skipped_arg).lower()
@@ -378,3 +377,10 @@ class Arguments:
                 return True
 
         return wrapper
+
+
+async def suppress_timeout_errors(awaitable):
+    try:
+        return await awaitable
+    except asyncio.TimeoutError:
+        pass

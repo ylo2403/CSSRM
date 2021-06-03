@@ -201,6 +201,37 @@ class IPC(Bloxlink.Module):
 
                 await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
 
+        elif type == "DM_AND_INTERACTION":
+            if 0 in SHARD_RANGE:
+                try:
+                    task_1 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("message", check=lambda m: m.author.id == data and not m.guild, timeout=PROMPT["PROMPT_TIMEOUT"])))
+                    task_2 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("interaction", check=lambda i: i.user.id == data and not i.guild_id and i.data.get("custom_id"), timeout=PROMPT["PROMPT_TIMEOUT"])))
+
+                    result_set, pending = await asyncio.wait({task_1, task_2}, return_when=asyncio.FIRST_COMPLETED, timeout=PROMPT["PROMPT_TIMEOUT"])
+
+                    if result_set:
+                        item = next(iter(result_set)).result()
+                        if hasattr(item, "content"):
+                            message_content = item.content
+                        else:
+                            message_content = item.data["custom_id"]
+                    else:
+                        message_content = "cancel (timeout)"
+
+                except asyncio.TimeoutError:
+                    message_content = "cancel (timeout)"
+
+                data = json.dumps({
+                    "nonce": nonce,
+                    "cluster_id": CLUSTER_ID,
+                    "data": message_content,
+                    "type": "CLIENT_RESULT",
+                    "original_cluster": original_cluster,
+                    "waiting_for": waiting_for
+                })
+
+                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+
         elif type == "STATS":
             seconds = floor(time() - STARTED)
 
@@ -316,3 +347,10 @@ class IPC(Bloxlink.Module):
             return result
         else:
             self.pending_tasks[nonce] = None # this is necessary to prevent any race conditions
+
+
+async def suppress_timeout_errors(awaitable):
+    try:
+        return await awaitable
+    except asyncio.TimeoutError:
+        pass
