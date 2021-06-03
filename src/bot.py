@@ -69,7 +69,7 @@ async def handle_signal(sig):
 
     loop.stop()
 
-    for task in asyncio.Task.all_tasks():
+    for task in asyncio.all_tasks():
         task.cancel()
 
     os._exit(0)
