@@ -2,8 +2,7 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO # pylint: disable=import-error
 from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error
 from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
-from discord.errors import Forbidden, HTTPException
-from discord.utils import find
+import discord
 import re
 
 NICKNAME_DEFAULT = "{smart-name}"
@@ -120,6 +119,7 @@ class SetupCommand(Bloxlink.Module):
                 "footer": "Say **next** to continue.",
                 "type": "choice",
                 "choices": ["next"],
+                "components": [discord.ui.Button(label="Next", style=discord.ButtonStyle.primary)],
                 "embed_title": "Setup Prompt"
             },
             {
@@ -128,6 +128,7 @@ class SetupCommand(Bloxlink.Module):
                 "name": "nickname",
                 "embed_title": "Setup Prompt",
                 "footer": "Say **disable** to not have a nickname.\nSay **skip** to leave this as the default (`{smart-name}`).",
+                "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "formatting": False,
                 "exceptions": ("disable", "skip")
             },
@@ -136,6 +137,7 @@ class SetupCommand(Bloxlink.Module):
                 "name": "group",
                 "footer": "Say **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
+                "components": [discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "validation": self.validate_group
             },
             {
@@ -144,6 +146,7 @@ class SetupCommand(Bloxlink.Module):
                 "name": "verified_role",
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
+                "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "max": 50
             }
         ], dm=True, no_dm_post=False)
@@ -197,6 +200,7 @@ class SetupCommand(Bloxlink.Module):
                     "type": "choice",
                     "choices": ["disable", "skip"],
                     "footer": "Say **disable** to unlink your server.\nSay **skip** to skip this.",
+                    "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                     "embed_title": "Trello Deprecation"
 
                 }
@@ -216,6 +220,7 @@ class SetupCommand(Bloxlink.Module):
                 "choices": ["done"],
                 "embed_title": "Setup Prompt Confirmation",
                 "embed_color": BROWN_COLOR,
+                "components": [discord.ui.Button(label="Done", style=discord.ButtonStyle.primary)],
                 "formatting": False
             }
         ], dm=True, no_dm_post=True, last=True)
@@ -230,19 +235,19 @@ class SetupCommand(Bloxlink.Module):
                             if not (role in guild.me.roles or role.is_default()):
                                 try:
                                     await role.delete(reason=f"{author} chose to replace roles through {prefix}setup")
-                                except Forbidden:
+                                except discord.errors.orbidden:
                                     pass
-                                except HTTPException:
+                                except discord.errors.HTTPException:
                                     pass
 
                         except AttributeError: # guild.me is None -- bot kicked out
                             raise CancelCommand
 
                 for _, roleset_data in group.rolesets.items():
-                    if not find(lambda r: r.name == roleset_data[0], guild.roles):
+                    if not discord.utils.find(lambda r: r.name == roleset_data[0], guild.roles):
                         try:
                             await guild.create_role(name=roleset_data[0])
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 
         if verified:
