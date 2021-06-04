@@ -41,6 +41,12 @@ class Utils(Bloxlink.Module):
         finally:
             loop.close()
 
+    @staticmethod
+    async def suppress_timeout_errors(awaitable):
+        try:
+            return await awaitable
+        except asyncio.TimeoutError:
+            pass
 
     async def post_event(self, guild, guild_data, event_name, text, color=None):
         if guild_data:

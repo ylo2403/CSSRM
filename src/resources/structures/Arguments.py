@@ -11,6 +11,7 @@ import asyncio
 
 get_resolver = Bloxlink.get_module("resolver", attrs="get_resolver")
 broadcast = Bloxlink.get_module("ipc", attrs="broadcast")
+suppress_timeout_errors = Bloxlink.get_module("utils", attrs="suppress_timeout_errors")
 
 prompts = {}
 
@@ -377,10 +378,3 @@ class Arguments:
                 return True
 
         return wrapper
-
-
-async def suppress_timeout_errors(awaitable):
-    try:
-        return await awaitable
-    except asyncio.TimeoutError:
-        pass

@@ -15,7 +15,7 @@ from psutil import Process
 import async_timeout
 
 eval = Bloxlink.get_module("evalm", attrs="__call__")
-post_event = Bloxlink.get_module("utils", attrs="post_event")
+post_event, suppress_timeout_errors = Bloxlink.get_module("utils", attrs=["post_event", "suppress_timeout_errors"])
 guild_obligations, get_user, get_nickname = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname"])
 get_guild_value = Bloxlink.get_module("cache", attrs="get_guild_value")
 
@@ -347,10 +347,3 @@ class IPC(Bloxlink.Module):
             return result
         else:
             self.pending_tasks[nonce] = None # this is necessary to prevent any race conditions
-
-
-async def suppress_timeout_errors(awaitable):
-    try:
-        return await awaitable
-    except asyncio.TimeoutError:
-        pass
