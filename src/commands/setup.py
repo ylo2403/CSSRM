@@ -128,7 +128,6 @@ class SetupCommand(Bloxlink.Module):
                 "name": "nickname",
                 "embed_title": "Setup Prompt",
                 "footer": "Say **disable** to not have a nickname.\nSay **skip** to leave this as the default (`{smart-name}`).",
-                "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "formatting": False,
                 "exceptions": ("disable", "skip")
             },
@@ -137,7 +136,6 @@ class SetupCommand(Bloxlink.Module):
                 "name": "group",
                 "footer": "Say **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
-                "components": [discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "validation": self.validate_group
             },
             {
@@ -146,7 +144,6 @@ class SetupCommand(Bloxlink.Module):
                 "name": "verified_role",
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
-                "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                 "max": 50
             }
         ], dm=True, no_dm_post=False)
