@@ -1,5 +1,5 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference
+from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference, ui
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
@@ -210,7 +210,7 @@ class Response(Bloxlink.Module):
             return None
 
         if isinstance(dest, Webhook):
-            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view)
+            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view or ui.View())
 
         elif self.slash_command and send_as_slash_command:
             if self.sent_first_slash_command:
