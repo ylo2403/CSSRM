@@ -108,7 +108,7 @@ class SettingsCommand(Bloxlink.Module):
 
         embed.description = "\n".join(text_buffer)
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-        embed.set_author(name=guild.name, icon_url=guild.icon.url)
+        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else "")
 
         await response.send(embed=embed)
 
@@ -526,7 +526,7 @@ class SettingsCommand(Bloxlink.Module):
 
         embed = Embed(title="Bloxlink Settings Help")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-        embed.set_author(name=guild.name, icon_url=guild.icon.url)
+        embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else "")
 
         for option_name, option_data in OPTIONS.items():
             desc = option_data[4].format(prefix=CommandArgs.prefix, templates=NICKNAME_TEMPLATES)

@@ -190,7 +190,7 @@ class GroupLockCommand(Bloxlink.Module):
 
             embed = Embed(title="Bloxlink Server-Lock")
             embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-            embed.set_author(name=guild.name, icon_url=guild.icon.url)
+            embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else "")
 
             for group_id, data in groups.items():
                 embed.add_field(name=f"{data['groupName']} ({group_id})", value=data["dmMessage"], inline=False)
