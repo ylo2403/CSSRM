@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
 from discord import Embed, Object, Member, User
+import discord
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
 from ..structures import Bloxlink, Args, Permissions, Locale, Arguments, Response # pylint: disable=import-error
 from ..constants import MAGIC_ROLES, OWNER, DEFAULTS, RELEASE, CLUSTER_ID # pylint: disable=import-error
@@ -37,6 +38,8 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
+            return
+
             slash_commands = [self.slash_command_to_json(c) for c in commands.values() if c.slash_enabled]
             text, response = await fetch(COMMANDS_URL, "PUT", json=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -69,7 +72,7 @@ class Commands(Bloxlink.Module):
 
                         raise CancelCommand
 
-            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix"):
+            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix", "add-features"):
                 donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
                 if not donator_profile.features.get("pro"):
@@ -206,7 +209,7 @@ class Commands(Bloxlink.Module):
             CommandArgs.has_permission = True
 
 
-    async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, user, interaction_id, interaction_token, subcommand):
+    async def handle_slash_command(self, command_name, command_id, arguments, guild, channel, user, first_response, followups, interaction, subcommand):
         command = commands.get(command_name)
         guild_id = guild and str(guild.id)
 
@@ -247,14 +250,15 @@ class Commands(Bloxlink.Module):
                 guild = guild,
                 channel = channel,
                 author = user,
-                interaction_id = interaction_id,
-                interaction_token = interaction_token
+                first_response = first_response,
+                followups = followups,
+                interaction = interaction
             )
 
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
 
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, user, channel, guild, None, slash_command={"id": interaction_id, "token": interaction_token})
+            response = Response(CommandArgs, user, channel, guild, None, slash_command=(first_response, followups, interaction))
 
             if Arguments.in_prompt(user):
                 await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)
@@ -264,9 +268,9 @@ class Commands(Bloxlink.Module):
 
             await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
 
-            if command.slash_ack:
+            if command.slash_defer:
                 try:
-                    await response.slash_ack()
+                    await response.slash_defer()
                 except NotFound:
                     raise CancelCommand
 
@@ -326,7 +330,7 @@ class Commands(Bloxlink.Module):
             else:
                 if my_permissions and my_permissions.manage_messages:
                     if slash_command and response.first_slash_command:
-                        await response.first_slash_command.edit(content="**_Command finished._**")
+                        await response.first_slash_command.edit(content="**_Command finished._**", view=None, embed=None)
 
                 await response.send(text, dm=e.dm, no_dm_post=True)
 
@@ -408,7 +412,7 @@ class Commands(Bloxlink.Module):
 
                 if delete_messages:
                     if slash_command and response.first_slash_command and not arguments.cancelled:
-                        await response.first_slash_command.edit(content="_**Command finished.**_")
+                        await response.first_slash_command.edit(content="_**Command finished.**_", embed=None, view=None)
 
                     try:
                         await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
@@ -629,7 +633,7 @@ class Commands(Bloxlink.Module):
 
 class Command:
     def __init__(self, command):
-        self.name = command.__class__.__name__.replace("Command", "").lower()
+        self.name = command.__class__.__name__[:-7].lower()
         self.subcommands = {}
         self.description = command.__doc__ or "N/A"
         self.dm_allowed = getattr(command, "dm_allowed", False)
@@ -647,7 +651,7 @@ class Command:
         self.developer_only = self.permissions.developer_only or self.category == "Developer" or getattr(command, "developer_only", False) or getattr(command, "developer", False)
         self.addon = getattr(command, "addon", None)
         self.slash_enabled = getattr(command, "slash_enabled", False)
-        self.slash_ack = getattr(command, "slash_ack", False)
+        self.slash_defer = getattr(command, "slash_defer", False)
         self.slash_args = getattr(command, "slash_args", None)
 
         self.usage = []

@@ -280,7 +280,7 @@ class Arguments:
                         skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
 
                         if custom_id == "cancel":
-                            raise CancelledPrompt()
+                            raise CancelledPrompt(type="delete")
                         elif skipped_arg_lower == "cancel":
                             raise CancelledPrompt(type="delete", dm=dm)
                         elif skipped_arg_lower == "cancel (timeout)":

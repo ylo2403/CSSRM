@@ -1,5 +1,5 @@
 from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
-from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference, ui
+from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference, ui, Embed
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
 from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
@@ -14,7 +14,7 @@ loop = asyncio.get_event_loop()
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
 
-
+"""
 class InteractionWebhook(WebhookMessage):
     def __init__(self, interaction_id, interaction_token, discord_response, state, channel, data):
         super().__init__(state=state, channel=channel, data={
@@ -63,7 +63,29 @@ class InteractionWebhook(WebhookMessage):
                           interaction_token=self.interaction_token)
 
         await self._state.http.request(route)
+"""
 
+class InteractionWebhook:
+    def __init__(self, interaction_or_webhook, followup=False, channel=None, content=None):
+        self.followup = followup
+        self.interaction_or_webhook = interaction_or_webhook
+
+        self.id = getattr(interaction_or_webhook, "id", 0)
+        self.channel = getattr(interaction_or_webhook, "channel", channel)
+        self.content = getattr(interaction_or_webhook, "content", content)
+
+
+    async def edit(self, content, **kwargs):
+        if self.followup:
+            await self.interaction_or_webhook.edit(content=content, **kwargs)
+        else:
+            await self.interaction_or_webhook.response.edit_message(content=content, **kwargs)
+
+    async def delete(self):
+        if self.followup:
+            await self.interaction_or_webhook.delete()
+        else:
+            await self.interaction_or_webhook.response.delete_message()
 
 class ResponseLoading:
     def __init__(self, response, backup_text):
@@ -192,16 +214,9 @@ class Response(Bloxlink.Module):
             if message:
                 self.delete_message_queue.append(message.id)
 
-    async def slash_ack(self):
-        if self.slash_command:
-            route = Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=self.slash_command["id"], interaction_token=self.slash_command["token"])
-
-            payload = {
-                "type": 5
-            }
-
-            await self.channel._state.http.request(route, json=payload)
-            self.sent_first_slash_command = True
+    async def slash_defer(self):
+        await self.slash_command[0].defer()
+        self.sent_first_slash_command = True
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
         msg = None
@@ -213,35 +228,17 @@ class Response(Bloxlink.Module):
             msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view or ui.View())
 
         elif self.slash_command and send_as_slash_command:
+            kwargs = {"content": content, "ephemeral": hidden}
+            if embed:
+                kwargs["embed"] = embed
+            if view:
+                kwargs["view"] = view
+
             if self.sent_first_slash_command:
-                payload = {
-                    "type": 4,
-                    "content": content,
-                    "embeds": [embed.to_dict()] if embed else None,
-                    "flags": 1 << 6 if hidden else None,
-                    "components": view.to_components() if view else None
-                }
-                message_data = payload
-                route = Route("POST", "/webhooks/{application_id}/{interaction_token}", application_id=Bloxlink.user.id, interaction_token=self.slash_command["token"])
+                msg = InteractionWebhook(await self.slash_command[1].send(**kwargs), True) # webhook
             else:
-                payload = {
-                    "type": 4,
-                    "data": {
-                        "content": content,
-                        "embeds": [embed.to_dict()] if embed else None,
-                        "flags": 1 << 6 if hidden else None,
-                        "components": view.to_components() if view else None
-                    }
-                }
-                message_data = payload["data"]
-                route = Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=self.slash_command["id"], interaction_token=self.slash_command["token"])
-
-            response = await self.channel._state.http.request(route, json=payload)
-
-            msg = InteractionWebhook(interaction_id=self.slash_command["token"], interaction_token=self.slash_command["token"], discord_response=response, state=self.channel._state, channel=self.channel, data=response or {
-                "content": message_data["content"],
-                "embeds":  message_data["embeds"] or []
-            })
+                await self.slash_command[0].send_message(**kwargs) # no return
+                msg = InteractionWebhook(self.slash_command[2], False)
 
             if not self.first_slash_command:
                 self.first_slash_command = msg

@@ -24,8 +24,8 @@ async def on_interaction(interaction):
             else:
                 subcommand = arg["name"]
 
-    interaction_id    = interaction.id
-    interaction_token = interaction.token
+    first_response = interaction.response
+    followups      = interaction.followup
 
     guild   = interaction.guild
     channel = interaction.channel
@@ -36,9 +36,9 @@ async def on_interaction(interaction):
 
     try:
         await handle_slash_command(command_name, guild=guild, channel=channel,
-                                    user=user, interaction_id=interaction_id,
-                                    interaction_token=interaction_token,
-                                    command_id=command_id, subcommand=subcommand,
-                                    arguments=command_args)
+                                    user=user, first_response=first_response,
+                                    interaction=interaction,
+                                    followups=followups, command_id=command_id,
+                                    subcommand=subcommand, arguments=command_args)
     except CancelCommand:
         pass
