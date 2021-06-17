@@ -1,8 +1,8 @@
 from importlib import import_module
 from os import environ as env
-from discord import AutoShardedClient, AllowedMentions, Intents
-from config import WEBHOOKS # pylint: disable=E0611
-from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST # pylint: disable=import-error
+from discord import AutoShardedClient, AllowedMentions, Intents, Game
+from config import WEBHOOKS, PREFIX # pylint: disable=E0611
+from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error
 from ..secrets import REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, RETHINKDB_HOST, RETHINKDB_DB, RETHINKDB_PASSWORD, RETHINKDB_PORT # pylint: disable=import-error
 from . import Permissions # pylint: disable=import-error
 from async_timeout import timeout
@@ -23,8 +23,6 @@ except ImportError:
     import rethinkdb as r
 finally:
     r.set_loop_type("asyncio")
-
-
 
 LOG_LEVEL = env.get("LOG_LEVEL", "INFO").upper()
 LABEL = env.get("LABEL", "Bloxlink")
@@ -164,8 +162,9 @@ class BloxlinkStructure(AutoShardedClient):
         #return load
 
     @staticmethod
-    def get_module(dir_name, *, name_override=None, path="resources.modules", attrs=None):
-        modules = loaded_modules.get(dir_name)
+    def get_module(dir_name, *, name_override=None, name_override_pattern="", path="resources.modules", attrs=None):
+        save_as  = f"{name_override_pattern.lower()}{(dir_name).lower()}"
+        modules = loaded_modules.get(save_as)
         name_obj = (name_override or dir_name).lower()
 
         class_obj = None
@@ -227,6 +226,10 @@ class BloxlinkStructure(AutoShardedClient):
 
         raise RuntimeError(f"Unable to find module {name_obj} from {dir_name}")
 
+    @staticmethod
+    def auto_reconnect(instance):
+        if instance._instance is None or not instance._instance.is_open():
+            loop.create_task(instance.reconnect())
 
     async def check_database(self, conn):
         try:
@@ -294,7 +297,7 @@ class BloxlinkStructure(AutoShardedClient):
                         if conn:
                             # check for missing databases/tables
                             await self.check_database(conn)
-
+                            r.Connection.check_open = self.auto_reconnect
                             return
 
                 except asyncio.TimeoutError:
@@ -306,7 +309,7 @@ class BloxlinkStructure(AutoShardedClient):
 
     @staticmethod
     def command(*args, **kwargs):
-        return Bloxlink.get_module("commands", attrs="new_command")(*args, **kwargs)
+        return Bloxlink.get_module("commands", attrs="new_command", name_override_pattern="Command_")(*args, **kwargs)
 
     @staticmethod
     def subcommand(**kwargs):
@@ -352,6 +355,7 @@ Bloxlink = BloxlinkStructure(
     shard_ids=SHARD_RANGE,
     allowed_mentions=AllowedMentions(everyone=False, users=True, roles=False),
     intents=intents,
+    activity=Game(PLAYING_STATUS.format(prefix=PREFIX))
 )
 
 

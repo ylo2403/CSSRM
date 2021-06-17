@@ -232,7 +232,7 @@ class SetupCommand(Bloxlink.Module):
                             if not (role in guild.me.roles or role.is_default()):
                                 try:
                                     await role.delete(reason=f"{author} chose to replace roles through {prefix}setup")
-                                except discord.errors.orbidden:
+                                except discord.errors.Forbidden:
                                     pass
                                 except discord.errors.HTTPException:
                                     pass

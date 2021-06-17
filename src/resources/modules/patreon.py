@@ -20,13 +20,8 @@ class Patreon(Bloxlink.Module):
     async def load_patrons(self):
         feed = await self.r.db("patreon").table("patrons").run()
 
-        pledges = {}
-
         while await feed.fetch_next():
             patron = await feed.next()
 
             if patron["discord_id"] and patron["active"]:
-                pledges[int(patron["discord_id"])] = patron
-
-        if pledges:
-            self.patrons = pledges
+                self.patrons[int(patron["discord_id"])] = patron

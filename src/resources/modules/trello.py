@@ -60,7 +60,7 @@ class Trello(Bloxlink.Module):
 
             except TrelloNotFound:
                 guild_data = await self.r.db("bloxlink").table("guilds").get(str(guild.id)).run() or {}
-                guild_data.pop("trelloID")
+                guild_data.pop("trelloID", None)
 
                 await self.r.table("guilds").get(str(guild.id)).update(guild_data).run()
 
