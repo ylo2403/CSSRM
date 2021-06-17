@@ -9,7 +9,8 @@ from backoff import on_exception, expo
 from config import REACTIONS, PREFIX # pylint: disable=import-error
 from ..constants import (RELEASE, DEFAULTS, ORANGE_COLOR, PARTNERED_SERVER, ARROW, # pylint: disable=import-error
                          SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR, # pylint: disable=import-error
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS) # pylint: disable=import-error
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS,
+                         VERIFY_URL) # pylint: disable=import-error
 import json
 import random
 import re
