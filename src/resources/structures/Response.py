@@ -75,7 +75,7 @@ class InteractionWebhook:
         self.content = getattr(interaction_or_webhook, "content", content)
 
 
-    async def edit(self, content, **kwargs):
+    async def edit(self, content=None, **kwargs):
         if self.followup:
             await self.interaction_or_webhook.edit(content=content, **kwargs)
         else:

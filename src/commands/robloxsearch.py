@@ -30,7 +30,7 @@ class RobloxSearchCommand(Bloxlink.Module):
         self.cooldown = 5
         self.dm_allowed = True
         self.slash_enabled = True
-        self.slash_ack = True
+        self.slash_defer = True
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
