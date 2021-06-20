@@ -41,7 +41,7 @@ class BindCommand(Bloxlink.Module):
         return {}, 0
 
     @staticmethod
-    async def validate_group(message, content, prompt):
+    async def validate_group(message, content, prompt, guild):
         regex_search = roblox_group_regex.search(content)
 
         if regex_search:

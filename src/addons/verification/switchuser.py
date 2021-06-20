@@ -19,7 +19,7 @@ class SwitchUserCommand(Bloxlink.Module):
         self.slash_enabled = True
 
     @staticmethod
-    async def validate_server(message, content, prompt):
+    async def validate_server(message, content, prompt, guild):
         content = content.lower()
 
         if content in ("skip", "next"):

@@ -1798,8 +1798,8 @@ class Roblox(Bloxlink.Module):
     async def call_bloxlink_api(self, author, guild=None):
         roblox_account = primary_account = None
 
-        bloxlink_api = guild and f"https://api.blox.link/v1/user/{author.id}?guild={guild.id}" or f"https://api.blox.link/user/{author.id}"
-        author_verified_data, _ = await fetch(bloxlink_api)
+        bloxlink_api = guild and f"https://api.blox.link/v1/user/{author.id}?guild={guild.id}" or f"https://api.blox.link/v1/user/{author.id}"
+        author_verified_data, _ = await fetch(bloxlink_api, raise_on_failure=False)
 
         if not author_verified_data.get("error"):
             roblox_account = author_verified_data.get("matchingAccount") or author_verified_data.get("primaryAccount")

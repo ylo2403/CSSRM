@@ -316,7 +316,7 @@ class Arguments:
 
                     if resolved:
                         if prompt_.get("validation"):
-                            res = [await prompt_["validation"](content=skipped_arg, message=not dm and message, prompt=self.prompt)]
+                            res = [await prompt_["validation"](content=skipped_arg, message=not dm and message, prompt=self.prompt, guild=self.guild)]
 
                             if isinstance(res[0], tuple):
                                 if not res[0][0]:

@@ -42,7 +42,7 @@ class ProfileCommand(Bloxlink.Module):
 
 
     @staticmethod
-    async def validate_date_of_return(message, content, prompt):
+    async def validate_date_of_return(message, content, prompt, guild):
         time_now = datetime.now()
 
         try:
@@ -57,7 +57,7 @@ class ProfileCommand(Bloxlink.Module):
         return time_delta
 
     @staticmethod
-    async def validate_games(message, content, prompt):
+    async def validate_games(message, content, prompt, guild):
         games = content.replace(" ", "").split(",")[:3]
         favorite_games = set()
 
@@ -83,7 +83,7 @@ class ProfileCommand(Bloxlink.Module):
         return favorite_games
 
     @staticmethod
-    async def validate_items(message, content, prompt):
+    async def validate_items(message, content, prompt, guild):
         items = content.replace(" ", "").split(",")[:3]
         favorite_items = set()
 

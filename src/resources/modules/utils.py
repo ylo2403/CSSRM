@@ -12,6 +12,7 @@ from requests.utils import requote_uri
 from async_timeout import timeout as a_timeout
 import asyncio
 import aiohttp
+import json as json_
 
 is_patron = Bloxlink.get_module("patreon", attrs="is_patron")
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
@@ -110,35 +111,48 @@ class Utils(Bloxlink.Module):
                         response_body = response_json["req"]["body"]
                         response_status = response_json["req"]["status"]
                         response.status = response_status
+                    else:
+                        response_status = response.status
+                        response_body = None
 
-                        if raise_on_failure:
-                            if response_status == 503:
-                                raise RobloxDown
-                            elif response_status == 404:
-                                raise RobloxNotFound
-                            elif response_status >= 400:
-                                raise RobloxAPIError
+                    if raise_on_failure:
+                        if response_status == 503:
+                            raise RobloxDown
+                        elif response_status == 404:
+                            raise RobloxNotFound
+                        elif response_status >= 400:
+                            raise RobloxAPIError
 
                         if json:
+                            if not proxied:
+                                try:
+                                    response_body = await response.json()
+                                except aiohttp.client_exceptions.ContentTypeError:
+                                    raise RobloxAPIError
+
                             if isinstance(response_body, dict):
                                 return response_body, response
                             else:
                                 return {}, response
 
-                        return response_body, response
-
                     if text:
+                        if proxied:
+                            return str(response_body), response
+
                         text = await response.text()
 
                         return text, response
 
                     elif json:
+                        if proxied:
+                            return response_body, response
+
                         try:
                             json = await response.json()
                         except aiohttp.client_exceptions.ContentTypeError:
                             print(await response.text(), flush=True)
 
-                            raise
+                            raise RobloxAPIError
 
                         return json, response
 

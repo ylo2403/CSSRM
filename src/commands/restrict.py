@@ -3,6 +3,7 @@ from resources.exceptions import RobloxNotFound, Error, UserNotVerified, RobloxA
 from resources.constants import LIMITS # pylint: disable=import-error
 from discord import Embed, Object
 import re
+import traceback
 
 
 get_group, get_user, parse_accounts = Bloxlink.get_module("roblox", attrs=["get_group", "get_user", "parse_accounts"])
@@ -30,7 +31,7 @@ class RestrictCommand(Bloxlink.Module):
 
         self._roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
-    async def resolve_restriction(self, message, content, prompt):
+    async def resolve_restriction(self, content, message, prompt, guild):
         if content.isdigit():
             # if there's a group and roblox account with the same ID
             try:
@@ -88,7 +89,7 @@ class RestrictCommand(Bloxlink.Module):
             return ("robloxAccounts", "Roblox account", account, account.id, account.username)
 
         # user check
-        user, _ = await user_resolver({}, message, message.guild, content)
+        user, _ = await user_resolver({}, message=message, guild=guild, content=content)
 
         if user:
             return ("users", "Discord user", user, user.id, str(user))
@@ -174,6 +175,8 @@ class RestrictCommand(Bloxlink.Module):
 
         guild_data["restrictions"] = restrictions
         await set_guild_value(guild, "restrictions", restrictions)
+
+        print(resolvable, flush=True)
 
         await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
