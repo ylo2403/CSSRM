@@ -312,7 +312,7 @@ class Arguments:
 
                 for resolver_type in resolver_types:
                     resolver = get_resolver(resolver_type)
-                    resolved, error_message = await resolver(prompt_, content=skipped_arg, guild=self.guild, message=message)
+                    resolved, error_message = await resolver(prompt_, content=skipped_arg, guild=self.guild, message=self.message)
 
                     if resolved:
                         if prompt_.get("validation"):
