@@ -111,6 +111,14 @@ class Utils(Bloxlink.Module):
                         response_body = response_json["req"]["body"]
                         response_status = response_json["req"]["status"]
                         response.status = response_status
+
+                        if not isinstance(response_body, dict):
+                            try:
+                                response_body_json = json_.loads(response_body)
+                            except:
+                                pass
+                            else:
+                                response_body = response_body_json
                     else:
                         response_status = response.status
                         response_body = None
@@ -145,6 +153,12 @@ class Utils(Bloxlink.Module):
 
                     elif json:
                         if proxied:
+                            if not isinstance(response_body, dict):
+                                print("Roblox API Error: ", old_url, type(response_body), response_body, flush=True)
+
+                                if raise_on_failure:
+                                    raise RobloxAPIError
+
                             return response_body, response
 
                         try:
