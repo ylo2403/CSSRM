@@ -176,8 +176,6 @@ class RestrictCommand(Bloxlink.Module):
         guild_data["restrictions"] = restrictions
         await set_guild_value(guild, "restrictions", restrictions)
 
-        print(resolvable, flush=True)
-
         await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
         await response.success(f"Successfully **added** {resolvable[1]} **{resolvable[4]}** to your restrictions.")
