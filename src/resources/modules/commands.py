@@ -38,6 +38,7 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
+            return
             slash_commands = [self.slash_command_to_json(c) for c in commands.values() if c.slash_enabled]
             text, response = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -250,7 +251,8 @@ class Commands(Bloxlink.Module):
                 author = user,
                 first_response = first_response,
                 followups = followups,
-                interaction = interaction
+                interaction = interaction,
+                slash_command = True
             )
 
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
@@ -481,7 +483,8 @@ class Commands(Bloxlink.Module):
                             prefix = prefix,
                             real_prefix = prefix,
                             has_permission = False,
-                            command = command
+                            command = command,
+                            slash_command = False
                         )
 
                         if getattr(fn, "__flags__", False):
@@ -591,6 +594,9 @@ class Commands(Bloxlink.Module):
         command = Command(c)
 
         Bloxlink.log(f"Adding command {command.name}")
+
+        if hasattr(c, "__setup__"):
+            self.loop.create_task(c.__setup__())
 
         for attr_name in dir(command_structure):
             attr = getattr(c, attr_name)
