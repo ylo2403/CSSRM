@@ -23,11 +23,9 @@ class Utils(Bloxlink.Module):
         self.option_regex = compile("(.+):(.+)")
         self.timeout = aiohttp.ClientTimeout(total=20)
 
-
     @staticmethod
     def get_files(directory):
         return [name for name in listdir(directory) if name[:1] != "." and name[:2] != "__" and name != "_DS_Store"]
-
 
     @staticmethod
     def coro_async(corofn, *args):
@@ -77,7 +75,7 @@ class Utils(Bloxlink.Module):
         new_json = {}
         proxied = False
 
-        if text:
+        if text or bytes:
             json = False
 
         if PROXY_URL and "roblox.com" in url:
@@ -129,6 +127,10 @@ class Utils(Bloxlink.Module):
                         elif response_status == 404:
                             raise RobloxNotFound
                         elif response_status >= 400:
+                            if proxied:
+                                print(response_body, flush=True)
+                            else:
+                                print(await response.text(), flush=True)
                             raise RobloxAPIError
 
                         if json:
@@ -169,6 +171,9 @@ class Utils(Bloxlink.Module):
                             raise RobloxAPIError
 
                         return json, response
+
+                    elif bytes:
+                        return await response.read(), response
 
                     return response
 
