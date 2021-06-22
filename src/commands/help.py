@@ -35,7 +35,7 @@ class HelpCommand(Bloxlink.Module):
         guild    = CommandArgs.guild
 
         if CommandArgs.slash_command or not channel.permissions_for(guild.me).attach_files:
-            await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.\n"
-                                "https://i.imgur.com/zQwITet.png\nhttps://i.imgur.com/yv6jfNC.png\nhttps://i.imgur.com/pwMB8wZ.png")
+            urls = "\n".join(self.urls)
+            await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.\n{urls}")
         else:
             await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.", files=[File(BytesIO(b), filename=f"image_{i}.png") for i, b in enumerate(self.images)])
