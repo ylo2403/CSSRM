@@ -34,7 +34,7 @@ class HelpCommand(Bloxlink.Module):
         channel  = CommandArgs.channel
         guild    = CommandArgs.guild
 
-        if CommandArgs.slash_command or not channel.permissions_for(guild.me).attach_files:
+        if CommandArgs.slash_command or (guild and not channel.permissions_for(guild.me).attach_files):
             urls = "\n".join(self.urls)
             await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.\n{urls}")
         else:
