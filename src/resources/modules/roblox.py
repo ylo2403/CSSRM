@@ -477,7 +477,7 @@ class Roblox(Bloxlink.Module):
         ).replace(
             "discord-mention", author.mention
         ).replace(
-            "discord-id", author.id
+            "discord-id", str(author.id)
         ).replace(
             "server-name", guild.name
         ).replace(
