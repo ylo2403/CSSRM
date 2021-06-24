@@ -146,7 +146,9 @@ SERVER_VERIFIED_TEMPLATES = (
 UNVERIFIED_TEMPLATES = (
     "{discord-name} \u2192 changes to their Discord display name\n"
     "{discord-nick} \u2192 changes to their Discord nickname\n"
-    "{server-name} \u2192 changes to the server name"
+    "{server-name} \u2192 changes to the server name\n"
+    "{discord-mention} \u2192 changes to a string that mentions (pings) the user\n"
+    "{discord-id} \u2192 changes to their Discord ID"
 )
 
 ESCAPED_NICKNAME_TEMPLATES = NICKNAME_TEMPLATES.replace("{", "{{").replace("}", "}}")

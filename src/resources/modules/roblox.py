@@ -475,6 +475,10 @@ class Roblox(Bloxlink.Module):
         ).replace(
             "discord-nick", author.display_name
         ).replace(
+            "discord-mention", author.mention
+        ).replace(
+            "discord-id", author.id
+        ).replace(
             "server-name", guild.name
         ).replace(
             "prefix", prefix or PREFIX
