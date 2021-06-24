@@ -111,7 +111,7 @@ WORDS = [
 NICKNAME_TEMPLATES = (
     "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
     "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
-    "{smart-name} \u2192 changes to: username (display name) if the user has a display name; otherwise, changes to their username\n"
+    "{smart-name} \u2192 changes to: display name (@display name) if the user has a display name; otherwise, changes to their username\n"
     "{roblox-id} \u2192 changes to their Roblox user ID\n"
     "{roblox-age} \u2192 changes to their Roblox user age in days\n"
     "{roblox-join-date} \u2192 changes to their Roblox join date\n"
@@ -120,7 +120,6 @@ NICKNAME_TEMPLATES = (
     "{discord-name} \u2192 changes to their Discord display name; works on unverified users\n"
     "{discord-nick} \u2192 changes to their Discord nickname; works on unverified users\n"
     "{server-name} \u2192 changes to the server name; works on unverified users\n"
-    "{prefix} \u2192 changes to the server prefix; works on unverified users\n"
     "{clan-tag} \u2192 replaceable text which the user can set\n"
     "\n"
     "{disable-nicknaming} \u2192 overrides all other options and returns a blank nickname. Note that this ONLY APPLIES TO NICKNAMES."
