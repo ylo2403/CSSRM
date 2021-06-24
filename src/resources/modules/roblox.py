@@ -17,6 +17,7 @@ import re
 import asyncio
 import dateutil.parser as parser
 import math
+import traceback
 
 
 nickname_template_regex = re.compile(r"\{(.*?)\}")
@@ -878,9 +879,10 @@ class Roblox(Bloxlink.Module):
         if not roblox_user:
             unverified = True
 
-        options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", return_guild_data=True)
+        options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", return_guild_data=True)
 
         verified_dm = options.get("verifiedDM")
+        join_channel = options.get("joinChannel")
         unverified_dm = options.get("unverifiedDM")
         age_limit = options.get("ageLimit")
         disallow_alts = options.get("disallowAlts")
@@ -1099,6 +1101,44 @@ class Roblox(Bloxlink.Module):
                 except (discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
 
+            if event and join_channel and join_channel.get("verified"):
+                channel_id = int(join_channel["verified"]["channel"])
+                channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
+
+                if channel:
+                    join_channel_message = join_channel["verified"]["message"]
+                    join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
+                    includes = join_channel["verified"]["includes"]
+
+                    embed   = None
+                    content = None
+                    view    = None
+
+                    if includes:
+                        embed = discord.Embed(description=f"<:BloxlinkHappy:823633735446167552> **A new user has joined the server!**\n\n{join_message_parsed}")
+                        embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
+                        embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
+                                              "is through https://blox.link and NO other link.")
+
+                        if includes.get("avatar"):
+                            embed.set_thumbnail(url=roblox_user.avatar)
+
+                        if includes.get("metadata"):
+                            embed.description = f"{embed.description}\n\n**Roblox account age:** {roblox_user.full_join_string}"
+
+                        view = discord.ui.View()
+                        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
+                    else:
+                        content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
+                                  "is through <https://blox.link> and NO other link."
+
+                    if includes.get("ping"):
+                        content = f"{member.mention} {content or ''}"
+
+                    try:
+                        await channel.send(content=content, embed=embed, view=view)
+                    except (discord.errors.NotFound, discord.errors.Forbidden):
+                        pass
         else:
             if age_limit:
                 if not donator_profile:
@@ -1155,6 +1195,36 @@ class Roblox(Bloxlink.Module):
                     await member.send(unverified_dm)
                 except (discord.errors.Forbidden, discord.errors.HTTPException):
                     pass
+
+            if event and join_channel and join_channel.get("unverified"):
+                channel_id = int(join_channel["unverified"]["channel"])
+                channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
+
+                if channel:
+                    join_channel_message = join_channel["unverified"]["message"]
+                    join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
+                    includes = join_channel["unverified"]["includes"]
+                    format_embed = join_channel["unverified"]["embed"]
+
+                    embed   = None
+                    content = None
+
+                    if format_embed:
+                        embed = discord.Embed(description=f"<:BloxlinkHappy:823633735446167552> **A new user has joined the server!**\n\n{join_message_parsed}")
+                        embed.set_author(name=str(member), icon_url=member.avatar.url)
+                        embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
+                                              "is through https://blox.link and NO other link.")
+                    else:
+                        content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
+                                  "is through <https://blox.link> and NO other link."
+
+                    if includes.get("ping"):
+                        content = f"{member.mention} {content or ''}"
+
+                    try:
+                        await channel.send(content=content, embed=embed)
+                    except (discord.errors.NotFound, discord.errors.Forbidden):
+                        pass
 
         if not unverified:
             return added, removed, chosen_nickname, errored, warnings, roblox_user
@@ -2506,7 +2576,7 @@ class Game(RobloxItem):
 class RobloxUser(Bloxlink.Module):
     __slots__ = ("username", "id", "discord_id", "verified", "complete", "more_details", "groups",
                  "avatar", "premium", "presence", "badges", "description", "banned", "age", "created",
-                 "join_date", "profile_link", "session", "embed", "dev_forum", "display_name")
+                 "join_date", "profile_link", "session", "embed", "dev_forum", "display_name", "full_join_string")
 
     def __init__(self, *, username=None, roblox_id=None, discord_id=None, **kwargs):
         self.username = username
@@ -2533,6 +2603,7 @@ class RobloxUser(Bloxlink.Module):
 
         self.age = 0
         self.join_date = None
+        self.full_join_string = None
         self.profile_link = roblox_id and f"https://www.roblox.com/users/{roblox_id}/profile"
 
     @staticmethod
@@ -2554,6 +2625,7 @@ class RobloxUser(Bloxlink.Module):
             "description": None,
             "age": None,
             "join_date": None,
+            "full_join_string": None,
             "created": None,
             "dev_forum": None
         }
@@ -2585,6 +2657,7 @@ class RobloxUser(Bloxlink.Module):
             roblox_data["badges"] = roblox_user_from_cache.badges
             roblox_data["banned"] = roblox_user_from_cache.banned
             roblox_data["join_date"] = roblox_user_from_cache.join_date
+            roblox_data["full_join_string"] = roblox_user_from_cache.full_join_string
             roblox_data["description"] = roblox_user_from_cache.description
             roblox_data["age"] = roblox_user_from_cache.age
             roblox_data["created"] = roblox_user_from_cache.created
@@ -2735,6 +2808,7 @@ class RobloxUser(Bloxlink.Module):
                 created = None
                 join_date = None
                 display_name = None
+                full_join_string = None
 
                 profile, _ = await fetch(f"https://users.roblox.com/v1/users/{roblox_data['id']}", json=True)
 
@@ -2758,21 +2832,22 @@ class RobloxUser(Bloxlink.Module):
                 roblox_data["age"] = age
                 roblox_data["join_date"] = join_date
 
+                if age >= 365:
+                    years = math.floor(age/365)
+                    ending = f"year{((years > 1 or years == 0) and 's') or ''}"
+                    text = f"{years} {ending} old"
+                else:
+                    ending = f"day{((age > 1 or age == 0) and 's') or ''}"
+                    text = f"{age} {ending} old"
+
+                full_join_string = f"{text} ({join_date})"
+                roblox_data["full_join_string"] = full_join_string
+
             if embed:
-                if everything or "age" in args:
-                    text = ""
+                if age and (everything or "age" in args):
+                    embed[0].add_field(name="Account Age", value=roblox_data["full_join_string"])
 
-                    if age >= 365:
-                        years = math.floor(age/365)
-                        ending = f"year{((years > 1 or years == 0) and 's') or ''}"
-                        text = f"{years} {ending} old"
-                    else:
-                        ending = f"day{((age > 1 or age == 0) and 's') or ''}"
-                        text = f"{age} {ending} old"
-
-                    embed[0].add_field(name="Account Age", value=f"{text} ({join_date})")
-
-                if (everything or "banned" in args) and banned:
+                if banned and (everything or "banned" in args):
                     if guild and guild.default_role.permissions.external_emojis:
                         embed[0].description = f"{REACTIONS['BANNED']} This user is _banned._"
                     else:
@@ -2797,6 +2872,7 @@ class RobloxUser(Bloxlink.Module):
                 roblox_user.description = description
                 roblox_user.age = age
                 roblox_user.join_date = join_date
+                roblox_user.full_join_string = full_join_string
                 roblox_user.created = created
                 roblox_user.banned = banned
                 roblox_user.display_name = display_name
@@ -2902,6 +2978,7 @@ class RobloxUser(Bloxlink.Module):
             )
 
         except RobloxAPIError:
+            traceback.print_exc()
             self.complete = False
 
             if self.discord_id and self.id:

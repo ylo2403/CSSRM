@@ -126,6 +126,23 @@ NICKNAME_TEMPLATES = (
     "{disable-nicknaming} \u2192 overrides all other options and returns a blank nickname. Note that this ONLY APPLIES TO NICKNAMES."
 )
 
+SERVER_VERIFIED_TEMPLATES = (
+    "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
+    "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
+    "{smart-name} \u2192 changes to: display name (@display name) if the user has a display name; otherwise, changes to their username\n"
+    "{roblox-id} \u2192 changes to their Roblox user ID\n"
+    "{roblox-age} \u2192 changes to their Roblox user age in days\n"
+    "{roblox-join-date} \u2192 changes to their Roblox join date\n"
+    "{group-rank} \u2192 changes to their group rank\n"
+    "{group-rank-ID} \u2192 changes to their group rank in group with ID\n"
+    "{discord-name} \u2192 changes to their Discord display name\n"
+    "{discord-mention} \u2192 changes to a string that mentions (pings) the user\n"
+    "{discord-id} \u2192 changes to their Discord ID\n"
+    "{discord-nick} \u2192 changes to their Discord nickname; works on unverified users\n"
+    "{server-name} \u2192 changes to the server name; works on unverified users\n"
+    "{prefix} \u2192 changes to the server prefix"
+)
+
 UNVERIFIED_TEMPLATES = (
     "{discord-name} \u2192 changes to their Discord display name\n"
     "{discord-nick} \u2192 changes to their Discord nickname\n"
@@ -147,6 +164,7 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "dynamicRoles":          (None, "boolean", None, False, "Bloxlink will make missing group roles from your Linked Groups as people need them."),
     "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `{prefix}verify` responses. Note that you can use these templates: ```{templates}```"),
     "joinDM":                (lambda g, gd: bool(gd.get("verifiedDM", True)) or bool(gd.get("unverifiedDM")), None, None, False, "Customize the join DM messages of people who join the server."),
+    "joinChannel":           (lambda g, gd: bool(gd.get("joinChannel", True)), None, None, False, "Customize the join messages of people who join the server."),
     "persistRoles":          (None, "boolean", None, True,  "Update members' roles/nickname as they type."),
     "allowReVerify":         (None, "boolean", None, True,  "If this is enabled: members can change their Roblox account as many times as they want in your server; otherwise, only allow 1 account change."),
     "trelloID":              (None,  None, None,     False, "Link a Trello board that can change Bloxlink settings!"),

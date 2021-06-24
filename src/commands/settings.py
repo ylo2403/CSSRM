@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error
-from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error, no-name-in-module
 from discord import Embed, Object
 from discord.errors import Forbidden
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
@@ -152,6 +152,12 @@ class SettingsCommand(Bloxlink.Module):
                 return await parse_message(message)
             else:
                 await response.send(f"You can change this with `{prefix}joindm`!")
+        elif choice == "joinChannel":
+            if message:
+                message.content = f"{prefix}joinchannel"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}joinchannel`!")
         elif choice == "groupShoutChannel":
             if message:
                 message.content = f"{prefix}shoutproxy"
