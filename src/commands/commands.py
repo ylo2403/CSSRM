@@ -1,7 +1,7 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.modules.commands import commands # pylint: disable=import-error
-from resources.exceptions import Error # pylint: disable=import-error
-from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.modules.commands import commands # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error, no-name-in-module
 from discord import Embed
 
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs=["get_enabled_addons"])
