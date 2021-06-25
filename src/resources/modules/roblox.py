@@ -1119,16 +1119,17 @@ class Roblox(Bloxlink.Module):
                     view    = None
 
                     if includes:
-                        embed = discord.Embed(description=f"<:BloxlinkHappy:823633735446167552> **A new user has joined the server!**\n\n{join_message_parsed}")
+                        embed = discord.Embed(description=join_message_parsed)
                         embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
                         embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
                                               "is through https://blox.link and NO other link.")
+                        embed.colour = GREEN_COLOR
 
                         if includes.get("avatar"):
                             embed.set_thumbnail(url=roblox_user.avatar)
 
                         if includes.get("metadata"):
-                            embed.description = f"{embed.description}\n\n**Roblox account age:** {roblox_user.full_join_string}"
+                            embed.description = f"{embed.description}\n\n**Roblox username:** {roblox_user.username}\n**Roblox account age:** {roblox_user.full_join_string}\n"
 
                         view = discord.ui.View()
                         view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
@@ -1214,10 +1215,11 @@ class Roblox(Bloxlink.Module):
                     content = None
 
                     if format_embed:
-                        embed = discord.Embed(description=f"<:BloxlinkHappy:823633735446167552> **A new user has joined the server!**\n\n{join_message_parsed}")
+                        embed = discord.Embed(description=join_message_parsed)
                         embed.set_author(name=str(member), icon_url=member.avatar.url)
                         embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
                                               "is through https://blox.link and NO other link.")
+                        embed.colour = GREEN_COLOR
                     else:
                         content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
                                   "is through <https://blox.link> and NO other link."
