@@ -6,11 +6,11 @@ import discord
 from datetime import datetime
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
-from config import REACTIONS, PREFIX # pylint: disable=import-error
-from ..constants import (RELEASE, DEFAULTS, ORANGE_COLOR, PARTNERED_SERVER, ARROW, # pylint: disable=import-error
-                         SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR, # pylint: disable=import-error
+from config import REACTIONS, PREFIX # pylint: disable=import-error, no-name-in-module
+from ..constants import (RELEASE, DEFAULTS, ORANGE_COLOR, PARTNERED_SERVER, ARROW, # pylint: disable=import-error, no-name-in-module
+                         SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
                          RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS,
-                         VERIFY_URL) # pylint: disable=import-error
+                         VERIFY_URL) # pylint: disable=import-error, no-name-in-module
 import json
 import random
 import re

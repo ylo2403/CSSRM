@@ -1,6 +1,6 @@
 import math
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.constants import SHARD_RANGE, CLUSTER_ID, STARTED, IS_DOCKER, RELEASE # pylint: disable=import-error, no-name-in-module
 from discord import Embed
 from time import time
 from psutil import Process

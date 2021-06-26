@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error, no-name-in-module
-from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error, no-name-in-module
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.exceptions import Message, Error, CancelledPrompt, PermissionError # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.constants import ARROW, OPTIONS, DEFAULTS, NICKNAME_TEMPLATES, ORANGE_COLOR, GOLD_COLOR, BROWN_COLOR, TRELLO # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord import Embed, Object
 from discord.errors import Forbidden
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest

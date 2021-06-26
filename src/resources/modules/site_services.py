@@ -1,6 +1,6 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import TOPGG_API, DBL_API, RELEASE, SHARD_RANGE, SHARD_COUNT # pylint: disable=import-error
-from ..secrets import TOPGG_KEY, DBL_KEY # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import TOPGG_API, DBL_API, RELEASE, SHARD_RANGE, SHARD_COUNT # pylint: disable=import-error, no-name-in-module
+from ..secrets import TOPGG_KEY, DBL_KEY # pylint: disable=import-error, no-name-in-module
 import aiohttp
 
 

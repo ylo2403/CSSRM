@@ -1,5 +1,5 @@
-from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
-from ..constants import CACHE_CLEAR # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..constants import CACHE_CLEAR # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from benedict import benedict
 
 

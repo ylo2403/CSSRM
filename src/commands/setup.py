@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO # pylint: disable=import-error
-from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module
 from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
 import discord
 import re

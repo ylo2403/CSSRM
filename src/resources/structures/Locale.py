@@ -1,6 +1,6 @@
 import json
 from jsonpath_ng import parse
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 
 
 get_files = Bloxlink.get_module("utils", attrs="get_files")

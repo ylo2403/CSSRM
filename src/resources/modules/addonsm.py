@@ -1,4 +1,4 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from importlib import import_module
 
 get_files = Bloxlink.get_module("utils", attrs="get_files")

@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Message, Error, PermissionError, CancelledPrompt # pylint: disable=import-error
-from resources.constants import LIMITS, ARROW, DEFAULTS, ORANGE_COLOR, OWNER, PROMPT # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Message, Error, PermissionError, CancelledPrompt # pylint: disable=import-error, no-name-in-module
+from resources.constants import LIMITS, ARROW, DEFAULTS, ORANGE_COLOR, OWNER, PROMPT # pylint: disable=import-error, no-name-in-module
 from discord import Embed
 from discord.errors import Forbidden
 from time import time

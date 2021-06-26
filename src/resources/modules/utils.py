@@ -1,10 +1,10 @@
 from os import listdir
 from re import compile
-from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
-from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module
-from config import PREFIX # pylint: disable=import-error, no-name-in-module
-from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module
-from ..secrets import PROXY_URL # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from config import PREFIX # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..secrets import PROXY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.errors import NotFound, Forbidden
 from discord import Embed
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
@@ -105,7 +105,10 @@ class Utils(Bloxlink.Module):
             async with a_timeout(timeout): # I noticed sometimes the aiohttp timeout parameter doesn't work. This is added as a backup.
                 async with self.session.request(method, url, json=new_json, params=params, headers=headers, timeout=timeout) as response:
                     if proxied:
-                        response_json = await response.json()
+                        try:
+                            response_json = await response.json()
+                        except aiohttp.client_exceptions.ContentTypeError:
+                            print(old_url, await response.text(), flush=True)
                         response_body = response_json["req"]["body"]
                         response_status = response_json["req"]["status"]
                         response.status = response_status
@@ -128,9 +131,9 @@ class Utils(Bloxlink.Module):
                             raise RobloxNotFound
                         elif response_status >= 400:
                             if proxied:
-                                print(response_body, flush=True)
+                                print(old_url, response_body, flush=True)
                             else:
-                                print(await response.text(), flush=True)
+                                print(old_url, await response.text(), flush=True)
                             raise RobloxAPIError
 
                         if json:
@@ -166,7 +169,7 @@ class Utils(Bloxlink.Module):
                         try:
                             json = await response.json()
                         except aiohttp.client_exceptions.ContentTypeError:
-                            print(await response.text(), flush=True)
+                            print(old_url, await response.text(), flush=True)
 
                             raise RobloxAPIError
 

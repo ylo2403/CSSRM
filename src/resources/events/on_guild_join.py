@@ -1,5 +1,5 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import RELEASE, SERVER_INVITE # pylint: disable=import-error, no-name-in-module
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.constants import RELEASE, SERVER_INVITE # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.errors import NotFound, Forbidden
 from discord import Object
 

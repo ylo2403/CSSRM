@@ -1,6 +1,6 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import DEFAULTS # pylint: disable=import-error
-from ..exceptions import CancelCommand, RobloxDown # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import DEFAULTS # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelCommand, RobloxDown # pylint: disable=import-error, no-name-in-module
 from discord.errors import Forbidden
 
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])

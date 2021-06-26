@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import RobloxNotFound, Error, UserNotVerified, RobloxAPIError # pylint: disable=import-error
-from resources.constants import LIMITS # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import RobloxNotFound, Error, UserNotVerified, RobloxAPIError # pylint: disable=import-error, no-name-in-module
+from resources.constants import LIMITS # pylint: disable=import-error, no-name-in-module
 from discord import Embed, Object
 import re
 import traceback

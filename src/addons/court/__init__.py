@@ -1,4 +1,4 @@
-from resources.constants import ARROW # pylint: disable=import-error
+from resources.constants import ARROW # pylint: disable=import-error, no-name-in-module
 
 class CourtAddon:
     """provides judicial commands"""

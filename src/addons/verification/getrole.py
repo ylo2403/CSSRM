@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Message, UserNotVerified, Error, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error
-from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.exceptions import Message, UserNotVerified, Error, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
 import discord
 
 format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["format_update_embed", "guild_obligations"])

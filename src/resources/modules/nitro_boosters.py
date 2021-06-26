@@ -1,6 +1,6 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import RELEASE # pylint: disable=import-error
-from config import BLOXLINK_GUILD # pylint: disable=import-error, no-name-in-module
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
+from config import BLOXLINK_GUILD # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.utils import find
 
 cache_set, cache_get = Bloxlink.get_module("cache", attrs=["set", "get"])

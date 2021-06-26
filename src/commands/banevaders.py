@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.constants import RELEASE, RED_COLOR # pylint: disable=import-error
-from resources.exceptions import Error, Message # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.constants import RELEASE, RED_COLOR # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Error, Message # pylint: disable=import-error, no-name-in-module
 from io import StringIO
 from discord.errors import Forbidden, NotFound
 from discord import File

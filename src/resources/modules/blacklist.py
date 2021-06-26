@@ -1,6 +1,6 @@
-from ..structures import Bloxlink # pylint: disable=import-error
-from ..constants import RELEASE # pylint: disable=import-error
-from config import RESTRICTIONS_TRELLO # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
+from config import RESTRICTIONS_TRELLO # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from time import time
 import re
 

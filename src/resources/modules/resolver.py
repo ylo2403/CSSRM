@@ -1,7 +1,7 @@
 import discord
 from re import compile
 
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 
 import string
 

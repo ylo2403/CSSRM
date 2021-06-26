@@ -2,9 +2,9 @@ from importlib import import_module
 from os import environ as env
 from discord import AutoShardedClient, AllowedMentions, Intents, Game
 from config import WEBHOOKS, PREFIX # pylint: disable=E0611
-from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error
-from ..secrets import REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, RETHINKDB_HOST, RETHINKDB_DB, RETHINKDB_PASSWORD, RETHINKDB_PORT # pylint: disable=import-error
-from . import Permissions # pylint: disable=import-error
+from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
+from ..secrets import REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, RETHINKDB_HOST, RETHINKDB_DB, RETHINKDB_PASSWORD, RETHINKDB_PORT # pylint: disable=import-error, no-name-in-module
+from . import Permissions # pylint: disable=import-error, no-name-in-module
 from async_timeout import timeout
 import functools
 import traceback

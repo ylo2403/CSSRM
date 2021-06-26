@@ -1,6 +1,6 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..exceptions import UserNotVerified # pylint: disable=import-error
-from ..constants import DEFAULTS, RED_COLOR # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..exceptions import UserNotVerified # pylint: disable=import-error, no-name-in-module
+from ..constants import DEFAULTS, RED_COLOR # pylint: disable=import-error, no-name-in-module
 from discord.errors import NotFound, Forbidden
 from discord import Object
 

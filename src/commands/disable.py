@@ -1,8 +1,8 @@
 
-from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error
-from resources.modules.commands import commands # pylint: disable=import-error
-from resources.exceptions import Error # pylint: disable=import-error
-from resources.constants import BROWN_COLOR # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error, no-name-in-module
+from resources.modules.commands import commands # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module
+from resources.constants import BROWN_COLOR # pylint: disable=import-error, no-name-in-module
 from discord import TextChannel
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])

@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import CancelledPrompt # pylint: disable=import-error
-from resources.constants import ARROW, ESCAPED_NICKNAME_TEMPLATES, BROWN_COLOR # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import CancelledPrompt # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, ESCAPED_NICKNAME_TEMPLATES, BROWN_COLOR # pylint: disable=import-error, no-name-in-module
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])

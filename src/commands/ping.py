@@ -1,5 +1,5 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import PermissionError # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import PermissionError # pylint: disable=import-error, no-name-in-module
 from discord.errors import NotFound, Forbidden
 import time
 

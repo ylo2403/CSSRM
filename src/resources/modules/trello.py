@@ -1,9 +1,9 @@
 from aiotrello import Trello as TrelloClient
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloHttpError
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..constants import OPTIONS # pylint: disable=import-error
-from ..constants import TRELLO as TRELLO_ # pylint: disable=import-error
-from ..secrets import TRELLO_KEY, TRELLO_TOKEN # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import OPTIONS # pylint: disable=import-error, no-name-in-module
+from ..constants import TRELLO as TRELLO_ # pylint: disable=import-error, no-name-in-module
+from ..secrets import TRELLO_KEY, TRELLO_TOKEN # pylint: disable=import-error, no-name-in-module
 from time import time
 from re import compile
 import asyncio

@@ -4,9 +4,9 @@ import logging
 import signal
 import sys
 import os
-from resources.constants import MODULE_DIR # pylint: disable=import-error
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.secrets import TOKEN # , SENTRY_URL, VALID_SECRETS # pylint: disable=import-error
+from resources.constants import MODULE_DIR # pylint: disable=import-error, no-name-in-module
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.secrets import TOKEN # , SENTRY_URL, VALID_SECRETS # pylint: disable=import-error, no-name-in-module
 
 logger = logging.getLogger()
 logging.basicConfig(level=getattr("logging", environ.get("DEBUG_MODE", "WARNING"), "WARNING"))
@@ -25,7 +25,7 @@ async def register_modules():
 
 """
 def load_sentry():
-    from resources.constants import RELEASE # pylint: disable=import-error
+    from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
 
     if RELEASE != "LOCAL":
         try:

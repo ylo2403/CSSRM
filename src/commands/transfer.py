@@ -1,6 +1,6 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Message, Error # pylint: disable=import-error
-from resources.constants import BROWN_COLOR # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Message, Error # pylint: disable=import-error, no-name-in-module
+from resources.constants import BROWN_COLOR # pylint: disable=import-error, no-name-in-module
 import time
 import math
 

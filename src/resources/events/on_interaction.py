@@ -1,5 +1,5 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..exceptions import CancelCommand # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
 
 
 

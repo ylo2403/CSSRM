@@ -1,8 +1,8 @@
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from discord import Member, Object
 from discord.utils import find
-from ..constants import DEFAULTS, RELEASE # pylint: disable=import-error
-from ..exceptions import CancelCommand # pylint: disable=import-error
+from ..constants import DEFAULTS, RELEASE # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
 
 cache_get, cache_set, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "set", "get_guild_value"])
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])

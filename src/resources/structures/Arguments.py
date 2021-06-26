@@ -1,11 +1,11 @@
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord import Embed
 import discord
-from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from ..exceptions import CancelledPrompt, CancelCommand, Error # pylint: disable=import-error
-from ..constants import RED_COLOR, INVISIBLE_COLOR # pylint: disable=import-error
+from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelledPrompt, CancelCommand, Error # pylint: disable=import-error, no-name-in-module
+from ..constants import RED_COLOR, INVISIBLE_COLOR # pylint: disable=import-error, no-name-in-module
 from config import RELEASE # pylint: disable=no-name-in-module
-from ..constants import IS_DOCKER, TIP_CHANCES, SERVER_INVITE, PROMPT # pylint: disable=import-error
+from ..constants import IS_DOCKER, TIP_CHANCES, SERVER_INVITE, PROMPT # pylint: disable=import-error, no-name-in-module
 import random
 import asyncio
 

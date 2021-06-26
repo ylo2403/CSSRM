@@ -1,7 +1,7 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
-from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=no-name-in-module
-from resources.constants import RELEASE # pylint: disable=import-error
+from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
 from discord import Object, Role
 import math
 

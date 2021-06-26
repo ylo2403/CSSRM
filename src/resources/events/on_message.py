@@ -1,5 +1,5 @@
-from ..structures import Bloxlink, Arguments # pylint: disable=import-error
-from ..exceptions import CancelCommand # pylint: disable=import-error
+from ..structures import Bloxlink, Arguments # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
 
 parse_message = Bloxlink.get_module("commands", attrs="parse_message")
 

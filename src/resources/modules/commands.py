@@ -7,12 +7,11 @@ from inspect import iscoroutinefunction
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
 from discord import Embed, Object, Member, User
-import discord
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
-from ..structures import Bloxlink, Args, Permissions, Locale, Arguments, Response # pylint: disable=import-error
-from ..constants import MAGIC_ROLES, OWNER, DEFAULTS, RELEASE, CLUSTER_ID # pylint: disable=import-error
-from ..secrets import TOKEN # pylint: disable=import-error
-from config import BOTS # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink, Args, Permissions, Locale, Arguments, Response # pylint: disable=import-error, no-name-in-module
+from ..constants import MAGIC_ROLES, OWNER, DEFAULTS, RELEASE, CLUSTER_ID # pylint: disable=import-error, no-name-in-module
+from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
+from config import BOTS # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
 
 get_prefix, fetch = Bloxlink.get_module("utils", attrs=["get_prefix", "fetch"])
@@ -38,7 +37,6 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
-            return
             slash_commands = [self.slash_command_to_json(c) for c in commands.values() if c.slash_enabled]
             text, response = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -48,6 +46,8 @@ class Commands(Bloxlink.Module):
                 print(slash_commands, flush=True)
                 print(response.status, text, flush=True)
 
+    async def redirect_command(self, command_name, ):
+        pass
 
     async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
         channel_id      = str(channel.id) if channel else None
