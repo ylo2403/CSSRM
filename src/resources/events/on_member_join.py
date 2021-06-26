@@ -38,7 +38,7 @@ class MemberJoinEvent(Bloxlink.Module):
                 else:
                     if auto_verification or auto_roles:
                         try:
-                            await guild_obligations(member, guild, cache=False, dm=True, event=True, exceptions=("RobloxDown",))
+                            await guild_obligations(member, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown",))
                         except CancelCommand:
                             pass
                         except RobloxDown:

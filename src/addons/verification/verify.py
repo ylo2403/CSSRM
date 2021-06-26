@@ -63,6 +63,7 @@ class VerifyCommand(Bloxlink.Module):
 
             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                 CommandArgs.author,
+                join                 = True,
                 guild                = guild,
                 guild_data           = guild_data,
                 roles                = True,

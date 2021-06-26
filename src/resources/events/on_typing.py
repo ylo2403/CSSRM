@@ -37,6 +37,6 @@ class ChannelTypingEvent(Bloxlink.Module):
 
                                 if not find(lambda r: r.name == "Bloxlink Bypass", user.roles):
                                     try:
-                                        await guild_obligations(user, guild, dm=False, event=False)
+                                        await guild_obligations(user, guild, join=True, dm=False, event=False)
                                     except CancelCommand:
                                         pass

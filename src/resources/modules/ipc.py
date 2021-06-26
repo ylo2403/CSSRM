@@ -90,6 +90,7 @@ class IPC(Bloxlink.Module):
                     added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         member,
                         guild                = guild,
+                        join                 = True,
                         roles                = True,
                         nickname             = True,
                         roblox_user          = roblox_user,

@@ -41,6 +41,7 @@ class GetRoleCommand(Bloxlink.Module):
                 author,
                 guild                = guild,
                 guild_data           = guild_data,
+                join                 = True,
                 roles                = True,
                 nickname             = True,
                 trello_board         = CommandArgs.trello_board,

@@ -143,6 +143,7 @@ class UpdateUserCommand(Bloxlink.Module):
                         try:
                             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                                 user,
+                                join              = True,
                                 guild             = guild,
                                 guild_data        = guild_data,
                                 trello_board      = trello_board,
@@ -176,6 +177,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 try:
                     added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         user,
+                        join              = True,
                         guild             = guild,
                         guild_data        = guild_data,
                         trello_board      = trello_board,
