@@ -512,11 +512,11 @@ class Roblox(Bloxlink.Module):
 
         if is_nickname:
             if clan_tag:
-                characters_left = 31 - len(template) + 8
+                characters_left = 32 - len(template) + 8
                 clan_tag = clan_tag[:characters_left]
                 template = template.replace("clan-tag", clan_tag)
 
-            return template[:31]
+            return template[:32]
         else:
             if clan_tag:
                 template = template.replace("clan-tag", clan_tag)
