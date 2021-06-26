@@ -166,6 +166,7 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `{prefix}verify` responses. Note that you can use these templates: ```{templates}```"),
     "joinDM":                (lambda g, gd: bool(gd.get("verifiedDM", True)) or bool(gd.get("unverifiedDM")), None, None, False, "Customize the join DM messages of people who join the server."),
     "joinChannel":           (lambda g, gd: bool(gd.get("joinChannel", True)), None, None, False, "Customize the join messages of people who join the server."),
+    "leaveChannel":          (lambda g, gd: bool(gd.get("leaveChannel", True)), None, None, False, "Customize the leave messages of people who leave the server."),
     "persistRoles":          (None, "boolean", None, True,  "Update members' roles/nickname as they type."),
     "allowReVerify":         (None, "boolean", None, True,  "If this is enabled: members can change their Roblox account as many times as they want in your server; otherwise, only allow 1 account change."),
     "trelloID":              (None,  None, None,     False, "Link a Trello board that can change Bloxlink settings!"),

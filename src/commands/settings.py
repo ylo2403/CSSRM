@@ -158,6 +158,12 @@ class SettingsCommand(Bloxlink.Module):
                 return await parse_message(message)
             else:
                 await response.send(f"You can change this with `{prefix}joinchannel`!")
+        elif choice == "leaveChannel":
+            if message:
+                message.content = f"{prefix}leavechannel"
+                return await parse_message(message)
+            else:
+                await response.send(f"You can change this with `{prefix}leavechannel`!")
         elif choice == "groupShoutChannel":
             if message:
                 message.content = f"{prefix}shoutproxy"
