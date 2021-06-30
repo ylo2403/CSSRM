@@ -232,7 +232,7 @@ class Arguments:
                         if formatting:
                             prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
 
-                        await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
+                        bot_prompt = await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
 
                         if dm and IS_DOCKER:
                             message_content = await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
@@ -284,6 +284,15 @@ class Arguments:
                                 skipped_arg = custom_id
 
                         skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
+
+                        if bot_prompt.components:
+                            disabled_view = discord.ui.View.from_message(bot_prompt)
+
+                            for child in disabled_view.children:
+                                if isinstance(child, discord.ui.Button):
+                                    child.disabled = True
+
+                            await bot_prompt.edit(view=disabled_view)
 
                         if custom_id == "cancel":
                             raise CancelledPrompt(type="delete")
