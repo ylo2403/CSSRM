@@ -111,7 +111,9 @@ class Arguments:
 
         if components:
             for component in components:
-                component.custom_id = component.label
+                if isinstance(component, discord.ui.Button):
+                    component.custom_id = component.label
+
                 view.add_item(item=component)
 
         if type != "error":
@@ -208,6 +210,7 @@ class Arguments:
                 skipped_arg = self.skipped_args and str(self.skipped_args[0])
                 message     = None
                 interaction = None
+                select_values = []
 
                 custom_id = None
 
@@ -265,6 +268,9 @@ class Arguments:
                                 interaction = result
                                 message = None
                                 custom_id = interaction.data["custom_id"]
+
+                                if interaction.data["component_type"] == 3:
+                                    select_values = interaction.data["values"]
                             else:
                                 interaction = None
                                 message = result
@@ -275,7 +281,10 @@ class Arguments:
                                 if prompt_.get("delete_original", True):
                                     self.messages.append(message.id)
                             else:
-                                skipped_arg = custom_id
+                                if select_values:
+                                    skipped_arg = ", ".join(select_values)
+                                else:
+                                    skipped_arg = custom_id
 
                         skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
 
@@ -312,7 +321,7 @@ class Arguments:
 
                 for resolver_type in resolver_types:
                     resolver = get_resolver(resolver_type)
-                    resolved, error_message = await resolver(prompt_, content=skipped_arg, guild=self.guild, message=message or self.message)
+                    resolved, error_message = await resolver(prompt_, content=skipped_arg, guild=self.guild, message=message or self.message, select_options=select_values)
 
                     if resolved:
                         if prompt_.get("validation"):
@@ -352,7 +361,6 @@ class Arguments:
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
-                    #had_args[checked_args] = True
 
             return resolved_args
 

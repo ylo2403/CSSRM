@@ -12,7 +12,7 @@ class Resolver(Bloxlink.Module):
         self.user_pattern = compile(r"<@!?([0-9]+)>")
         self.role_pattern = compile(r"<@&([0-9]+)>")
 
-    async def string_resolver(self, arg, message=None, guild=None, content=None):
+    async def string_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -35,7 +35,7 @@ class Resolver(Bloxlink.Module):
 
         return str(content), None
 
-    async def number_resolver(self, arg, message=None, guild=None, content=None):
+    async def number_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -55,28 +55,43 @@ class Resolver(Bloxlink.Module):
 
         return False, "You must pass a number"
 
-    async def choice_resolver(self, arg, message=None, guild=None, content=None):
+    async def choice_resolver(self, arg, message=None, guild=None, content=None, select_options=None):
         if message and not content:
             content = message.content
 
-        content = content.lower()
-        content = content.strip(string.punctuation)
+        if select_options:
+            user_choices = select_options
+
+            for i, user_choice in enumerate(user_choices):
+                user_choices[i] = user_choice.lower()
+        else:
+            content = content.lower()
+            content = content.strip(string.punctuation)
+            user_choices = [content]
 
         choice_dict = {x:True for x in arg["choices"]}
+        parsed_choices = []
 
-        if content in choice_dict:
-            return content, None
+        for user_choice in user_choices:
+            if user_choice in choice_dict:
+                parsed_choices.append(user_choice)
+                continue
 
-        for choice in arg["choices"]:
-            choice_lower = choice.lower()
+            for choice in arg["choices"]:
+                choice_lower = choice.lower()
 
-            if choice_lower == content or content == choice_lower[0:len(content)]:
-                return choice, None
+                if choice_lower == user_choice or user_choice == choice_lower[0:len(user_choice)]:
+                    parsed_choices.append(choice)
+
+        if parsed_choices:
+            if select_options:
+                return parsed_choices, None
+            else:
+                return parsed_choices[0], None
 
         return False, f"Choice must be of either: {str(arg['choices'])}"
 
-
-    async def user_resolver(self, arg, message=None, guild=None, content=None):
+    async def user_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -190,7 +205,7 @@ class Resolver(Bloxlink.Module):
             return list(users), None
 
 
-    async def channel_resolver(self, arg, message=None, guild=None, content=None):
+    async def channel_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -244,7 +259,7 @@ class Resolver(Bloxlink.Module):
                 return channels[0], None
 
 
-    async def category_resolver(self, arg, message=None, guild=None, content=None):
+    async def category_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -291,7 +306,7 @@ class Resolver(Bloxlink.Module):
                 return categories[0], None
 
 
-    async def role_resolver(self, arg, message=None, guild=None, content=None):
+    async def role_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -345,7 +360,7 @@ class Resolver(Bloxlink.Module):
                 return roles[0], None
 
 
-    async def image_resolver(self, arg, message=None, guild=None, content=None):
+    async def image_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
@@ -361,7 +376,7 @@ class Resolver(Bloxlink.Module):
             return False, "This doesn't appear to be a valid https URL."
 
 
-    async def list_resolver(self, arg, message=None, guild=None, content=None):
+    async def list_resolver(self, arg, message=None, guild=None, content=None, **kwargs):
         if message and not content:
             content = message.content
 
