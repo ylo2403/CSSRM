@@ -7,7 +7,7 @@ from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
 
-from discord.http import Route # temporary slash command workaround
+#from discord.http import edit_original_interaction_response, delete_original_interaction_response # temporary slash command workaround
 
 loop = asyncio.get_event_loop()
 
@@ -73,7 +73,7 @@ class InteractionWebhook:
         self.id = getattr(interaction_or_webhook, "id", 0)
         self.channel = getattr(interaction_or_webhook, "channel", channel)
         self.content = getattr(interaction_or_webhook, "content", content)
-
+        self.components = getattr(interaction_or_webhook, "components", None)
 
     async def edit(self, content=None, **kwargs):
         if self.followup:
@@ -86,6 +86,7 @@ class InteractionWebhook:
             await self.interaction_or_webhook.delete()
         else:
             await self.interaction_or_webhook.response.delete_message()
+
 
 class ResponseLoading:
     def __init__(self, response, backup_text):
@@ -220,17 +221,21 @@ class Response(Bloxlink.Module):
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
         msg = None
+        embeds = None
 
         if fail_on_dm and isinstance(dest, (DMChannel, User, Member)):
             return None
+
+        if embed:
+            embeds = [embed]
 
         if isinstance(dest, Webhook):
             msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view or ui.View())
 
         elif self.slash_command and send_as_slash_command:
             kwargs = {"content": content, "ephemeral": hidden}
-            if embed:
-                kwargs["embed"] = embed
+            if embeds:
+                kwargs["embeds"] = embeds
             if view:
                 kwargs["view"] = view
 
@@ -246,7 +251,7 @@ class Response(Bloxlink.Module):
                 self.sent_first_slash_command = True
 
         else:
-            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
+            msg = await dest.send(content, embeds=embeds, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
 
 
         self.bot_responses.append(msg.id)

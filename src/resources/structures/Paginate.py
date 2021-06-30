@@ -120,7 +120,7 @@ class Paginate:
 
         if self.sent_message:
             try:
-                await self.sent_message.edit(embed=self.embed)
+                await self.sent_message.edit(embeds=[self.embed])
             except (NotFound, Forbidden):
                 raise CancelCommand
         else:

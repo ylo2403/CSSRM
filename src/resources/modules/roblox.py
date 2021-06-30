@@ -2978,7 +2978,7 @@ class RobloxUser(Bloxlink.Module):
                 if response.webhook_only:
                     await response.send(embed=embed[0], view=view)
                 else:
-                    await embed[2].edit(embed=embed[0], view=view)
+                    await embed[2].edit(embeds=[embed[0]], view=view)
 
         return roblox_data
 

@@ -37,6 +37,7 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
+            return
             slash_commands = [self.slash_command_to_json(c) for c in commands.values() if c.slash_enabled]
             text, response = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -331,7 +332,7 @@ class Commands(Bloxlink.Module):
             else:
                 if my_permissions and my_permissions.manage_messages:
                     if slash_command and response.first_slash_command:
-                        await response.first_slash_command.edit(content="**_Command finished._**", view=None, embed=None)
+                        await response.first_slash_command.edit(content="**_Command finished._**", view=None, embeds=None)
 
                 await response.send(text, dm=e.dm, no_dm_post=True)
 
@@ -413,7 +414,7 @@ class Commands(Bloxlink.Module):
 
                 if delete_messages:
                     if slash_command and response.first_slash_command and not arguments.cancelled:
-                        await response.first_slash_command.edit(content="_**Command finished.**_", embed=None, view=None)
+                        await response.first_slash_command.edit(content="_**Command finished.**_", embeds=[], view=None)
 
                     try:
                         await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
