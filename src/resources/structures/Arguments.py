@@ -281,10 +281,7 @@ class Arguments:
                                 if prompt_.get("delete_original", True):
                                     self.messages.append(message.id)
                             else:
-                                if select_values:
-                                    skipped_arg = ", ".join(select_values)
-                                else:
-                                    skipped_arg = custom_id
+                                skipped_arg = custom_id
 
                         skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
 
