@@ -84,7 +84,7 @@ class Resolver(Bloxlink.Module):
                     parsed_choices.append(choice)
 
         if parsed_choices:
-            if select_options:
+            if select_options or arg.get("components"):
                 return parsed_choices, None
             else:
                 return parsed_choices[0], None

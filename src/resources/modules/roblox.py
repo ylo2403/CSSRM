@@ -895,28 +895,43 @@ class Roblox(Bloxlink.Module):
                             join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
                             includes = channel_data["verified"]["includes"]
 
-                            embed   = None
+                            embed   = discord.Embed(description=join_message_parsed)
                             content = None
                             view    = None
+                            use_embed = False
 
                             if includes:
-                                embed = discord.Embed(description=join_message_parsed)
-                                embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
-                                embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
-                                                    "is through https://blox.link and NO other link.")
-                                embed.colour = color
+                                embed_description_buffer = []
 
-                                if includes.get("avatar"):
+                                if includes.get("robloxAvatar"):
+                                    use_embed = True
                                     embed.set_thumbnail(url=roblox_user.avatar)
 
-                                if includes.get("metadata"):
-                                    embed.description = f"{embed.description}\n\n**Roblox username:** {roblox_user.username}\n**Roblox account age:** {roblox_user.full_join_string}\n"
+                                if includes.get("robloxUsername"):
+                                    use_embed = True
+                                    embed_description_buffer.append(f"**Roblox username:** {roblox_user.username}")
 
-                                view = discord.ui.View()
-                                view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
-                            else:
+                                if includes.get("robloxAge"):
+                                    use_embed = True
+                                    embed_description_buffer.append(f"**Roblox account age:** {roblox_user.full_join_string}")
+
+                                if use_embed:
+                                    embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
+                                    embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
+                                                        "is through https://blox.link and NO other link.")
+                                    embed.colour = color
+
+                                    view = discord.ui.View()
+                                    view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
+
+                                    if embed_description_buffer:
+                                        embed_description_buffer = "\n".join(embed_description_buffer)
+                                        embed.description = f"{embed.description}\n\n{embed_description_buffer}"
+
+                            if not use_embed:
+                                embed = None
                                 content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
-                                        "is through <https://blox.link> and NO other link."
+                                          "is through <https://blox.link> and NO other link."
 
                             if includes.get("ping"):
                                 content = f"{member.mention} {content or ''}"
