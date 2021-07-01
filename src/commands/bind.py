@@ -1,12 +1,9 @@
 import re
+import discord
 from resources.exceptions import CancelledPrompt # pylint: disable=import-error, no-name-in-module
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import PermissionError, Error, RobloxNotFound, RobloxAPIError, Message  # pylint: disable=import-error, no-name-in-module
 from resources.constants import NICKNAME_TEMPLATES, ARROW, LIMITS, BLURPLE_COLOR, BROWN_COLOR  # pylint: disable=import-error, no-name-in-module
-from discord import Embed, Object
-from discord.errors import Forbidden
-from discord.utils import find
-import discord
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
 bind_num_range = re.compile(r"([0-9]+)\-([0-9]+)")
@@ -71,7 +68,7 @@ class BindCommand(Bloxlink.Module):
         bind_count = count_binds(guild_data, role_binds=role_binds_trello, group_ids=group_ids_trello)
 
         if bind_count >= FREE_BIND_COUNT:
-            profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+            profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
             if not profile.features.get("premium"):
                 raise Error(locale("commands.bind.errors.noPremiumBindLimitExceeded", prefix=prefix, free_bind_count=FREE_BIND_COUNT, prem_bind_count=PREM_BIND_COUNT))
@@ -257,12 +254,12 @@ class BindCommand(Bloxlink.Module):
                         raise Message("This group is already linked!", type="silly")
 
                 for _, roleset_data in group.rolesets.items():
-                    discord_role = find(lambda r: r.name == roleset_data[0], guild.roles)
+                    discord_role = discord.utils.find(lambda r: r.name == roleset_data[0], guild.roles)
 
                     if not discord_role:
                         try:
                             discord_role = await guild.create_role(name=roleset_data[0])
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
 
                 # add group to guild_data.groupIDs
@@ -322,7 +319,7 @@ class BindCommand(Bloxlink.Module):
                 role_binds["groups"][group_id]["groupName"] = group.name
                 role_binds["groups"][group_id]["removeRoles"] = remove_roles
 
-                rolesets_embed = Embed(title=f"{group.name} Rolesets", description="\n".join(f"**{x[0]}** {ARROW} {x[1]}" for x in group.rolesets.values()))
+                rolesets_embed = discord.Embed(title=f"{group.name} Rolesets", description="\n".join(f"**{x[0]}** {ARROW} {x[1]}" for x in group.rolesets.values()))
                 rolesets_embed = await CommandArgs.response.send(embed=rolesets_embed)
                 response.delete(rolesets_embed)
 
