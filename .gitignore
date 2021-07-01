@@ -136,3 +136,4 @@ src/resources/modules/potions.py
 src/resources/modules/currency.py
 slash_creator.py
 src/commands/feeds.py
+src/commands/banevaders.py
