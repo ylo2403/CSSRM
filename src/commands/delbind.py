@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from discord import Embed
+import discord
 from resources.exceptions import Error, Message # pylint: disable=import-error, no-name-in-module
 from resources.constants import BLURPLE_COLOR # pylint: disable=import-error, no-name-in-module
 from aiotrello.exceptions import TrelloException
@@ -159,6 +159,7 @@ class UnBindCommand(Bloxlink.Module):
         trello_board = CommandArgs.trello_board
         prefix = CommandArgs.prefix
         author = CommandArgs.author
+        response = CommandArgs.response
 
         role_binds = guild_data.get("roleBinds", {"groups": {}, "assets": {}})
         role_binds_trello, group_ids_trello, trello_binds_list = await get_binds(guild=guild, trello_board=trello_board)
@@ -186,16 +187,23 @@ class UnBindCommand(Bloxlink.Module):
             found_linked_group_trello = group_ids_trello.get(bind_id)
             found_linked_group = group_ids.get(bind_id)
 
+            found_group_trello = role_binds_trello.get("groups", {}).get(bind_id) or {}
+            found_group = role_binds.get("groups", {}).get(bind_id) or {}
+
             if found_linked_group_trello:
                 parsed_args = await CommandArgs.prompt([{
                     "prompt": "This group is linked as a Main Group. This means anyone who joins from this group will get their role(s), "
-                             f"and it lists the users' ranks in `{prefix}getinfo`. Would you like to remove this entry? `Y/N`",
+                             f"and the roles HAVE to match with the Rolesets. Would you like to remove this entry?",
                     "type": "choice",
+                    "components": [discord.ui.Select(max_values=1, options=[
+                            discord.SelectOption(label="Yes", description="Remove this linked group."),
+                            discord.SelectOption(label="No", description="Don't remove this linked group."),
+                        ])],
                     "choices": ["yes", "no"],
                     "name": "main_group_choice"
                 }])
 
-                if parsed_args["main_group_choice"] == "yes":
+                if parsed_args["main_group_choice"][0] == "yes":
                     found_trello = found_linked_group_trello.get("trello")
 
                     if found_trello:
@@ -207,11 +215,12 @@ class UnBindCommand(Bloxlink.Module):
                         guild_data["groupIDs"] = group_ids
                         await self.r.table("guilds").insert(guild_data, conflict="replace").run() # so they can delete this and still
                                                                                                   # cancel bind deletion below
+                        if found_group_trello:
+                            await response.send("Successfully removed this linked group. There are additional binds that exist that you may remove, however. If you **don't** want to remove the binds, say `cancel`.")
+                        else:
+                            await response.send("Successfully removed this linked group. There are no additional binds found for this group.")
 
                     removed_main_group = True
-
-            found_group_trello = role_binds_trello.get("groups", {}).get(bind_id) or {}
-            found_group = role_binds.get("groups", {}).get(bind_id) or {}
 
             if found_group_trello:
                 parsed_args = await CommandArgs.prompt([
