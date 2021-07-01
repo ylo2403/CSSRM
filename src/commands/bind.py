@@ -6,6 +6,7 @@ from resources.constants import NICKNAME_TEMPLATES, ARROW, LIMITS, BLURPLE_COLOR
 from discord import Embed, Object
 from discord.errors import Forbidden
 from discord.utils import find
+import discord
 from aiotrello.exceptions import TrelloUnauthorized, TrelloNotFound, TrelloBadRequest
 
 bind_num_range = re.compile(r"([0-9]+)\-([0-9]+)")
@@ -80,13 +81,15 @@ class BindCommand(Bloxlink.Module):
 
         parsed_args = await CommandArgs.prompt([
             {
-                "prompt": f"{locale('commands.bind.prompts.bindTypePrompt.line_1', arrow=ARROW)}\n"
-                          f"{locale('commands.bind.prompts.bindTypePrompt.line_2', arrow=ARROW)}\n"
-                          f"{locale('commands.bind.prompts.bindTypePrompt.line_3', arrow=ARROW)}\n"
-                          f"{locale('commands.bind.prompts.bindTypePrompt.line_4', arrow=ARROW)}\n"
-                          f"{locale('commands.bind.prompts.bindTypePrompt.line_5', arrow=ARROW)}",
+                "prompt": f"{locale('commands.bind.prompts.bindTypePrompt.line_1', arrow=ARROW)}\n",
                 "name": "bind_choice",
                 "type": "choice",
+                "components": [discord.ui.Select(max_values=1, options=[
+                        discord.SelectOption(label="Group", description="Users of your group will get a role."),
+                        discord.SelectOption(label="Asset", description="Users need to own this catalog item."),
+                        discord.SelectOption(label="Badge", description="Users need to own this badge."),
+                        discord.SelectOption(label="GamePass", description="Users need to own this GamePass."),
+                    ])],
                 "choices": locale("commands.bind.prompts.bindTypePrompt.choices"),
                 "formatting": False
             },
@@ -99,8 +102,9 @@ class BindCommand(Bloxlink.Module):
                 "formatting": False
             },
             {
-                "prompt": "Should any roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.\n\n"
-                          "Note that this is an **advanced option**, so you most likely should `skip` this.",
+                "prompt": "Should any **additional** roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.\n\n"
+                          "Note that this is an **advanced option**, so you most likely should `skip` this. Bloxlink will already remove \"old\" Group roles.\n\n"
+                          "This option really exists if there are non-group roles that another bot in your server gives.",
                 "name": "remove_roles",
                 "multiple": True,
                 "type": "role",
@@ -110,7 +114,7 @@ class BindCommand(Bloxlink.Module):
             }
         ])
 
-        bind_choice = parsed_args["bind_choice"].lower()
+        bind_choice = parsed_args["bind_choice"][0].lower()
         nickname = parsed_args["nickname"]
 
         if "display-name" in nickname:
@@ -118,12 +122,16 @@ class BindCommand(Bloxlink.Module):
                 "prompt": "**Warning!** You chose Display Names for your Nickname Template.\n"
                           "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
                 "type": "choice",
+                "components": [discord.ui.Select(max_values=1, options=[
+                        discord.SelectOption(label="Yes"),
+                        discord.SelectOption(label="No"),
+                    ])],
                 "choices": ("yes", "no"),
                 "name": "confirm",
                 "embed_title": "Display Names Confirmation",
                 "embed_color": BROWN_COLOR,
                 "formatting": False
-            }]))["confirm"]
+            }]))["confirm"][0]
 
             if display_name_confirm == "no":
                 raise CancelledPrompt
@@ -174,8 +182,12 @@ class BindCommand(Bloxlink.Module):
                           f"{locale('commands.bind.prompts.groupBindMode.line_2', arrow=ARROW)}\n"
                           f"{locale('commands.bind.prompts.groupBindMode.line_3', arrow=ARROW)}",
                     "name": "type",
+                    "components": [discord.ui.Select(max_values=1, options=[
+                            discord.SelectOption(label="Link my entire group", description="Roleset names must match with Discord role names."),
+                            discord.SelectOption(label="Select specific rolesets", description="You can choose how the roles are called."),
+                        ])],
                     "type": "choice",
-                    "choices": locale("commands.bind.prompts.groupBindMode.choices")
+                    "choices": ("link my entire group", "select specific rolesets")
                 }
             ])
 
@@ -187,7 +199,7 @@ class BindCommand(Bloxlink.Module):
 
             trello_group_bind = trello_card_binds["groups"]["entire group"].get(group_id)
 
-            if parsed_args_group["type"] == locale("commands.bind.entireGroup"):
+            if parsed_args_group["type"][0] == "link my entire group":
                 if found_group:
                     if (nickname and found_group["nickname"] != nickname) or (sorted(remove_roles) != sorted(found_group.get("removeRoles", []))):
                         group_ids[group_id] = {"nickname": nickname, "groupName": group.name, "removeRoles": remove_roles}
@@ -649,7 +661,7 @@ class BindCommand(Bloxlink.Module):
             if bind_choice == "asset":
                 try:
                     json_data, response_ = await fetch(f"{API_URL}/marketplace/productinfo?assetId={bind_id}", json=True)
-                except RobloxNotFound:
+                except (RobloxNotFound, RobloxAPIError):
                     raise Error(f"An Asset with ID `{bind_id}` does not exist.")
 
                 display_name = json_data.get("Name")
@@ -657,7 +669,7 @@ class BindCommand(Bloxlink.Module):
             elif bind_choice == "badge":
                 try:
                     json_data, response_ = await fetch(f"https://badges.roblox.com/v1/badges/{bind_id}", json=True)
-                except RobloxNotFound:
+                except (RobloxNotFound, RobloxAPIError):
                     raise Error(f"A Badge with ID `{bind_id}` does not exist.")
 
                 display_name = json_data.get("displayName")
