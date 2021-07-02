@@ -2,8 +2,8 @@ from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-err
 from resources.exceptions import RobloxNotFound, Message  # pylint: disable=import-error, no-name-in-module
 from resources.constants import BROWN_COLOR # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module
-from discord import Embed, Object
 import re
+import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -42,7 +42,12 @@ class GroupLockCommand(Bloxlink.Module):
                           "Would you like to **add** a new group, **delete** a group, or **view** your current groups?",
                 "name": "choice",
                 "type": "choice",
-                "choices": ["add", "delete", "view"]
+                "components": [discord.ui.Select(max_values=1, options=[
+                        discord.SelectOption(label="Add a new group", description="Add a new group to your group-lock."),
+                        discord.SelectOption(label="Delete a group", description="Delete a group from your group-lock."),
+                        discord.SelectOption(label="View groups", description="View your group-lock."),
+                    ])],
+                "choices": ["add a new group", "delete a group", "view groups"]
             }
         ]
 
@@ -52,7 +57,7 @@ class GroupLockCommand(Bloxlink.Module):
         self._range_search = re.compile(r"([0-9]+)\-([0-9]+)")
 
     async def __main__(self, CommandArgs):
-        choice = CommandArgs.parsed_args["choice"]
+        choice = CommandArgs.parsed_args["choice"][0]
         guild_data = CommandArgs.guild_data
         groups = CommandArgs.guild_data.get("groupLock", {})
         guild = CommandArgs.guild
@@ -60,7 +65,7 @@ class GroupLockCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
         response = CommandArgs.response
 
-        if choice == "add":
+        if choice == "add a new group":
             args = await CommandArgs.prompt([
                 {
                     "prompt": "Please specify either the **Group ID** or **Group URL** that you would like "
@@ -125,7 +130,7 @@ class GroupLockCommand(Bloxlink.Module):
             if len(groups) >= 15:
                 raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="silly")
 
-            profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+            profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
             if len(groups) >= 3 and not profile.features.get("premium"):
                 raise Message("If you would like to add more than **3** groups to your group-lock, then you need Bloxlink Premium.\n"
@@ -155,7 +160,7 @@ class GroupLockCommand(Bloxlink.Module):
 
             await response.success(f"Successfully added group **{group.name}** to your Server-Lock!")
 
-        elif choice == "delete":
+        elif choice == "delete a group":
             group = (await CommandArgs.prompt([
                 {
                     "prompt": "Please specify either the **Group URL** or **Group ID** to delete.",
@@ -184,11 +189,11 @@ class GroupLockCommand(Bloxlink.Module):
             await response.success("Successfully **deleted** your group from the Server-Lock!")
 
 
-        elif choice == "view":
+        elif choice == "view groups":
             if not groups:
                 raise Message("You have no groups added to your Server-Lock!", type="info")
 
-            embed = Embed(title="Bloxlink Server-Lock")
+            embed = discord.Embed(title="Bloxlink Server-Lock")
             embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
             embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else "")
 
