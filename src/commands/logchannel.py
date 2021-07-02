@@ -1,7 +1,7 @@
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Message  # pylint: disable=import-error, no-name-in-module
 from resources.constants import ARROW, BROWN_COLOR # pylint: disable=import-error, no-name-in-module
-from discord import Embed, Object
+import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -20,7 +20,11 @@ class LogChannelCommand(Bloxlink.Module):
                           "current log channels?",
                 "name": "choice",
                 "type": "choice",
-                "choices": ["change", "add", "delete", "view"]
+                "components": [discord.ui.Select(max_values=1, options=[
+                        discord.SelectOption(label="Change log channels", description="Add/delete a log channel."),
+                        discord.SelectOption(label="View log channels", description="View your log channels.")
+                    ])],
+                "choices": ["change log channels", "add", "delete", "view log channels"]
             }
         ]
 
@@ -29,15 +33,13 @@ class LogChannelCommand(Bloxlink.Module):
         self.aliases = ["logchannels", "log-channel", "log-channels"]
         self.slash_enabled = True
 
-
     async def __main__(self, CommandArgs):
-        choice = CommandArgs.parsed_args["choice"]
+        choice = CommandArgs.parsed_args["choice"][0]
 
-        if choice in ("change", "add", "delete"):
+        if choice in ("change log channels", "add", "change", "delete"):
             return await self.change(CommandArgs)
         else:
             return await self.view(CommandArgs)
-
 
     @Bloxlink.subcommand()
     async def change(self, CommandArgs):
@@ -69,11 +71,19 @@ class LogChannelCommand(Bloxlink.Module):
 
                 "name": "log_type",
                 "type": "choice",
-                "choices": ["all", "verifications", "configurations", "inactivity notices", "binds", "moderation"]
+                "components": [discord.ui.Select(max_values=1, options=[
+                        discord.SelectOption(label="All events", description="Subscribe to all event types."),
+                        discord.SelectOption(label="Verification Events", description="Fired when someome verifies."),
+                        discord.SelectOption(label="Configuration Events", description="Fired when a setting is changed."),
+                        discord.SelectOption(label="Inactivity Notice Events", description="Fired when someone from your server goes inactive."),
+                        discord.SelectOption(label="Bind Events", description="Fired when someone binds a role."),
+                        discord.SelectOption(label="Moderation Events", description="Fired when Bloxlink moderates someone.")
+                    ])],
+                "choices": ["all events", "verification events", "configuration events", "inactivity notice events", "bind events", "moderation events"]
             },
             {
                 "prompt": "Please either **mention a channel**, or say a **channel name.**\n"
-                          "Successful `{log_type}` events will be posted to this channel.\n\n"
+                          "Successful `{log_type[0]}` will be posted to this channel.\n\n"
                           "**Please make sure Bloxlink has permission to send/read messages "
                           "from the channel!**",
                 "name": "log_channel",
@@ -83,7 +93,14 @@ class LogChannelCommand(Bloxlink.Module):
             }
         ], last=True)
 
-        log_type = parsed_args["log_type"]
+        log_type = {
+            "all events": "all",
+            "verification events": "verifications",
+            "configuration events": "configurations",
+            "inactivity notice events": "inactivity notices",
+            "bind events": "binds",
+            "moderation events": "moderation"
+        }[parsed_args["log_type"][0]]
 
         if log_type.endswith("s"):
             log_type = log_type[:-1] # remove ending "s" - looks better on embed titles
@@ -91,13 +108,12 @@ class LogChannelCommand(Bloxlink.Module):
         log_channel = parsed_args["log_channel"]
         action = None
 
-        if log_type == "inactivity notices":
-            donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+        if log_type == "inactivity events":
+            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
             if not donator_profile.features.get("premium"):
                 raise Message("Only premium subscribers can subscribe to `inactivity notices`!\n"
                               f"Please use `{prefix}donate` for instructions on subscribing to premium.", type="info")
-
 
         if log_channel in ("clear", "delete"):
             log_channels.pop(log_type, None)
@@ -135,7 +151,7 @@ class LogChannelCommand(Bloxlink.Module):
         if not log_channels:
             raise Message("You have no log channels!", type="confused")
 
-        embed = Embed(title="Bloxlink Log Channels")
+        embed = discord.Embed(title="Bloxlink Log Channels")
         embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
         embed.set_author(name=guild.name, icon_url=guild.icon.url if guild.icon else "")
 
