@@ -235,10 +235,9 @@ class Arguments:
                         bot_prompt = await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
 
                         if dm and IS_DOCKER:
-                            message_content = await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"])
-                            skipped_arg = message_content[0]
+                            message_data = (await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"]))[0]
 
-                            if not skipped_arg:
+                            if not message_data:
                                 await self.say("Cluster which handles DMs is temporarily unavailable. Please say your message in the server instead of DMs.", type="error", embed=embed, dm=dm)
                                 self.dm_false_override = True
                                 dm = False
@@ -249,6 +248,13 @@ class Arguments:
 
                                 if prompt_.get("delete_original", True):
                                     self.messages.append(message.id)
+                            else:
+                                message_type = message_data.get("type")
+
+                                if message_type in ("message", "button"):
+                                    skipped_arg = message_data["content"]
+                                elif message_type == "select":
+                                    select_values = message_data["values"]
 
                             if skipped_arg == "cluster timeout":
                                 skipped_arg = "cancel (timeout)"

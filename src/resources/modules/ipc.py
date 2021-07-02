@@ -212,12 +212,16 @@ class IPC(Bloxlink.Module):
 
                     if result_set:
                         item = next(iter(result_set)).result()
+
                         if hasattr(item, "content"):
-                            message_content = item.content
+                            message_content = {"type": "message", "content": item.content}
                         else:
-                            message_content = item.data["custom_id"]
+                            if item.data["component_type"] == 3:
+                                message_content = {"type": "select", "values": item.data["values"]}
+                            else:
+                                message_content = {"type": "button", "content": item.data["custom_id"]}
                     else:
-                        message_content = "cancel (timeout)"
+                        message_content = {"type": "message", "content": "cancel (timeout)"}
 
                 except asyncio.TimeoutError:
                     message_content = "cancel (timeout)"
