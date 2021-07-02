@@ -160,30 +160,32 @@ class SetupCommand(Bloxlink.Module):
         if group not in ("next", "skip"):
             group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
 
-            parsed_args_2 = await CommandArgs.prompt([
+            merge_replace = (await CommandArgs.prompt([
                 {
                     "prompt": "Would you like to automatically transfer your Roblox group ranks to Discord roles?\nValid choices:\n"
                               "`merge` — This will **NOT** remove any roles. Your group Rolesets will be **merged** with your current roles.\n"
                               "`replace` — **This will REMOVE and REPLACE your CURRENT ROLES** with your Roblox group Rolesets. You'll "
                               "need to configure permissions and colors yourself.\n"
-                              "`skip` — nothing will be changed.\n\nValid choices: (merge/replace/skip)",
+                              "`skip` — nothing will be changed.",
                     "name": "merge_replace",
                     "type": "choice",
+                    "components": [discord.ui.Select(max_values=1, options=[
+                            discord.SelectOption(label="Merge", description="No roles will be removed, only added."),
+                            discord.SelectOption(label="Replace", description="This will remove your existing roles."),
+                            discord.SelectOption(label="Skip", description="Your roles will be un-touched.")
+                        ])],
                     "choices": ["merge", "replace", "skip", "next"],
-                    "footer": "Say either **merge**, **replace**, or **skip**",
                     "embed_title": "Setup Prompt"
 
                 }
-            ], dm=True, no_dm_post=True)
+            ], dm=True, no_dm_post=True))["merge_replace"][0]
 
-            if parsed_args_2["merge_replace"]  == "next":
-                parsed_args_2["merge_replace"] = "skip"
+            if merge_replace  == "next":
+                merge_replace = "skip"
 
             group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
 
-        for k, v in parsed_args_2.items():
-            if k != "_":
-                settings_buffer.append(f"**{k}** {ARROW} {v}")
+            settings_buffer.append(f"**merge_replace** {ARROW} {merge_replace}")
 
         if CommandArgs.trello_board:
             parsed_args_3 = (await CommandArgs.prompt([
@@ -195,15 +197,17 @@ class SetupCommand(Bloxlink.Module):
                               "not ready to unlink Trello yet, say `skip`.",
                     "name": "trello_choice",
                     "type": "choice",
+                    "components": [discord.ui.Select(max_values=1, options=[
+                            discord.SelectOption(label="Disable", description="Your Trello board will be unlinked."),
+                            discord.SelectOption(label="Skip")
+                        ])],
                     "choices": ["disable", "skip"],
-                    "footer": "Say **disable** to unlink your server.\nSay **skip** to skip this.",
-                    "components": [discord.ui.Button(label="Disable", style=discord.ButtonStyle.primary), discord.ui.Button(label="Skip", style=discord.ButtonStyle.primary)],
                     "embed_title": "Trello Deprecation"
 
                 }
             ], dm=True, no_dm_post=True))["trello_choice"]
 
-            if parsed_args_3 == "disable":
+            if parsed_args_3[0] == "disable":
                 guild_data.pop("trelloID")
 
 
@@ -223,8 +227,6 @@ class SetupCommand(Bloxlink.Module):
         ], dm=True, no_dm_post=True, last=True)
 
         if group and group != "skip":
-            merge_replace = parsed_args_2.get("merge_replace")
-
             if merge_replace not in ("skip", "next"):
                 if merge_replace == "replace":
                     for role in list(guild.roles):
