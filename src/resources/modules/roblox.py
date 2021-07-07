@@ -488,29 +488,28 @@ class Roblox(Bloxlink.Module):
             nick_data = outer_nick.split(":")
             nick_fn = None
             nick_value = None
-            nick_array = None
 
             if len(nick_data) > 1:
-                nick_fn = outer_nick.split(":")
-                nick_fn = nick_fn[0]
-                nick_array = outer_nick.split(":")
-                if nick_array[0] == "allC" or nick_array[0] == "allL":
-                    del nick_array[0]
-                nick_value = ":".join(nick_array)
+                nick_fn = nick_data[0]
+                nick_value = nick_data[1]
             else:
                 nick_value = nick_data[0]
 
             # nick_fn = capA
             # nick_value = roblox-name
 
-            if nick_fn == "allC":
-                nick_value = nick_value.upper()
-            elif nick_fn == "allL":
-                nick_value = nick_value.lower()
+            if nick_fn:
+                if nick_fn in ("allC", "allL"):
+                    if nick_fn == "allC":
+                        nick_value = nick_value.upper()
+                    elif nick_fn == "allL":
+                        nick_value = nick_value.lower()
 
-            # TODO: add more nickname functions
-
-            template = template.replace("{{{0}}}".format(outer_nick), nick_value)
+                    template = template.replace("{{{0}}}".format(outer_nick), nick_value)
+                else:
+                    template = template.replace("{{{0}}}".format(outer_nick), outer_nick) # remove {} only
+            else:
+                template = template.replace("{{{0}}}".format(outer_nick), nick_value)
 
         # clan tags are done at the end bc we may need to shorten them, and brackets are removed at the end
         clan_tag = "clan-tag" in template and (await self.get_clan_tag(author=author, guild=guild, response=response, user_data=user_data, dm=dm) or "N/A")
