@@ -10,6 +10,7 @@ class Extras(Bloxlink.Module):
 
     def has_magic_role(self, author, magic_roles_data, magic_role_name=None):
         has_any_magic_role = False
+        magic_roles_data = magic_roles_data or {}
 
         for role in author.roles:
             if role.name == magic_role_name:

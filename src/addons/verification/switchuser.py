@@ -137,7 +137,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     else:
                         role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
 
-                        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) and not has_magic_role(member, guild_data.get("magicRoles"), "Bloxlink Bypass"):
+                        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) and not has_magic_role(member, guild_data.get("magicRoles", {}), "Bloxlink Bypass"):
                             for role in list(member.roles):
                                 if role != guild.default_role and role.name != "Muted":
                                     try:
