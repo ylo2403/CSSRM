@@ -12,6 +12,8 @@ RUN wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemal
     make && \
     make install
 
+RUN pip install --upgrade pip
+
 RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 RUN apt install dumb-init
 
