@@ -488,10 +488,15 @@ class Roblox(Bloxlink.Module):
             nick_data = outer_nick.split(":")
             nick_fn = None
             nick_value = None
+            nick_array = None
 
             if len(nick_data) > 1:
-                nick_fn = nick_data[0]
-                nick_value = nick_data[1]
+                nick_fn = outer_nick.split(":")
+                nick_fn = nick_fn[0]
+                nick_array = outer_nick.split(":")
+                if nick_array[0] == "allC" or nick_array[0] == "allL":
+                    del nick_array[0]
+                nick_value = ":".join(nick_array)
             else:
                 nick_value = nick_data[0]
 
