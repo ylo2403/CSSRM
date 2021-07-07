@@ -20,24 +20,23 @@ class ChannelTypingEvent(Bloxlink.Module):
 
         @Bloxlink.event
         async def on_typing(channel, user, when):
-            if RELEASE == "PRO":
-                if isinstance(user, Member):
-                    guild = user.guild
+            if isinstance(user, Member):
+                guild = user.guild
+                donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
-                    if self.redis:
-                        donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                if donator_profile.features.get("premium"):
+                    if await cache_get(f"channel_typing:{guild.id}:{user.id}", primitives=True):
+                        return
 
-                        if donator_profile.features.get("premium"):
-                            if await cache_get(f"channel_typing:{guild.id}:{user.id}", primitives=True):
-                                return
+                    options = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")], ["magicRoles", {}])
+                    persist_roles = options["persistRoles"]
+                    magic_roles   = options["magicRoles"]
 
-                            persist_roles, magic_roles = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")], ["magicRoles", {}])
+                    if persist_roles:
+                        await cache_set(f"channel_typing:{guild.id}:{user.id}", True, expire=7200)
 
-                            if persist_roles:
-                                await cache_set(f"channel_typing:{guild.id}:{user.id}", True, expire=7200)
-
-                                if not has_magic_role(user, magic_roles, "Bloxlink Bypass"):
-                                    try:
-                                        await guild_obligations(user, guild, join=True, dm=False, event=False)
-                                    except CancelCommand:
-                                        pass
+                        if not has_magic_role(user, magic_roles, "Bloxlink Bypass"):
+                            try:
+                                await guild_obligations(user, guild, join=True, dm=False, event=False)
+                            except CancelCommand:
+                                pass
