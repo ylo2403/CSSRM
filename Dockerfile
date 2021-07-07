@@ -10,8 +10,6 @@ RUN echo Attempting to Update && apt-get update || true && wget -O - https://git
     make && \
     make install
 
-RUN pip install --upgrade pip
-
 RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 RUN apt install dumb-init
 
