@@ -1,10 +1,12 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.constants import ARROW, BROWN_COLOR, MAGIC_ROLES # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module, no-name-in-module
 import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
 @Bloxlink.command
@@ -13,7 +15,7 @@ class MagicRolesCommand(Bloxlink.Module):
 
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
-        self.category = "Administration"
+        self.category = "Premium"
         self.arguments = [{
             "prompt": "Magic Roles allow you to create roles that have special abilities within Bloxlink.\n\n"
                       "Would you like to **add** a new magic role, **view** your existing magic roles, or "
@@ -29,6 +31,7 @@ class MagicRolesCommand(Bloxlink.Module):
         }]
         self.hidden = True
         self.aliases = ["magicrole", "magicroles", "magic-roles"]
+        self.free_to_use = True
 
     async def __main__(self, CommandArgs):
         subcommand = CommandArgs.parsed_args["subcommand"][0]
@@ -43,10 +46,21 @@ class MagicRolesCommand(Bloxlink.Module):
     @Bloxlink.subcommand()
     async def add(self, CommandArgs):
         """add a new Magic Role to Bloxlink"""
+
         guild_data = CommandArgs.guild_data
         guild      = CommandArgs.guild
         response   = CommandArgs.response
         author     = CommandArgs.author
+        prefix     = CommandArgs.prefix
+
+        premium_status, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+
+        if not premium_status.features.get("premium"):
+            magic_roles_desc = "\n".join([f'**{x}** {ARROW} {y}' for x,y in MAGIC_ROLES.items()])
+            raise Error("Customizing Magic Roles is reserved for __Bloxlink Premium subscribers!__ You may find out "
+                        f"more information with the `{prefix}donate` command.\n\n"
+                        "However, you may manually create a Bloxlink Magic Role "
+                        f"and assign it one of these names, then give it to people!\n{magic_roles_desc}")
 
         parsed_args = await CommandArgs.prompt([
             {
@@ -83,6 +97,8 @@ class MagicRolesCommand(Bloxlink.Module):
 
     @Bloxlink.subcommand()
     async def view(self, CommandArgs):
+        """view your Magic Roles in your server"""
+
         guild_data = CommandArgs.guild_data
         magic_roles = guild_data.get("magicRoles", {})
         guild = CommandArgs.guild
@@ -122,6 +138,8 @@ class MagicRolesCommand(Bloxlink.Module):
 
     @Bloxlink.subcommand()
     async def delete(self, CommandArgs):
+        """delete a Magic Role from your server"""
+
         response = CommandArgs.response
         guild    = CommandArgs.guild
         author   = CommandArgs.author
