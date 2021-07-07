@@ -129,7 +129,7 @@ class MagicRolesCommand(Bloxlink.Module):
                     magic_role_sorted[feature].add(f"Deleted role: {magic_role_id}")
 
         for magic_role_name, roles in magic_role_sorted.items():
-            embed.add_field(name=magic_role_name, value=f"**Description** {ARROW} {MAGIC_ROLES[magic_role_name]}\n**Roles** {ARROW}" + ", ".join(roles), inline=False)
+            embed.add_field(name=magic_role_name, value=f"**Description** {ARROW} {MAGIC_ROLES[magic_role_name]}\n**Roles** {ARROW} " + ", ".join(roles), inline=False)
 
         if has_magic_role:
             await response.send(embed=embed)
