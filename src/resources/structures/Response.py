@@ -221,21 +221,17 @@ class Response(Bloxlink.Module):
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
         msg = None
-        embeds = None
 
         if fail_on_dm and isinstance(dest, (DMChannel, User, Member)):
             return None
-
-        if embed:
-            embeds = [embed]
 
         if isinstance(dest, Webhook):
             msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view or ui.View())
 
         elif self.slash_command and send_as_slash_command:
             kwargs = {"content": content, "ephemeral": hidden}
-            if embeds:
-                kwargs["embeds"] = embeds
+            if embed:
+                kwargs["embeds"] = [embed]
             if view:
                 kwargs["view"] = view
 
@@ -251,7 +247,7 @@ class Response(Bloxlink.Module):
                 self.sent_first_slash_command = True
 
         else:
-            msg = await dest.send(content, embeds=embeds, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
+            msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
 
 
         self.bot_responses.append(msg.id)
