@@ -4,9 +4,7 @@ WORKDIR /usr/src/bloxlink
 
 ADD . /usr/src/bloxlink
 
-RUN apt-get update
-
-RUN wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemalloc-5.2.1.tar.bz2 | tar -xj && \
+RUN echo Attempting to Update && apt-get update || true && wget -O - https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemalloc-5.2.1.tar.bz2 | tar -xj && \
     cd jemalloc-5.2.1 && \
     ./configure && \
     make && \
