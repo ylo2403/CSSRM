@@ -184,6 +184,7 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
     "trelloBindMode":        (None, "choice", ("merge", "replace"), False, "Choose 'replace' if trello binds should replace the server binds, or 'merge' if trello binds should be merged with the server binds. Default = merge."),
+    "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, False, "Customize the names of the Bloxlink Magic Roles.")
 }
 
 PROMPT = {
@@ -225,7 +226,11 @@ DEFAULTS = {
 
 ARROW = "\u2192"
 
-MAGIC_ROLES = ["Bloxlink Admin", "Bloxlink Bypass", "Bloxlink Updater"]
+MAGIC_ROLES = {
+    "Bloxlink Admin": "These users can use ANY Bloxlink command.",
+    "Bloxlink Bypass": "Bloxlink will NOT update these users.",
+    "Bloxlink Updater": "These users can use !updateuser on others."
+}
 
 OWNER = 84117866944663552
 

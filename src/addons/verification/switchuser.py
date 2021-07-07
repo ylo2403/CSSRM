@@ -8,6 +8,7 @@ from discord.utils import find
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 get_user, verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds", "get_binds"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
+has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
 class SwitchUserCommand(Bloxlink.Module):
@@ -136,7 +137,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     else:
                         role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
 
-                        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) and not find(lambda r: r.name == "Bloxlink Bypass", member.roles):
+                        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) and not has_magic_role(member, guild_data.get("magicRoles"), "Bloxlink Bypass"):
                             for role in list(member.roles):
                                 if role != guild.default_role and role.name != "Muted":
                                     try:
