@@ -8,6 +8,7 @@ cache_get, cache_set, get_guild_value = Bloxlink.get_module("cache", attrs=["get
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
 get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
 @Bloxlink.module
@@ -30,12 +31,12 @@ class ChannelTypingEvent(Bloxlink.Module):
                             if await cache_get(f"channel_typing:{guild.id}:{user.id}", primitives=True):
                                 return
 
-                            persist_roles = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")])
+                            persist_roles, magic_roles = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")], ["magicRoles", {}])
 
                             if persist_roles:
                                 await cache_set(f"channel_typing:{guild.id}:{user.id}", True, expire=7200)
 
-                                if not find(lambda r: r.name == "Bloxlink Bypass", user.roles):
+                                if not has_magic_role(user, magic_roles, "Bloxlink Bypass"):
                                     try:
                                         await guild_obligations(user, guild, join=True, dm=False, event=False)
                                     except CancelCommand:

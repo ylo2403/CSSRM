@@ -20,6 +20,7 @@ get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
+has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
 flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")
@@ -332,7 +333,7 @@ class Commands(Bloxlink.Module):
             else:
                 if my_permissions and my_permissions.manage_messages:
                     if slash_command and response.first_slash_command:
-                        await response.first_slash_command.edit(content="**_Command finished._**", view=None, embeds=None)
+                        await response.first_slash_command.edit(content="**_Command finished._**", view=None, embed=None)
 
                 await response.send(text, dm=e.dm, no_dm_post=True)
 
@@ -414,7 +415,7 @@ class Commands(Bloxlink.Module):
 
                 if delete_messages:
                     if slash_command and response.first_slash_command and not arguments.cancelled:
-                        await response.first_slash_command.edit(content="_**Command finished.**_", embeds=[], view=None)
+                        await response.first_slash_command.edit(content="_**Command finished.**_", embed=None, view=None)
 
                     try:
                         await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
@@ -713,7 +714,9 @@ class Command:
                 if permissions.bloxlink_role:
                     role_name = permissions.bloxlink_role
 
-                    if find(lambda r: r.name == "Bloxlink Admin", author.roles):
+                    magic_roles = await get_guild_value(guild, ["magicRoles", {}])
+
+                    if has_magic_role(author, magic_roles, "Bloxlink Admin"):
                         return True
                     else:
                         if role_name == "Bloxlink Manager":
@@ -729,7 +732,7 @@ class Command:
                                 raise PermissionError("You need the `Kick` or `Ban` permission to run this command.")
 
                         elif role_name == "Bloxlink Updater":
-                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or find(lambda r: r.name == "Bloxlink Updater", author.roles):
+                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or has_magic_role(author, magic_roles, "Bloxlink Updater"):
                                 pass
                             else:
                                 raise PermissionError("You either need: a role called `Bloxlink Updater`, the `Manage Roles` "
