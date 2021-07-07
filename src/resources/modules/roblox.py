@@ -34,6 +34,7 @@ is_booster = Bloxlink.get_module("nitro_boosters", attrs=["is_booster"], name_ov
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
+has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
 API_URL = "https://api.roblox.com"
@@ -142,7 +143,6 @@ class Roblox(Bloxlink.Module):
                 parsed_accounts[roblox_user.username] = roblox_user
 
         return parsed_accounts
-
 
     @staticmethod
     def count_binds(guild_data, role_binds=None, group_ids=None):
@@ -1132,16 +1132,14 @@ class Roblox(Bloxlink.Module):
                                         group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
                                         if dm_message:
-                                            text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not having an  "
-                                                    f"allowed roleset in the group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                                    f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
-                                                    f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
-                                                    f"Admins:\n\n{dm_message}")
+                                            text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                                    f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                    f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\n"
+                                                    f"These instructions were set by the Server Admins:\n\n{dm_message}")
                                         else:
-                                            text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not having an  "
-                                                    f"allowed roleset in the group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                                    f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
-                                                    f"provide this ID to the command: `{guild.id}`.")
+                                            text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` doesn't have an allowed Roleset in the group "
+                                                    f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                    f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
                                         try:
                                             await member.send(text)
                                         except discord.errors.Forbidden:
@@ -1160,16 +1158,13 @@ class Roblox(Bloxlink.Module):
                                 group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
                                 if dm_message:
-                                    text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
-                                            f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                            f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
-                                            f"provide this ID to the command: `{guild.id}`.\n\nThese instructions were set by the Server "
-                                            f"Admins:\n\n{dm_message}")
+                                    text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                            f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                            f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\nThese instructions were set by the Server Admins:\n\n{dm_message}`")
                                 else:
-                                    text = (f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being in the "
-                                            f"required group <{group_url}>. If this is a mistake, then please join {SERVER_INVITE} "
-                                            f"and link a different account with `{PREFIX}verify add`. Finally, use the `{PREFIX}switchuser` command and "
-                                            f"provide this ID to the command: `{guild.id}`.")
+                                    text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                            f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                            f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
 
                                 try:
                                     await member.send(text)
@@ -1210,10 +1205,9 @@ class Roblox(Bloxlink.Module):
                                                     "primary account, then try rejoining this server.")
                                 else:
                                     await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                  f"You may link your account to Bloxlink by visiting <https://blox.link/verify> and completing the verification process.\n"
-                                                  f"Select any server, or introduce this server ID: {guild.id}. Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
-                                                  f"If you're already verified, you might need to switch your account. Join {SERVER_INVITE}, use the `{PREFIX}switchuser`"
-                                                  f"and provide this ID to it: `{guild.id}. Then try rejoining this server.")
+                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
+                                                    "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
+                                                    f"Join {SERVER_INVITE} for additional help.")
                             except discord.errors.Forbidden:
                                 pass
 
@@ -1234,8 +1228,9 @@ class Roblox(Bloxlink.Module):
                                                 "primary account, then try rejoining this server.")
                             else:
                                 await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                f"You may link your account by joining {SERVER_INVITE} and running the `{PREFIX}switchuser` command "
-                                                f"and provide this ID to the command: `{guild.id}`, or run `{PREFIX}verify add` and set a primary account for any server.")
+                                                f"You may link your account to Bloxlink by visiting <https://blox.link/verification{guild.id}> and completing the verification process.\n"
+                                                "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
+                                                f"Join {SERVER_INVITE} for additional help.")
                         except discord.errors.Forbidden:
                             pass
 
@@ -1311,8 +1306,8 @@ class Roblox(Bloxlink.Module):
             if not guild:
                 raise Error("Unable to resolve a guild from author.")
 
-        if discord.utils.find(lambda r: r.name == "Bloxlink Bypass", author.roles):
-            raise BloxlinkBypass
+        if has_magic_role(author, guild_data.get("magicRoles"), "Bloxlink Bypass"):
+            raise BloxlinkBypass()
 
         guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
 
@@ -2995,7 +2990,7 @@ class RobloxUser(Bloxlink.Module):
                 if response.webhook_only:
                     await response.send(embed=embed[0], view=view)
                 else:
-                    await embed[2].edit(embeds=[embed[0]], view=view)
+                    await embed[2].edit(embed=embed[0], view=view)
 
         return roblox_data
 

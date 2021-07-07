@@ -6,12 +6,13 @@ PREMIUM_PERKS = "\n".join([
     f"- More role bindings allowed (from {LIMITS['BINDS']['FREE']} to {LIMITS['BINDS']['PREMIUM']}).",
     f"- `persistRoles:` update users as they type once every 2 hours",
     f"- Access to the `Pro` version of Bloxlink - a bot in less servers, so downtime is very minimal.",
-     "- Exclusive premium-only settings such as setting an age-limit, **changing the username "
-        "and pfp of the bot** (white-labeling), and much more. "
-        "See `{prefix}settings change/help` and look at the premium section.",
+     "- Customize the name and profile picture of bot responses (`{prefix}whitelabel`).",
+     "- Set an age limit that checks the person's Roblox account age. (`{prefix}settings change agelimit`).",
+     "- Customize the name of Magic Roles (`{prefix}magicroles`).",
      "- No cooldown on some commands.",
      "- More restrictions (`{prefix}restrict`) " + f"allowed (from {LIMITS['RESTRICTIONS']['FREE']} to {LIMITS['RESTRICTIONS']['PREMIUM']}).",
-     "- More groups allowed to be added to your Group-Lock (`{prefix}grouplock`)."
+     "- More groups allowed to be added to your Group-Lock (`{prefix}grouplock`).",
+     "- And more! Check `{prefix}settings change` to view the premium settings."
 ])
 
 
