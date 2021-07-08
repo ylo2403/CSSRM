@@ -291,7 +291,7 @@ class Arguments:
 
                         skipped_arg_lower = skipped_arg.lower() if skipped_arg else None
 
-                        if bot_prompt.components:
+                        if bot_prompt and bot_prompt.components:
                             disabled_view = discord.ui.View.from_message(bot_prompt)
 
                             for child in disabled_view.children:
