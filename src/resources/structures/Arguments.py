@@ -1,10 +1,9 @@
-from discord.errors import Forbidden, NotFound, HTTPException
 from discord import Embed
 import discord
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelledPrompt, CancelCommand, Error # pylint: disable=import-error, no-name-in-module
 from ..constants import RED_COLOR, INVISIBLE_COLOR # pylint: disable=import-error, no-name-in-module
-from config import RELEASE # pylint: disable=no-name-in-module
+from config import RELEASE # pylint: disable=no-name-in-module, import-error
 from ..constants import IS_DOCKER, TIP_CHANCES, SERVER_INVITE, PROMPT # pylint: disable=import-error, no-name-in-module
 import random
 import asyncio
@@ -185,12 +184,12 @@ class Arguments:
             if IS_DOCKER:
                 try:
                     m = await self.author.send("Loading setup...")
-                except Forbidden:
+                except discord.errors.Forbidden:
                     dm = False
                 else:
                     try:
                         await m.delete()
-                    except NotFound:
+                    except discord.errors.NotFound:
                         pass
 
                     if not no_dm_post:
@@ -249,12 +248,13 @@ class Arguments:
                                 if prompt_.get("delete_original", True):
                                     self.messages.append(message.id)
                             else:
-                                message_type = message_data.get("type")
+                                if message_data != "cluster timeout":
+                                    message_type = message_data.get("type")
 
-                                if message_type in ("message", "button"):
-                                    skipped_arg = message_data["content"]
-                                elif message_type == "select":
-                                    select_values = message_data["values"]
+                                    if message_type in ("message", "button"):
+                                        skipped_arg = message_data["content"]
+                                    elif message_type == "select":
+                                        select_values = message_data["values"]
 
                             if skipped_arg == "cluster timeout":
                                 skipped_arg = "cancel (timeout)"
@@ -298,7 +298,10 @@ class Arguments:
                                 if isinstance(child, discord.ui.Button):
                                     child.disabled = True
 
-                            await bot_prompt.edit(view=disabled_view)
+                            try:
+                                await bot_prompt.edit(view=disabled_view)
+                            except discord.errors.NotFound:
+                                pass
 
                         if custom_id == "cancel":
                             raise CancelledPrompt(type="delete")
