@@ -224,7 +224,7 @@ class IPC(Bloxlink.Module):
                         message_content = {"type": "message", "content": "cancel (timeout)"}
 
                 except asyncio.TimeoutError:
-                    message_content = "cancel (timeout)"
+                    message_content = {"type": "message", "content": "cancel (timeout)"}
 
                 data = json.dumps({
                     "nonce": nonce,

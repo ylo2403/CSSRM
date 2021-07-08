@@ -147,6 +147,7 @@ class SwitchUserCommand(Bloxlink.Module):
                         try:
                             added, removed, nickname, errors, warnings, roblox_user = await update_member(
                                 member,
+                                guild_data   = guild_data,
                                 guild        = guild,
                                 roles        = True,
                                 nickname     = True,

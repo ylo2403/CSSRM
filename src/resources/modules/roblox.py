@@ -1310,10 +1310,10 @@ class Roblox(Bloxlink.Module):
             if not guild:
                 raise Error("Unable to resolve a guild from author.")
 
+        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
+
         if has_magic_role(author, guild_data.get("magicRoles"), "Bloxlink Bypass"):
             raise BloxlinkBypass()
-
-        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
 
         if not trello_board:
             trello_board = await get_board(guild=guild, guild_data=guild_data)
