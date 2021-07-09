@@ -2981,7 +2981,7 @@ class RobloxUser(Bloxlink.Module):
             view = discord.ui.View()
             view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_data["profile_link"], emoji="👥"))
 
-            if roblox_data["dev_forum"]:
+            if roblox_data["dev_forum"] and roblox_data["dev_forum"].get("trust_level"):
                 view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit DevForum Profile", url=f"https://devforum.roblox.com/u/{roblox_data['dev_forum']['username']}", emoji="🧑‍💻"))
 
             if not args:

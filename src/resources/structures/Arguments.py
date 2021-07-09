@@ -206,7 +206,7 @@ class Arguments:
                     self.skipped_args = [" ".join(self.skipped_args)]
 
                 prompt_ = arguments[checked_args]
-                skipped_arg = self.skipped_args and str(self.skipped_args[0])
+                skipped_arg = str(self.skipped_args[0]) if self.skipped_args else ""
                 message     = None
                 interaction = None
                 select_values = []
@@ -242,7 +242,6 @@ class Arguments:
                                 dm = False
 
                                 message = await Bloxlink.wait_for("message", check=self._check_prompt(), timeout=PROMPT["PROMPT_TIMEOUT"])
-
                                 skipped_arg = message.content
 
                                 if prompt_.get("delete_original", True):
@@ -253,6 +252,7 @@ class Arguments:
 
                                     if message_type in ("message", "button"):
                                         skipped_arg = message_data["content"]
+
                                     elif message_type == "select":
                                         select_values = message_data["values"]
 
