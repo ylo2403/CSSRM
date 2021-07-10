@@ -64,31 +64,6 @@ class SetupCommand(Bloxlink.Module):
 
         return board
 
-    @staticmethod
-    async def verify_trello_board(trello_board, code):
-        async def validate(message, content, prompt, guild):
-            try:
-                await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
-            except TrelloNotFound:
-                raise Error("Something happened to your Trello board! Was it deleted? Set-up cancelled.")
-            except TrelloUnauthorized:
-                raise Error("I've lost permissions to view your Trello board! Please run this command "
-                            "again. Set-up cancelled.")
-
-            for List in await trello_board.get_lists():
-                if List.name == code:
-                    return True
-
-                for card in await List.get_cards():
-                    if code in (card.name, card.desc):
-                        return True
-
-
-            return None, "Failed to find the code on your Trello board. Please try again."
-
-
-        return validate
-
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
         author = CommandArgs.author
@@ -132,19 +107,19 @@ class SetupCommand(Bloxlink.Module):
                 "exceptions": ("disable", "skip")
             },
             {
-                "prompt": "Would you like to link a **Roblox group** to this Discord server? Please provide the **Group URL, or Group ID**.",
-                "name": "group",
-                "footer": "Say **skip** to leave as-is.",
-                "embed_title": "Setup Prompt",
-                "validation": self.validate_group
-            },
-            {
                 "prompt": "Would you like to change the **Verified role** (the role people are given if they're linked to Bloxlink) name to something else?\n"
                           "Default: `Verified`",
                 "name": "verified_role",
                 "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
                 "max": 50
+            },
+            {
+                "prompt": "Would you like to link a **Roblox group** to this Discord server? Please provide the **Group URL, or Group ID**.",
+                "name": "group",
+                "footer": "Say **skip** to leave as-is.",
+                "embed_title": "Setup Prompt",
+                "validation": self.validate_group
             }
         ], dm=True, no_dm_post=False)
 
