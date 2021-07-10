@@ -177,9 +177,3 @@ class MagicRolesCommand(Bloxlink.Module):
             await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **removed** a `magicRole`!", BROWN_COLOR)
 
             await response.success("Successfully **removed** this Magic Role!")
-
-            try:
-                await role.delete(reason="Removed Magic Role")
-            except discord.Forbidden:
-                pass
-
