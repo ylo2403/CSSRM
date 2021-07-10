@@ -147,7 +147,7 @@ class MagicRolesCommand(Bloxlink.Module):
         guild_data  = CommandArgs.guild_data
         magic_roles = guild_data.get("magicRoles", {})
 
-        if not magic_roles:
+        if not (magic_roles or discord.utils.find(lambda r: r.name in MAGIC_ROLES, guild.roles)):
             await response.silly("You have no Magic Roles!")
             return
 
@@ -161,19 +161,35 @@ class MagicRolesCommand(Bloxlink.Module):
 
         role = parsed_args["role"]
         magic_role = magic_roles.get(str(role.id))
+        removed_builtin_magic_role = False
+        builtin_magic_role = False
 
-        if not magic_role:
+        if role.name in MAGIC_ROLES:
+            builtin_magic_role = True
+
+            try:
+                await role.delete()
+            except discord.errors.Forbidden:
+                await response.error("I don't have permission to remove this Magic Role! Please give me the `Manage Roles` permission.")
+            else:
+                await response.success("Successfully **removed** this Magic Role!")
+                removed_builtin_magic_role = True
+
+        if not (magic_role or builtin_magic_role):
             await response.silly("This is not a Magic Role!")
         else:
-            magic_roles.pop(str(role.id))
+            if magic_role:
+                magic_roles.pop(str(role.id))
 
-            if magic_roles:
-                guild_data["magicRoles"] = magic_roles
-            else:
-                guild_data.pop("magicRoles")
+                if magic_roles:
+                    guild_data["magicRoles"] = magic_roles
+                else:
+                    guild_data.pop("magicRoles")
 
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-            await set_guild_value(guild, "magicRoles", magic_roles)
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+                await set_guild_value(guild, "magicRoles", magic_roles)
+
             await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **removed** a `magicRole`!", BROWN_COLOR)
 
-            await response.success("Successfully **removed** this Magic Role!")
+            if not removed_builtin_magic_role:
+                await response.success("Successfully **removed** this Magic Role!")
