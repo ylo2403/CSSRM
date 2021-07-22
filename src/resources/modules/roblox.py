@@ -1209,7 +1209,7 @@ class Roblox(Bloxlink.Module):
                                                     "primary account, then try rejoining this server.")
                                 else:
                                     await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification{guild.id}> and completing the verification process.\n"
+                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
                                                     "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
                                                     f"Join {SERVER_INVITE} for additional help.")
                             except discord.errors.Forbidden:

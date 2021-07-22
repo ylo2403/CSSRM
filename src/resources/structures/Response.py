@@ -349,7 +349,7 @@ class Response(Bloxlink.Module):
                     content = f"Disclaimer: you are getting this message DM'd since I don't have permission to post in {original_channel.mention}! " \
                               f"Please make sure I have these permissions: `Read Message History`, `Send Messages`, and `Embed Links`.\n{content or ''}"[:2000]
                 else:
-                    content = f"{original_channel.mention}, I was unable to  DM you! Here's the message here instead:\n{content or ''}"[:2000]
+                    content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content or ''}"[:2000]
 
                 if webhook:
                     await cache_pop(f"webhooks:{channel.id}")
