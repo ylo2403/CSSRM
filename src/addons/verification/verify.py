@@ -113,7 +113,7 @@ class VerifyCommand(Bloxlink.Module):
         view = discord.ui.View()
         view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL, emoji="🔗"))
         view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial", emoji="❔",
-                                            url="https://www.youtube.com/watch?v=hq496NmQ9GU"))
+                                             url="https://www.youtube.com/watch?v=0SH3n8rY9Fg&list=PLz7SOP-guESE1V6ywCCLc1IQWiLURSvBE&index=2"))
 
         await CommandArgs.response.send("To verify with Bloxlink, click the link below.", mention_author=True, view=view)
 

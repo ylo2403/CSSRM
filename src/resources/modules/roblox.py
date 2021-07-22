@@ -1210,7 +1210,7 @@ class Roblox(Bloxlink.Module):
                                 else:
                                     await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
                                                     f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
-                                                    "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
+                                                    "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
                                                     f"Join {SERVER_INVITE} for additional help.")
                             except discord.errors.Forbidden:
                                 pass
@@ -1233,7 +1233,7 @@ class Roblox(Bloxlink.Module):
                             else:
                                 await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
                                                 f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
-                                                "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
+                                                "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
                                                 f"Join {SERVER_INVITE} for additional help.")
                         except discord.errors.Forbidden:
                             pass
