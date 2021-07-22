@@ -124,23 +124,27 @@ class ViewBindsCommand(Bloxlink.Module):
                             else:
                                 embed.add_field(name=f"{group_name} ({group_id})", value=text, inline=False)
 
-                elif category in ("assets", "badges", "gamePasses"):
+                else:
                     text = []
+
                     if category == "gamePasses":
                         category_non_plural = "gamePass"
                         category_non_plural_title = "GamePass"
                         category_title = "GamePasses"
+                    elif category == "devForum":
+                        category_title = "DevForum Members"
+                    elif category == "robloxStaff":
+                        category_title = "Roblox Staff"
                     else:
                         category_non_plural = category[:-1]
                         category_non_plural_title = category_non_plural.title()
                         category_title = category.title()
 
-                    for bind_id, bind_vg_data in bind_data.items():
-                        display_name = bind_vg_data.get("displayName") or "(No Name)"
+                    if category in ("devForum", "robloxStaff"):
                         role_names = set()
 
-                        if bind_vg_data["roles"]:
-                            for role_ in bind_vg_data["roles"]:
+                        if bind_data["roles"]:
+                            for role_ in bind_data["roles"]:
                                 role_cache_find = role_cache.get(role_)
 
                                 if role_cache_find:
@@ -164,10 +168,44 @@ class ViewBindsCommand(Bloxlink.Module):
                                             role_names.add("(Deleted Role(s))")
                                             role_cache[role_] = "(Deleted Role(s))"
 
-                            text.append(f"**{category_non_plural_title}:** {display_name} ({bind_id}) {ARROW} **Roles:** {', '.join(role_names)} {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+                            text.append(f"**Roles:** {', '.join(role_names)} {ARROW} **Nickname:** {bind_data['nickname']}")
 
                         else:
-                            text.append(f"**{category_non_plural_title}:** {display_name} ({bind_id}) {ARROW} **Roles:** (No Roles) {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+                            text.append(f"**Roles:** (No Roles) {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+                    else:
+                        for bind_id, bind_vg_data in bind_data.items():
+                            display_name = bind_vg_data.get("displayName") or "(No Name)"
+                            role_names = set()
+
+                            if bind_vg_data["roles"]:
+                                for role_ in bind_vg_data["roles"]:
+                                    role_cache_find = role_cache.get(role_)
+
+                                    if role_cache_find:
+                                        role_names.add(role_cache_find)
+                                    else:
+                                        for role in guild.roles:
+                                            if role_ in (role.name, str(role.id)):
+                                                role_names.add(role.name)
+                                                role_cache[role_] = role.name
+
+                                                break
+                                        else:
+                                            try:
+                                                int(role_)
+                                            except ValueError:
+                                                role_names.add(role_)
+                                                role_cache[role_] = role_
+                                            else:
+                                                # deleted role
+                                                # TODO: check if the role is saved in server settings, then delete it
+                                                role_names.add("(Deleted Role(s))")
+                                                role_cache[role_] = "(Deleted Role(s))"
+
+                                text.append(f"**{category_non_plural_title}:** {display_name} ({bind_id}) {ARROW} **Roles:** {', '.join(role_names)} {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+
+                            else:
+                                text.append(f"**{category_non_plural_title}:** {display_name} ({bind_id}) {ARROW} **Roles:** (No Roles) {ARROW} **Nickname:** {bind_vg_data['nickname']}")
 
 
                     if text:

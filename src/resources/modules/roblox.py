@@ -1209,7 +1209,7 @@ class Roblox(Bloxlink.Module):
                                                     "primary account, then try rejoining this server.")
                                 else:
                                     await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
+                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification{guild.id}> and completing the verification process.\n"
                                                     "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
                                                     f"Join {SERVER_INVITE} for additional help.")
                             except discord.errors.Forbidden:
@@ -1232,7 +1232,7 @@ class Roblox(Bloxlink.Module):
                                                 "primary account, then try rejoining this server.")
                             else:
                                 await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                f"You may link your account to Bloxlink by visiting <https://blox.link/verification{guild.id}> and completing the verification process.\n"
+                                                f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
                                                 "Stuck? Watch this video: <https://youtu.be/hq496NmQ9GU>\n"
                                                 f"Join {SERVER_INVITE} for additional help.")
                         except discord.errors.Forbidden:
@@ -1321,6 +1321,44 @@ class Roblox(Bloxlink.Module):
         if trello_board and not given_trello_options:
             trello_options, _ = await get_options(trello_board)
             guild_data.update(trello_options)
+
+        async def give_bind_stuff(binds):
+            bind_nickname = binds.get("nickname")
+            bound_roles = binds.get("roles")
+            bind_remove_roles = binds.get("removeRoles") or []
+
+            for role_id in bound_roles:
+                int_role_id = role_id.isdigit() and int(role_id)
+                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+
+                if role:
+                    add_roles.add(role)
+
+                    if nickname and bind_nickname and bind_nickname != "skip":
+                        if author.top_role == role:
+                            top_role_nickname = await self.get_nickname(author=author, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
+
+                        resolved_nickname = await self.get_nickname(author=author, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
+
+                        if resolved_nickname and not resolved_nickname in possible_nicknames:
+                            possible_nicknames.append([role, resolved_nickname])
+
+            for role_id in bind_remove_roles:
+                int_role_id = role_id.isdigit() and int(role_id)
+                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+
+                if role:
+                    remove_roles.add(role)
+
+        async def remove_bind_stuff(binds):
+            bound_roles = binds.get("roles")
+
+            for role_id in bound_roles:
+                int_role_id = role_id.isdigit() and int(role_id)
+                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
+
+                if role and not allow_old_roles:
+                    remove_roles.add(role)
 
 
         verify_role = guild_data.get("verifiedRoleEnabled", DEFAULTS.get("verifiedRoleEnabled"))
@@ -1429,11 +1467,7 @@ class Roblox(Bloxlink.Module):
                                 category_title = (category[:-1]).title()
 
                             for bind_id, bind_data in all_binds.items():
-                                bind_nickname = bind_data.get("nickname")
-                                bound_roles = bind_data.get("roles")
-                                bind_remove_roles = bind_data.get("removeRoles") or []
-
-                                json_data, response_ = await fetch(f"https://inventory.roblox.com/v1/users/{roblox_user.id}/items/{category_title}/{bind_id}", json=True, raise_on_failure=False)
+                                json_data, response_ = await fetch(f"https://inventory.roblox.com/v1/users/{roblox_user.id}/items/{category_title}/{bind_id}", json=True, raise_on_failure=False) # TODO: cache this
 
                                 if response_.status != 200:
                                     vg_errors = json_data.get("errors", [])
@@ -1447,50 +1481,25 @@ class Roblox(Bloxlink.Module):
                                         raise Error(f"Bind error for {category_title} ID {bind_id}")
 
                                 if json_data.get("data"):
-                                    # TODO: cache this
-
-                                    for role_id in bound_roles:
-                                        int_role_id = role_id.isdigit() and int(role_id)
-                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                        if not role:
-                                            if bind_data.get("trello"):
-                                                try:
-                                                    role = await guild.create_role(name=role_id)
-                                                except discord.errors.Forbidden:
-                                                    raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                           "Please ensure I have the `Manage Roles` permission.")
-                                                except discord.errors.HTTPException:
-                                                    raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-                                                else:
-                                                    add_roles.add(role)
-
-                                        else:
-                                            add_roles.add(role)
-
-                                        if role and nickname and bind_nickname and bind_nickname != "skip":
-                                            if author.top_role == role:
-                                                top_role_nickname = await self.get_nickname(author=author, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                            resolved_nickname = await self.get_nickname(author=author, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                            if resolved_nickname and not resolved_nickname in possible_nicknames:
-                                                possible_nicknames.append([role, resolved_nickname])
-
-                                    for role_id in bind_remove_roles:
-                                        int_role_id = role_id.isdigit() and int(role_id)
-                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
-
-                                        if role:
-                                            remove_roles.add(role)
+                                    await give_bind_stuff(bind_data)
                                 else:
-                                    for role_id in bound_roles:
-                                        int_role_id = role_id.isdigit() and int(role_id)
-                                        role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                    await remove_bind_stuff(bind_data)
 
-                                        if not allow_old_roles and role and role in author.roles:
-                                            remove_roles.add(role)
+                        elif category == "robloxStaff":
+                            devforum_data = roblox_user.dev_forum
+
+                            if devforum_data and devforum_data.get("trust_level") == 4:
+                                await give_bind_stuff(all_binds)
+                            else:
+                                await remove_bind_stuff(all_binds)
+
+                        elif category == "devForum":
+                            devforum_data = roblox_user.dev_forum
+
+                            if devforum_data and devforum_data.get("trust_level"):
+                                await give_bind_stuff(all_binds)
+                            else:
+                                await remove_bind_stuff(all_binds)
 
                         elif category == "groups":
                             for group_id, data in all_binds.items():
@@ -1498,9 +1507,6 @@ class Roblox(Bloxlink.Module):
 
                                 for bind_id, bind_data in data.get("binds", {}).items():
                                     rank = None
-                                    bind_nickname = bind_data.get("nickname")
-                                    bound_roles = bind_data.get("roles")
-                                    bind_remove_roles = bind_data.get("removeRoles") or []
 
                                     try:
                                         rank = int(bind_id)
@@ -1511,164 +1517,30 @@ class Roblox(Bloxlink.Module):
                                         user_rank = group.user_rank_id
 
                                         if bind_id == "0":
-                                            if bound_roles:
-                                                for role_id in bound_roles:
-                                                    int_role_id = role_id.isdigit() and int(role_id)
-                                                    role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
-
-                                                    if role and not allow_old_roles:
-                                                        remove_roles.add(role)
+                                            await remove_bind_stuff(bind_data)
 
                                         elif (bind_id == "all" or rank == user_rank) or (rank and (rank < 0 and user_rank >= abs(rank))):
-                                            if not bound_roles:
-                                                bound_roles = {group.user_rank_name}
-
-                                            for role_id in bound_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                if not role:
-                                                    if bind_data.get("trello"):
-                                                        try:
-                                                            role = await guild.create_role(name=role_id)
-                                                        except discord.errors.Forbidden:
-                                                            raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                   "Please ensure I have the `Manage Roles` permission.")
-                                                        except discord.errors.HTTPException:
-                                                            raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-                                                        else:
-                                                            add_roles.add(role)
-                                                else:
-                                                    add_roles.add(role)
-
-                                                if role and nickname and bind_nickname and bind_nickname != "skip":
-                                                    if author.top_role == role:
-                                                        top_role_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                    resolved_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                    if resolved_nickname and not resolved_nickname in possible_nicknames:
-                                                        possible_nicknames.append([role, resolved_nickname])
-
-                                            for role_id in bind_remove_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
-
-                                                if role:
-                                                    remove_roles.add(role)
+                                            await give_bind_stuff(bind_data)
 
                                         else:
-                                            for role_id in bound_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                if not allow_old_roles and role and role in author.roles:
-                                                    remove_roles.add(role)
+                                            await remove_bind_stuff(bind_data)
                                     else:
                                         if bind_id == "0":
-                                            if bound_roles:
-                                                for role_id in bound_roles:
-                                                    int_role_id = role_id.isdigit() and int(role_id)
-                                                    role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                    if not role:
-                                                        if bind_data.get("trello"):
-                                                            try:
-                                                                role = await guild.create_role(name=role_id)
-                                                            except discord.errors.Forbidden:
-                                                                raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                       "Please ensure I have the `Manage Roles` permission.")
-
-                                                            except discord.errors.HTTPException:
-                                                                raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-                                                            else:
-                                                                add_roles.add(role)
-                                                    else:
-                                                        add_roles.add(role)
-
-                                                    if role and nickname and bind_nickname and bind_nickname != "skip":
-                                                        if author.top_role == role:
-                                                            top_role_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                        resolved_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                        if resolved_nickname and not resolved_nickname in possible_nicknames:
-                                                            possible_nicknames.append([role, resolved_nickname])
-
-                                            for role_id in bind_remove_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
-
-                                                if role:
-                                                    remove_roles.add(role)
+                                            await give_bind_stuff(bind_data)
                                         else:
-                                            for role_id in bound_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                if not allow_old_roles and role and role in author.roles:
-                                                    remove_roles.add(role)
+                                            await remove_bind_stuff(bind_data)
 
                                 for bind_range in data.get("ranges", []):
-                                    bind_nickname = bind_range.get("nickname")
-                                    bound_roles = bind_range.get("roles", set())
-                                    bind_remove_roles = bind_range.get("removeRoles") or []
-
                                     if group:
                                         user_rank = group.user_rank_id
 
                                         if bind_range["low"] <= user_rank <= bind_range["high"]:
-                                            if not bound_roles:
-                                                bound_roles = {group.user_rank_name}
-
-                                            for role_id in bound_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                if not role:
-                                                    if bind_range.get("trello"):
-                                                        try:
-                                                            role = await guild.create_role(name=role_id)
-                                                        except discord.errors.Forbidden:
-                                                            raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                    "Please ensure I have the `Manage Roles` permission.")
-                                                        except discord.errors.HTTPException:
-                                                            raise Error("Unable to create role: this server has reached the max amount of roles!")
-                                                if role:
-                                                    if roles:
-                                                        add_roles.add(role)
-
-                                                        if nickname and author.top_role == role and bind_nickname:
-                                                            top_role_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                    if nickname and bind_nickname and bind_nickname != "skip":
-                                                        resolved_nickname = await self.get_nickname(author=author, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=author_data, dm=dm, response=response)
-
-                                                        if resolved_nickname and not resolved_nickname in possible_nicknames:
-                                                            possible_nicknames.append([role, resolved_nickname])
-
-                                            for role_id in bind_remove_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, author.roles)
-
-                                                if role:
-                                                    remove_roles.add(role)
+                                            await give_bind_stuff(bind_range)
                                         else:
-                                            for role_id in bound_roles:
-                                                int_role_id = role_id.isdigit() and int(role_id)
-                                                role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
-
-                                                if not allow_old_roles and role and role in author.roles:
-                                                    remove_roles.add(role)
+                                            await remove_bind_stuff(bind_range)
                                     else:
-                                        for role_id in bound_roles:
-                                            int_role_id = role_id.isdigit() and int(role_id)
-                                            role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
+                                        await remove_bind_stuff(bind_range)
 
-                                            if not allow_old_roles and role and role in author.roles:
-                                                remove_roles.add(role)
 
                 if group_roles and group_ids:
                     for group_id, group_data in group_ids.items():

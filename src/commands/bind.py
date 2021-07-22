@@ -86,6 +86,8 @@ class BindCommand(Bloxlink.Module):
                         discord.SelectOption(label="Asset", description="Users need to own this catalog item."),
                         discord.SelectOption(label="Badge", description="Users need to own this badge."),
                         discord.SelectOption(label="GamePass", description="Users need to own this GamePass."),
+                        discord.SelectOption(label="DevForum Members", description="Users need to be a member of the DevForum."),
+                        discord.SelectOption(label="Roblox Staff", description="Users need to be Roblox Staff members."),
                     ])],
                 "choices": locale("commands.bind.prompts.bindTypePrompt.choices"),
                 "formatting": False
@@ -628,32 +630,47 @@ class BindCommand(Bloxlink.Module):
 
             await response.success(text)
 
-        elif bind_choice in ("asset", "badge", "gamepass"):
+        else:
+            no_id_bind = False
+
             if bind_choice == "gamepass":
                 bind_choice_title = "GamePass"
                 bind_choice_plural = "gamePasses"
+            elif bind_choice == "devforum members":
+                bind_choice_title = "DevForum Members"
+                bind_choice_plural = "devForum"
+                no_id_bind = True
+            elif bind_choice == "roblox staff":
+                bind_choice_title = "Roblox Staff"
+                bind_choice_plural = "robloxStaff"
+                no_id_bind = True
             else:
                 bind_choice_title = bind_choice.title()
                 bind_choice_plural = f"{bind_choice}s"
 
-            vg_parsed_args = await CommandArgs.prompt([
+            if not no_id_bind:
+                vg_parsed_args_1 = await CommandArgs.prompt([
+                    {
+                        "prompt": f"Please provide the **{bind_choice_title} ID** to use for this bind.",
+                        "name": "bind_id",
+                        "type": "number",
+                        "formatting": False
+                    }
+                ])
+
+            vg_parsed_args_2 = await CommandArgs.prompt([
                 {
-                   "prompt": f"Please provide the **{bind_choice_title} ID** to use for this bind.",
-                   "name": "bind_id",
-                   "type": "number",
-                   "formatting": False
-                },
-                {
-                   "prompt": "Please provide **Discord role name(s)** for this bind, separated by commas.",
-                   "name": "role",
-                   "type": "role",
-                   "multiple": True,
-                   "max": 10
+                    "prompt": "Please provide **Discord role name(s)** for this bind, separated by commas.",
+                    "name": "role",
+                    "type": "role",
+                    "multiple": True,
+                    "max": 10
                 },
             ], last=True)
 
-            discord_roles = vg_parsed_args["role"]
-            bind_id = str(vg_parsed_args["bind_id"])
+            discord_roles = vg_parsed_args_2["role"]
+            bind_id = str(vg_parsed_args_1["bind_id"]) if not no_id_bind else None
+            display_name = None
 
             if bind_choice == "asset":
                 try:
@@ -691,14 +708,19 @@ class BindCommand(Bloxlink.Module):
                 role_binds = role_binds[0]
 
             role_binds[bind_choice_plural] = role_binds.get(bind_choice_plural) or {}
-            role_binds[bind_choice_plural][bind_id] = role_binds[bind_choice_plural].get(bind_id) or {}
 
-            role_binds[bind_choice_plural][bind_id]["nickname"] = nickname
-            role_binds[bind_choice_plural][bind_id]["displayName"] = display_name
-            role_binds[bind_choice_plural][bind_id]["removeRoles"] = remove_roles
-            role_binds[bind_choice_plural][bind_id]["roles"] = role_binds[bind_choice_plural][bind_id].get("roles", [])
+            if bind_id:
+                role_binds[bind_choice_plural][bind_id] = role_binds[bind_choice_plural].get(bind_id) or {}
+                data_point = role_binds[bind_choice_plural][bind_id]
+            else:
+                role_binds[bind_choice_plural] = role_binds.get(bind_choice_plural) or {}
+                data_point = role_binds[bind_choice_plural]
 
-            roles = role_binds[bind_choice_plural][bind_id]["roles"]
+            data_point["nickname"] = nickname
+            data_point["displayName"] = display_name
+            data_point["removeRoles"] = remove_roles
+            data_point["roles"] = data_point.get("roles", [])
+            roles = data_point["roles"]
 
             for discord_role in discord_roles:
                 role_id = str(discord_role.id)
@@ -706,7 +728,6 @@ class BindCommand(Bloxlink.Module):
                 if not role_id in roles:
                     roles.append(role_id)
 
-            role_binds[bind_choice_plural][bind_id]["roles"] = roles
 
             if trello_binds_list:
                 make_binds_card = True
@@ -772,14 +793,17 @@ class BindCommand(Bloxlink.Module):
 
                     trello_binds_list.parsed_bind_data = None
 
+
             await self.r.table("guilds").insert({
                 "id": str(guild.id),
                 "roleBinds": role_binds
             }, conflict="update").run()
 
-
-            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** {bind_choice_title} `{display_name}`.", BLURPLE_COLOR)
-
             await clear_guild_data(guild)
 
-            await response.success(f"Successfully **bound** {bind_choice_title} `{display_name}` ({bind_id}) with Discord role(s) **{', '.join([r.name for r in discord_roles])}!**")
+            if display_name:
+                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** {bind_choice_title} `{display_name}`.", BLURPLE_COLOR)
+                await response.success(f"Successfully **bound** {bind_choice_title} `{display_name}` ({bind_id}) with Discord role(s) **{', '.join([r.name for r in discord_roles])}!**")
+            else:
+                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **bound** {bind_choice_title}.", BLURPLE_COLOR)
+                await response.success(f"Successfully **bound** {bind_choice_title} with Discord role(s) **{', '.join([r.name for r in discord_roles])}!**")

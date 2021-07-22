@@ -91,7 +91,7 @@
 			"prompts": {
 				"bindTypePrompt": {
 					"line_1": "A bind is a link between a Roblox entity and a Discord role. Please select a bind type.",
-					"choices": ["group", "asset", "badge", "gamepass"]
+					"choices": ["group", "asset", "badge", "gamepass", "devforum members", "roblox staff"]
 				},
 				"nicknamePrompt": {
 					"line": "Should these members be given a nickname different from the server-wide `{prefix}nickname`? Please specify a nickname, or say `skip` to skip this option and default to the server-wide nickname `{prefix}nickname` template.\n\nYou may use these templates: ```{nickname_templates}```",

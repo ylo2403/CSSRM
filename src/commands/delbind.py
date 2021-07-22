@@ -133,25 +133,38 @@ async def delete_bind_from_cards(type="group", bind_id=None, trello_binds_list=N
 
 
 
-
-
 @Bloxlink.command
 class UnBindCommand(Bloxlink.Module):
     """delete a role bind from your server"""
 
     def __init__(self):
         self.arguments = [{
-            "prompt": "Please specify the group ID that this bind resides in. If this is not a group, " \
-			          "specify the bind type found on `{prefix}viewbinds`(e.g. \"assets\").",
-            "slash_desc": "Please specify the group ID, or bind type. Bind types are found on /viewbinds.",
-            "name": "bind_id"
-        }]
+                "prompt": "Please choose the type of bind to delete.",
+                "components": [discord.ui.Select(max_values=1, options=[
+                    discord.SelectOption(label="Group", description="Remove a Group bind."),
+                    discord.SelectOption(label="Asset", description="Remove a Catalog Asset bind."),
+                    discord.SelectOption(label="Badge", description="Remove a Badge bind."),
+                    discord.SelectOption(label="GamePass", description="Remove a GamePass bind."),
+                    discord.SelectOption(label="DevForum Members", description="Remove a DevForum bind."),
+                    discord.SelectOption(label="Roblox Staff", description="Remove a Roblox Staff bind."),
+                ])],
+                "type": "choice",
+                "choices": ("group", "asset", "badge", "gamepass", "devforum members", "roblox staff"),
+                "name": "bind_category"
+            },
+            {
+                "prompt": "Please specify the **{bind_category[0]} ID** to delete.",
+                "type": "number",
+                "name": "bind_id",
+                "show_if": lambda c: c[0] not in ("roblox staff", "devforum members")
+            }
+        ]
+
 
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
         self.aliases = ["delbind", "delbinds", "un-bind", "del-bind"]
         self.slash_enabled = True
-
 
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
@@ -174,13 +187,12 @@ class UnBindCommand(Bloxlink.Module):
             raise Message(f"You have no bounded roles! Please use `{prefix}bind` "
                           f"to make a new role bind. {additional}", type="info")
 
-        bind_category = CommandArgs.parsed_args["bind_id"]
+        bind_category = CommandArgs.parsed_args["bind_category"][0]
+        bind_id = str(CommandArgs.parsed_args["bind_id"]) if CommandArgs.parsed_args["bind_id"] else None
 
         role_binds_groups_trello = role_binds_trello["groups"]
 
-        if bind_category.isdigit():
-            bind_id = bind_category
-
+        if bind_category == "group":
             if not (role_binds_groups_trello.get(bind_id) or group_ids_trello.get(bind_id)):
                 raise Message("There's no linked group with this ID!", type="info")
 
@@ -307,59 +319,49 @@ class UnBindCommand(Bloxlink.Module):
             raise Message("All bind removals were successful.", type="success")
 
         else:
-            bind_category = bind_category.lower()
-
-            if bind_category.endswith("s") and bind_category != "gamepass":
-                if bind_category in "gamepasses":
-                    bind_category = "gamepass"
-                else:
-                    bind_category = bind_category[:-1]
-
             if bind_category == "gamepass":
-                bind_category_plural = "gamePasses"
-                bind_category_title = "GamePass"
+                bind_category_internal = "gamePasses"
+            elif bind_category == "devforum members":
+                bind_category_internal = "devForum"
+            elif bind_category == "roblox staff":
+                bind_category_internal = "robloxStaff"
             else:
-                bind_category_plural = f"{bind_category}s"
-                bind_category_title = bind_category.title()
+                bind_category_internal = f"{bind_category}s"
 
-            if bind_category in BIND_TYPES:
-                bind_id = str((await CommandArgs.prompt([
-                    {
-                        "prompt": f"Please specify the **{bind_category_title} ID** to delete from.",
-                        "name": "bind_id",
-                        "type": "number",
-                        "formatting": False
-                    },
-                ], last=True))["bind_id"])
+            all_binds = role_binds_trello.get(bind_category_internal, {})
+            saving_binds = role_binds.get(bind_category_internal)
 
-                all_binds = role_binds_trello.get(bind_category_plural, {})
-                saving_binds = role_binds.get(bind_category_plural)
-
+            if bind_id:
                 if not all_binds.get(bind_id):
-                    raise Error(f"This {bind_category} is not bounded!")
+                    raise Error(f"This `{bind_category}` bind is not bounded!")
 
                 if saving_binds:
                     saving_binds.pop(bind_id, None)
 
                     if not saving_binds:
-                        role_binds.pop(bind_category_plural, None)
+                        role_binds.pop(bind_category_internal, None)
 
                     guild_data["roleBinds"] = role_binds
 
                     await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-                found_bind_trello = role_binds_trello.get(bind_category_plural, {}).get(bind_id) or {}
+                found_bind_trello = role_binds_trello.get(bind_category_internal, {}).get(bind_id) or {}
 
                 if found_bind_trello:
                     await delete_bind_from_cards(type=bind_category, bind_id=bind_id, trello_binds_list=trello_binds_list, bind_data_trello=found_bind_trello)
 
-
-                await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
-
-                await clear_guild_data(guild)
-
-                raise Message("All bind removals were successful.", type="success")
-
-
             else:
-                raise Error(f"Unsupported bind type. Valid types are: <group ID>, {BIND_TYPES}")
+                if not all_binds:
+                    raise Error(f"This `{bind_category}` bind is not bounded!")
+
+                role_binds.pop(bind_category_internal, None)
+
+                guild_data["roleBinds"] = role_binds
+
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+
+        await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
+
+        await clear_guild_data(guild)
+
+        raise Message("All bind removals were successful.", type="success")
