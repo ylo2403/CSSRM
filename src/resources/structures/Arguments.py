@@ -179,6 +179,7 @@ class Arguments:
         err_count = 0
         resolved_args = {}
         had_args = {x:True for x, _ in enumerate(self.skipped_args)}
+        last_prompt = None
 
         if dm:
             if IS_DOCKER:
@@ -213,13 +214,14 @@ class Arguments:
 
                 custom_id = None
 
-                if (prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args):
+                if ((prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args)) or (prompt_.get("show_if") and last_prompt and not prompt_["show_if"](resolved_args[last_prompt["name"]])):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
                         #had_args[checked_args] = True
 
                     resolved_args[prompt_["name"]] = None
                     checked_args += 1
+                    last_prompt = prompt_
 
                     continue
 
@@ -323,6 +325,8 @@ class Arguments:
                     checked_args += 1
                     resolved_args[prompt_["name"]] = skipped_arg_lower
 
+                    last_prompt = prompt_
+
                     continue
 
                 resolver_types = prompt_.get("type", "string")
@@ -376,6 +380,8 @@ class Arguments:
 
                 if self.skipped_args:
                     self.skipped_args.pop(0)
+
+                last_prompt = prompt_
 
             return resolved_args
 
