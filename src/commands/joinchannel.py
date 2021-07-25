@@ -126,7 +126,7 @@ class JoinChannelCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **disabled** the `joinChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** the `joinChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** your join message.", type="success")
 
@@ -224,6 +224,6 @@ class JoinChannelCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **disabled** the `joinChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** the `joinChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** your join message.", type="success")
