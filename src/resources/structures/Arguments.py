@@ -106,7 +106,7 @@ class Arguments:
 
     async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False, components=None):
         embed_color = embed_color or INVISIBLE_COLOR
-        view = discord.ui.View()
+        view = discord.ui.View(timeout=PROMPT["PROMPT_TIMEOUT"])
 
         if components:
             for component in components:
