@@ -1,6 +1,6 @@
 #discord.py==1.7.2
-#git+https://github.com/Rapptz/discord.py
-git+https://github.com/zomien/discord.py@master
+git+https://github.com/Rapptz/discord.py@fc51736b34df3c37c06781ae948b18efb71616fa
+#git+https://github.com/zomien/discord.py@master
 #git+https://github.com/bloxlink/discord.py@master
 rethinkdb==2.4.7
 aiodns==2.0.0
