@@ -11,6 +11,7 @@ from resources.secrets import TOKEN # , SENTRY_URL, VALID_SECRETS # pylint: disa
 logger = logging.getLogger()
 logging.basicConfig(level=getattr("logging", environ.get("DEBUG_MODE", "WARNING"), "WARNING"))
 
+
 loop = asyncio.get_event_loop()
 
 

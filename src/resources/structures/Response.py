@@ -7,63 +7,11 @@ from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
 
-#from discord.http import edit_original_interaction_response, delete_original_interaction_response # temporary slash command workaround
-
 loop = asyncio.get_event_loop()
 
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
 
-"""
-class InteractionWebhook(WebhookMessage):
-    def __init__(self, interaction_id, interaction_token, discord_response, state, channel, data):
-        super().__init__(state=state, channel=channel, data={
-            "id": discord_response.get("id", 0) if isinstance(discord_response, dict) else 0,
-            "attachments": discord_response["attachments"] if isinstance(discord_response, dict) else [],
-            "embeds": data.get("embeds", []),
-            "edited_timestamp": discord_response["edited_timestamp"] if isinstance(discord_response, dict) else None,
-            "type": 0,
-            "pinned": False,
-            "mention_everyone": False,
-            "tts": False,
-            "content": data["content"]
-        })
-
-        self.interaction_token = interaction_token
-        self.interaction_id = interaction_id
-
-    async def edit(self, content=None, embed=None, *args, **kwargs):
-        payload = {
-            "content": content,
-            "embeds": [embed.to_dict()] if embed else None
-        }
-
-        if self.id:
-            route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
-                          application_id=Bloxlink.user.id,
-                          interaction_token=self.interaction_token, message_id=self.id)
-        else:
-            route = Route("PATCH", "/webhooks/{application_id}/{interaction_token}/messages/@original",
-                          application_id=Bloxlink.user.id,
-                          interaction_token=self.interaction_token)
-
-        await self._state.http.request(route, json=payload)
-
-        self.content = content
-        self.embeds = payload["embeds"]
-
-    async def delete(self):
-        if self.id:
-            route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/{message_id}",
-                          application_id=Bloxlink.user.id,
-                          interaction_token=self.interaction_token, message_id=self.id)
-        else:
-            route = Route("DELETE", "/webhooks/{application_id}/{interaction_token}/messages/@original",
-                          application_id=Bloxlink.user.id,
-                          interaction_token=self.interaction_token)
-
-        await self._state.http.request(route)
-"""
 
 class InteractionWebhook:
     def __init__(self, interaction_or_webhook, followup=False, channel=None, content=None):
