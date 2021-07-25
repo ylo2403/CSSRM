@@ -126,9 +126,11 @@ class JoinChannelCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** the `joinChannel` option for `verified` members.", BROWN_COLOR)
+        change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        raise Message(f"Successfully **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** your join message.", type="success")
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `joinChannel` option for `verified` members.", BROWN_COLOR)
+
+        raise Message(f"Successfully {change_text} your join message.", type="success")
 
     @Bloxlink.subcommand()
     async def unverified(self, CommandArgs):
@@ -224,6 +226,8 @@ class JoinChannelCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** the `joinChannel` option for `verified` members.", BROWN_COLOR)
+        change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        raise Message(f"Successfully **{'changed' if parsed_args_1 == 'Change message' else 'disabled'}** your join message.", type="success")
+        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `joinChannel` option for `verified` members.", BROWN_COLOR)
+
+        raise Message(f"Successfully {change_text} your join message.", type="success")
