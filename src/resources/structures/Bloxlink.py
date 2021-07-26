@@ -31,13 +31,10 @@ SHARD_SLEEP_TIME = int(env.get("SHARD_SLEEP_TIME", "5"))
 logger = logging.getLogger()
 
 
-loaded_modules = {}
-
-
-
 class BloxlinkStructure(AutoShardedClient):
     db_host_validated = False
     conn = None
+    loaded_modules = {}
 
     def __init__(self, *args, **kwargs): # pylint: disable=W0235
         super().__init__(*args, **kwargs) # this seems useless, but it's very necessary.
@@ -140,10 +137,10 @@ class BloxlinkStructure(AutoShardedClient):
         if hasattr(new_module, "__loaded__"):
             loop.create_task(new_module.__loaded__())
 
-        if loaded_modules.get(module_dir):
-            loaded_modules[module_dir][module_name] = new_module
+        if BloxlinkStructure.loaded_modules.get(module_dir):
+            BloxlinkStructure.loaded_modules[module_dir][module_name] = new_module
         else:
-            loaded_modules[module_dir] = {module_name: new_module}
+            BloxlinkStructure.loaded_modules[module_dir] = {module_name: new_module}
 
         return new_module
 
@@ -157,14 +154,14 @@ class BloxlinkStructure(AutoShardedClient):
         for attr in dir(module):
             stuff[attr] = getattr(module, attr)
 
-        #loaded_modules[module.__name__.lower()] = [load, stuff]
+        #BloxlinkStructure.loaded_modules[module.__name__.lower()] = [load, stuff]
 
         #return load
 
     @staticmethod
     def get_module(dir_name, *, name_override=None, name_override_pattern="", path="resources.modules", attrs=None):
         save_as  = f"{name_override_pattern.lower()}{(dir_name).lower()}"
-        modules = loaded_modules.get(save_as)
+        modules = BloxlinkStructure.loaded_modules.get(save_as)
         name_obj = (name_override or dir_name).lower()
 
         class_obj = None
@@ -310,6 +307,10 @@ class BloxlinkStructure(AutoShardedClient):
     @staticmethod
     def command(*args, **kwargs):
         return Bloxlink.get_module("commands", attrs="new_command", name_override_pattern="Command_")(*args, **kwargs)
+
+    @staticmethod
+    def extension(*args, **kwargs):
+        return Bloxlink.get_module("interactions", attrs="new_extension", name_override_pattern="Extension_")(*args, **kwargs)
 
     @staticmethod
     def subcommand(**kwargs):

@@ -137,7 +137,7 @@ class Response(Bloxlink.Module):
         self.sent_first_slash_command = False
         self.first_slash_command = None
 
-        if self.command.addon:
+        if getattr(self.command, "addon", False):
             if hasattr(self.command.addon, "whitelabel"):
                 self.webhook_only = getattr(self.command.addon, "whitelabel")
             else:
@@ -163,8 +163,8 @@ class Response(Bloxlink.Module):
             if message:
                 self.delete_message_queue.append(message.id)
 
-    async def slash_defer(self):
-        await self.slash_command[0].defer()
+    async def slash_defer(self, ephemeral=False):
+        await self.slash_command[0].defer(ephemeral=ephemeral)
         self.sent_first_slash_command = True
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
