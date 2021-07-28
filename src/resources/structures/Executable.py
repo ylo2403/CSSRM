@@ -55,8 +55,8 @@ class Executable:
     async def check_permissions(self, author, guild, locale, dm=False, permissions=None, **kwargs):
         permissions = permissions or self.permissions
 
-        #if author.id == OWNER:
-        #    return True
+        if author.id == OWNER:
+            return True
 
         if permissions.developer_only or self.developer_only:
             if author.id != OWNER:

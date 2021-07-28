@@ -1,7 +1,8 @@
 from ..structures import Bloxlink, Application, Args, Locale, Arguments, Response # pylint: disable=import-error, no-name-in-module
 from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
-from config import BOTS # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from config import BOTS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand # pylint: disable=redefined-builtin, import-error
+from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
 import discord
 
 BOT_ID = BOTS[RELEASE]
@@ -21,23 +22,27 @@ class Interactions(Bloxlink.Module):
         self.extensions = {}
         self.commands   = Bloxlink.get_module("commands", attrs=["commands"])
 
-    """
+
     async def __loaded__(self):
-        applications = [self.app_command_to_json(a) for a in self.apps.values()]
-        text, response = await fetch(COMMANDS_URL, "PUT", body=applications, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+        #text, response = await fetch(COMMANDS_URL, "GET", headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+        #print(text, flush=True)
+
+        return
+
+        #applications = [self.app_command_to_json(a) for a in self.apps.values()]
+        text, response = await fetch(COMMANDS_URL, "PUT", body=[], headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
         if response.status == 200:
             Bloxlink.log("Successfully synced the Applications")
         else:
-            print(applications, flush=True)
+            #print(applications, flush=True)
             print(response.status, text, flush=True)
-    """
+
 
     def app_command_to_json(self, application):
         return {
             "name": application.name,
-            "type": application.type,
-            "description": application.description
+            "type": application.type
         }
 
     def new_extension(self, application_structure):
@@ -51,9 +56,19 @@ class Interactions(Bloxlink.Module):
 
         self.extensions[app.name] = app
 
-        #self.loop.create_task(self.inject_command(self.app_command_to_json(app)))
+        #self.loop.create_task(self.inject_extension(app))
 
         return application_structure
+
+    async def inject_extension(self, app):
+        app_json = self.app_command_to_json(app)
+        text, response = await fetch(COMMANDS_URL, "POST", body=app_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+
+        if response.status != 200:
+            Bloxlink.log(f"Extension {app.name} could not be added.")
+            print(app, flush=True)
+            print(response.status, text, flush=True)
+
 
     async def execute_interaction_command(self, typex, command_name, command_id, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None):
         command = getattr(self, typex).get(command_name)
