@@ -27,13 +27,13 @@ class InteractionWebhook:
         if self.followup:
             await self.interaction_or_webhook.edit(content=content, **kwargs)
         else:
-            await self.interaction_or_webhook.response.edit_original_message(content=content, **kwargs)
+            await self.interaction_or_webhook.edit_original_message(content=content, **kwargs)
 
     async def delete(self):
         if self.followup:
             await self.interaction_or_webhook.delete()
         else:
-            await self.interaction_or_webhook.response.delete_original_message()
+            await self.interaction_or_webhook.delete_original_message()
 
 
 class ResponseLoading:

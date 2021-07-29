@@ -78,7 +78,8 @@ HTTP_RETRY_LIMIT = 5
 MODULE_DIR = [
 	"src/resources/modules",
 	"src/resources/events",
-	"src/commands"
+	"src/commands",
+    "src/apps"
 ]
 
 WORDS = [
