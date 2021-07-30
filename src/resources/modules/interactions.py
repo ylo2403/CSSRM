@@ -56,7 +56,7 @@ class Interactions(Bloxlink.Module):
 
         self.extensions[app.name] = app
 
-        #self.loop.create_task(self.inject_extension(app))
+        self.loop.create_task(self.inject_extension(app))
 
         return application_structure
 
@@ -64,7 +64,7 @@ class Interactions(Bloxlink.Module):
         app_json = self.app_command_to_json(app)
         text, response = await fetch(COMMANDS_URL, "POST", body=app_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
-        if response.status != 200:
+        if response.status not in (200, 201):
             Bloxlink.log(f"Extension {app.name} could not be added.")
             print(app, flush=True)
             print(response.status, text, flush=True)
