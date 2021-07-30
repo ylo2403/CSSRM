@@ -11,7 +11,7 @@ class UpdateUserExtension(Bloxlink.Module):
 
     def __init__(self):
         self.type = 2
-        self.name = "update-user"
+        self.name = "Update User"
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_UPDATER")
         self.slash_defer = True
         self.slash_ephemeral = True
