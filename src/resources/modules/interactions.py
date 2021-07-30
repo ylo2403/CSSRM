@@ -1,5 +1,5 @@
 from ..structures import Bloxlink, Application, Args, Locale, Arguments, Response # pylint: disable=import-error, no-name-in-module
-from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
+from ..constants import RELEASE, CLUSTER_ID # pylint: disable=import-error, no-name-in-module
 from config import BOTS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand # pylint: disable=redefined-builtin, import-error
 from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
@@ -56,7 +56,8 @@ class Interactions(Bloxlink.Module):
 
         self.extensions[app.name] = app
 
-        self.loop.create_task(self.inject_extension(app))
+        if CLUSTER_ID == 0:
+            self.loop.create_task(self.inject_extension(app))
 
         return application_structure
 
