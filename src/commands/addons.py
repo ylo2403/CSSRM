@@ -106,10 +106,10 @@ class AddonsCommand(Bloxlink.Module):
                                 "for instructions on donating.")
 
             await response.success(f"Successfully **{parsed_args['enable']}d** the **{addon_choice.title()}** add-on! You should "
-                                   f"now see additional commands if you run `{prefix}help`.")
+                                   f"now see additional commands if you run `{prefix}commands`.")
         else:
             await response.success(f"Successfully **{parsed_args['enable']}d** the **{addon_choice.title()}** add-on! These "
-                                   f"commands have been removed from your `{prefix}help` menu.")
+                                   f"commands have been removed from your `{prefix}commands` menu.")
 
         guild_addons[addon_choice] = enable
         guild_data["addons"] = guild_addons
