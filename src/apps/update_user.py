@@ -29,7 +29,6 @@ class UpdateUserExtension(Bloxlink.Module):
         try:
             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                 user,
-                join              = True,
                 guild             = guild,
                 guild_data        = guild_data,
                 roles             = True,

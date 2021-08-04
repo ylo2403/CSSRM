@@ -850,7 +850,7 @@ class Roblox(Bloxlink.Module):
         return role_binds, group_ids, trello_binds_list
 
 
-    async def guild_obligations(self, member, guild, join=True, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, trello_board=None, roblox_user=None):
+    async def guild_obligations(self, member, guild, join=None, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, trello_board=None, roblox_user=None):
         if member.bot:
             raise CancelCommand
 
@@ -976,7 +976,7 @@ class Roblox(Bloxlink.Module):
                             except (discord.errors.NotFound, discord.errors.Forbidden):
                                 pass
 
-        if join:
+        if join is not False:
             options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", return_guild_data=True)
 
             verified_dm = options.get("verifiedDM")
@@ -1194,7 +1194,8 @@ class Roblox(Bloxlink.Module):
                     except (discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
 
-                await post_log(join_channel, GREEN_COLOR)
+                if join is not None:
+                    await post_log(join_channel, GREEN_COLOR)
 
             else:
                 if age_limit:
@@ -1263,7 +1264,7 @@ class Roblox(Bloxlink.Module):
                 if "UserNotVerified" in exceptions:
                     raise UserNotVerified
 
-        else:
+        elif join == False:
             leave_channel = await get_guild_value(guild, "leaveChannel")
 
             await post_log(leave_channel, RED_COLOR)
