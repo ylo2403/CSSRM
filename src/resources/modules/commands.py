@@ -230,7 +230,7 @@ class Commands(Bloxlink.Module):
                 await response.error(locale("permissions.genericError"))
         except RobloxAPIError:
             traceback.print_exc()
-            await response.error("The Roblox API returned an error; are you supplying the correct ID to this command?")
+            await response.error("The Roblox API returned an error; are you supplying the correct ID to this command? Additionally, the Roblox API may also be down. Please try again later.")
         except RobloxDown:
             await response.error("The Roblox API is currently offline; please wait until Roblox is back online before re-running this command.")
         except CancelledPrompt as e:
