@@ -1,8 +1,174 @@
-from discord.errors import Forbidden, NotFound
+import discord
 from ..exceptions import CancelCommand, Error # pylint: disable=import-error, no-name-in-module
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import SERVER_INVITE # pylint: disable=import-error, no-name-in-module
 from asyncio import TimeoutError
+
+FAST_REWIND  = "<:FastRewind:872195337727660032>"
+BACK         = "<:LeftArrow:872188452639244339>"
+FORWARD      = "<:RightArrow:872188412596195338>"
+FAST_FORWARD = "<:FastForward:872195378680832001>"
+
+
+class InteractionPaginatorSelect(discord.ui.Select):
+    def __init__(self, categories, paginator):
+        self.paginator = paginator
+
+        options = [
+            discord.SelectOption(label=c, default = c == paginator.current_category) for c in categories
+        ]
+
+        super().__init__(placeholder=paginator.current_category, min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.paginator.current_category = self.values[0]
+
+        await self.paginator.start_position()
+
+
+class InteractionPaginator(discord.ui.View):
+    def __init__(self, items, response, embed=discord.Embed(), max_items=5, use_fields=True, default_category=None, description=None):
+        super().__init__()
+
+        self.categories = list(items.keys())
+        self.response = response
+        self.embed = embed
+        self.max_items = max_items
+        self.items = items
+        self.use_fields = use_fields
+        self.description = description
+
+        self.message = self.back_button = self.forward_button = self.fast_forward_button = self.fast_rewind_button = self.select_menu = None
+
+        self.current_category = default_category or self.categories[0]
+
+    async def fast_rewind_press(self, interaction):
+       await self.start_position()
+
+    async def fast_forward_press(self, interaction):
+        all_items = self.items[self.current_category]
+
+        self.i = (len(all_items) // self.max_items) * self.max_items
+
+        current_items = all_items[self.i-self.max_items:self.i]
+
+        self.populate_embed(current_items)
+
+        self.check_buttons()
+
+        self.back_button.disabled = False
+        self.fast_rewind_button.disabled = False
+
+        await self.message.edit(embed=self.embed, view=self)
+
+    async def back_press(self, interaction):
+        self.i = self.i-self.max_items
+
+        all_items = self.items[self.current_category]
+        current_items = all_items[self.i-self.max_items:self.i]
+
+        self.populate_embed(current_items)
+
+        self.check_buttons()
+
+        self.forward_button.disabled = False
+        self.fast_forward_button.disabled = False
+
+        await self.message.edit(embed=self.embed, view=self)
+
+    async def forward_press(self, interaction):
+        all_items = self.items[self.current_category]
+        current_items = all_items[self.i:self.i+self.max_items]
+
+        self.i = self.i+self.max_items
+
+        self.populate_embed(current_items)
+
+        self.check_buttons()
+
+        self.back_button.disabled = False
+        self.fast_rewind_button.disabled = False
+
+        await self.message.edit(embed=self.embed, view=self)
+
+    def populate_embed(self, current_items):
+        all_items = self.items[self.current_category]
+
+        if self.description:
+            self.embed.description = f"{self.description}\n\n"
+        else:
+            self.embed.description = ""
+
+        if self.use_fields:
+            self.embed.clear_fields()
+
+            for entry in current_items:
+                self.embed.add_field(name=entry[0], value=entry[1], inline=False)
+        else:
+            self.embed.description = self.embed.description + "\n".join(current_items)
+
+        self.embed.set_footer(text=f"!help <command name> to view more information | Page {self.i // self.max_items} of {((len(all_items) // self.max_items) or 1)}")
+
+    def check_buttons(self):
+        all_items = self.items[self.current_category]
+
+        if self.i >= len(all_items):
+            self.forward_button.disabled = True
+            self.fast_forward_button.disabled = True
+
+        if self.i == self.max_items:
+            self.back_button.disabled = True
+            self.fast_rewind_button.disabled = True
+
+    async def start_position(self):
+        self.i = 0
+
+        all_items = self.items[self.current_category]
+        current_items = all_items[self.i:self.i+self.max_items]
+
+        self.i = self.i+self.max_items
+
+        self.populate_embed(current_items)
+
+        if self.back_button or self.forward_button:
+            self.remove_item(self.back_button)
+            self.remove_item(self.forward_button)
+            self.remove_item(self.fast_rewind_button)
+            self.remove_item(self.fast_forward_button)
+
+        self.fast_rewind_button  = discord.ui.Button(emoji=FAST_REWIND, disabled=True, style=discord.ButtonStyle.primary)
+        self.back_button         = discord.ui.Button(emoji=BACK, disabled=True, style=discord.ButtonStyle.primary)
+        self.forward_button      = discord.ui.Button(emoji=FORWARD, style=discord.ButtonStyle.primary)
+        self.fast_forward_button = discord.ui.Button(emoji=FAST_FORWARD, style=discord.ButtonStyle.primary)
+
+        self.add_item(self.fast_rewind_button)
+        self.add_item(self.back_button)
+        self.add_item(self.forward_button)
+        self.add_item(self.fast_forward_button)
+
+        self.fast_rewind_button.callback  = self.fast_rewind_press
+        self.back_button.callback         = self.back_press
+        self.forward_button.callback      = self.forward_press
+        self.fast_forward_button.callback = self.fast_forward_press
+
+        self.check_buttons()
+
+        if self.categories:
+            if self.select_menu:
+                self.remove_item(self.select_menu)
+
+            self.select_menu = InteractionPaginatorSelect(self.categories, self)
+            self.add_item(self.select_menu)
+
+        if self.message:
+            await self.message.edit(embed=self.embed, view=self)
+        else:
+            self.message = await self.response.send(embed=self.embed, view=self)
+
+    async def __call__(self):
+        await self.start_position()
+
+
 
 class Paginate:
     """Smart paginator for Discord embeds"""
@@ -121,7 +287,7 @@ class Paginate:
         if self.sent_message:
             try:
                 await self.sent_message.edit(embed=self.embed)
-            except (NotFound, Forbidden):
+            except (discord.errors.NotFound, discord.errors.Forbidden):
                 raise CancelCommand
         else:
             self.sent_message = await self.response.send(embed=self.embed, channel_override=self.channel, ignore_http_check=True, hidden=self.hidden, reference=None, reply=False, mention_author=False)
@@ -164,7 +330,7 @@ class Paginate:
             for reaction in reactions:
                 try:
                     await self.sent_message.add_reaction(reaction)
-                except Forbidden:
+                except discord.errors.Forbidden:
                     raise Error("I'm missing the `Add Reactions` permission.")
 
             while True:
@@ -175,9 +341,9 @@ class Paginate:
                     try:
                         await self.sent_message.clear_reactions()
                         raise CancelCommand
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         raise Error("I'm missing the `Manage Messages` permission.")
-                    except NotFound:
+                    except discord.errors.NotFound:
                         raise CancelCommand
 
                 emoji = str(reaction)
@@ -191,9 +357,9 @@ class Paginate:
                 if user:
                     try:
                         await self.sent_message.remove_reaction(emoji, user)
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         raise Error("I'm missing the `Manage Messages` permission.")
-                    except NotFound:
+                    except discord.errors.NotFound:
                         raise CancelCommand
 
 
