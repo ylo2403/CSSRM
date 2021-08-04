@@ -1,10 +1,12 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.structures import Bloxlink, InteractionPaginator # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from discord import Embed
+import discord
 
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs=["get_enabled_addons"])
 commands = Bloxlink.get_module("commands", attrs=["commands"])
+
+
 
 
 @Bloxlink.command
@@ -28,13 +30,14 @@ class CommandsCommand(Bloxlink.Module):
         prefix = CommandArgs.prefix
         response = CommandArgs.response
         guild = CommandArgs.guild
+        author = CommandArgs.author
 
         if command_name:
             command_name = command_name.lower()
 
             for name, command in commands.items():
                 if name == command_name or command_name in command.aliases:
-                    embed = Embed(title=f"{prefix}{name}", description=command.full_description or "N/A")
+                    embed = discord.Embed(title=f"{prefix}{name}", description=command.full_description or "N/A")
                     embed.set_author(name="Bloxlink", icon_url=Bloxlink.user.avatar.url)
                     embed.add_field(name="Category", value=command.category)
 
@@ -103,38 +106,18 @@ class CommandsCommand(Bloxlink.Module):
                     break
             else:
                 raise Error(f"This command does not exist! Please use `{prefix}help` to view a full list of commands.")
-
         else:
-            embed = Embed(description=HELP_DESCRIPTION.format(prefix=prefix))
-            categories = {}
-
+            commands_categories = {}
             enabled_addons = guild and await get_enabled_addons(guild) or {}
 
-            for name, command in commands.items():
-                if (command.addon and str(command.addon) not in enabled_addons) or (command.hidden and CommandArgs.author.id != OWNER):
+            for command_name, command in commands.items():
+                if (command.hidden or (command.addon and str(command.addon) not in enabled_addons)) and author.id != OWNER:
                     continue
 
-                category = categories.get(command.category, [])
+                commands_categories[command.category] = commands_categories.get(command.category) or []
+                commands_categories[command.category].append(f"**[{prefix}{command_name}](https://blox.link/commands/{command_name})**\n<:Reply:872019019677450240>{command.description}")
 
 
-                subcommands = "" # FIXME: bring back subcommands when the new paginator is implemented
-                """
-                if command.subcommands:
-                    subcommands = [""]
+            paginator = InteractionPaginator(commands_categories, response, max_items=8, use_fields=False, default_category="Miscellaneous", description="Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.")
 
-                    for subcommand_name, subcommand in command.subcommands.items():
-                        subcommand_description = subcommand.__doc__ or "N/A"
-                        subcommands.append(f"`{prefix}{command.name} {subcommand_name}` {ARROW} {subcommand_description}")
-
-                    subcommands = "\n".join(subcommands)
-                else:
-                    subcommands = ""
-                """
-
-                category.append(f"`{prefix}{command.name}` {ARROW} {command.description}{subcommands}")
-                categories[command.category] = category
-
-            for i,v in categories.items():
-                embed.add_field(name=i, value="\n".join(v), inline=False)
-
-            await response.send(embed=embed, dm=True)
+            await paginator()
