@@ -204,12 +204,12 @@ class Premium(Bloxlink.Module):
                     premium_data["transferFrom"] = None
                     premium_data["transferTo"] = None
                     premium_data["transferCooldown"] = None
-                    transferee_data["transferTo"] = None
-                    transferee_data["transferFrom"] = None
-                    transferee_data["transferCooldown"] = None
+
+                    transferee_data["premium"]["transferTo"] = None
+                    transferee_data["premium"]["transferFrom"] = None
+                    transferee_data["premium"]["transferCooldown"] = None
 
                     author_data["premium"] = premium_data
-                    transferee_data["premium"] = transferee_data
 
                     await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
                     await self.r.db("bloxlink").table("users").insert(transferee_data, conflict="update").run()
