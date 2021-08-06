@@ -1,8 +1,8 @@
 import discord
 from ..exceptions import CancelCommand, Error # pylint: disable=import-error, no-name-in-module
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
-from ..constants import SERVER_INVITE # pylint: disable=import-error, no-name-in-module
 from asyncio import TimeoutError
+import math
 
 FAST_REWIND  = "<:FastRewind:872195337727660032>"
 BACK         = "<:LeftArrow:872188452639244339>"
@@ -48,7 +48,7 @@ class InteractionPaginator(discord.ui.View):
     async def fast_forward_press(self, interaction):
         all_items = self.items[self.current_category]
 
-        self.i = (len(all_items) // self.max_items) * self.max_items
+        self.i = math.ceil((len(all_items) / self.max_items)) * self.max_items
 
         current_items = all_items[self.i-self.max_items:self.i]
 
@@ -107,7 +107,7 @@ class InteractionPaginator(discord.ui.View):
         else:
             self.embed.description = self.embed.description + "\n".join(current_items)
 
-        self.embed.set_footer(text=f"!help <command name> to view more information | Page {self.i // self.max_items} of {((len(all_items) // self.max_items) or 1)}")
+        self.embed.set_footer(text=f"!help <command name> to view more information | Page {self.i // self.max_items} of {((math.ceil(len(all_items) / self.max_items)) or 1)}")
 
     def check_buttons(self):
         all_items = self.items[self.current_category]
