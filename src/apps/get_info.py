@@ -10,7 +10,7 @@ class GetInfoExtension(Bloxlink.Module):
 
     def __init__(self):
         self.type = 2
-        self.name = "Get User's Roblox Info"
+        self.name = "Get Roblox Info"
         self.slash_defer = True
         self.slash_ephemeral = True
 
