@@ -307,11 +307,12 @@ TRELLO = {
 
 EMBED_PERKS = {
     "GROUPS": { # title: group id, rank id, emote to show by username, backup emote
-        "Bloxlink Developer":  ["3587262", -200, "<:BloxlinkStaff:814303496538947594>", ":man_technologist:"],
-        "Bloxlink Staff":      ["3587262", -50, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
-        "Bloxlink Contractor": ["3587262", 30, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
-        "Roblox Admin":        ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
-        "Roblox Intern":       ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
-        "Roblox Star Creator": ["4199740", None, ":star:", ":star:"]
+        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkStaff:814303496538947594>", ":man_technologist:"],
+        "Bloxlink Staff":         ["3587262", -50, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
+        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
+        "Roblox Admin":           ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
+        "Roblox Intern":          ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
+        "Roblox Star Creator":    ["4199740", None, ":star:", ":star:"],
+        "Roblox Event Organizer": ["9420522", 100, ":boomerang:", ":boomerang:"]
     }
 }
