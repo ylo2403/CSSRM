@@ -44,10 +44,16 @@ async def on_interaction(interaction):
 
         if data.get("options"):
             for arg in data["options"]:
-                if arg.get("value") is not None:
-                    command_args.append([arg["name"], arg["value"]])
-                else:
+                if arg.get("options"):
                     subcommand = arg["name"]
+
+                    for arg2 in arg["options"]:
+                        command_args.append([arg2["name"], arg2["value"]])
+                else:
+                    if arg.get("value") is not None:
+                        command_args.append([arg["name"], arg["value"]])
+                    else:
+                        subcommand = arg["name"]
 
         if not guild:
             return

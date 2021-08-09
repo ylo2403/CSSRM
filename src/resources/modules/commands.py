@@ -33,8 +33,8 @@ class Commands(Bloxlink.Module):
     async def __loaded__(self):
         """sync the slash commands"""
 
+
         if CLUSTER_ID == 0:
-            return
             slash_commands = [self.slash_command_to_json(c) for c in self.commands.values() if c.slash_enabled]
 
             text, response = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
@@ -44,6 +44,8 @@ class Commands(Bloxlink.Module):
             else:
                 print(slash_commands, flush=True)
                 print(response.status, text, flush=True)
+
+        pass
 
     async def redirect_command(self, command_name, ):
         pass
@@ -477,7 +479,12 @@ class Commands(Bloxlink.Module):
                     "name": prompt["name"],
                     "type": type_enums.get(prompt.get("type", "string"), type_enums.get("string")),
                     "description": prompt.get("slash_desc", prompt["prompt"]),
-                    "required": not (prompt.get("optional") or prompt.get("slash_optional"))
+                    "required": not (prompt.get("optional") or prompt.get("slash_optional")),
+                    "choices": [{
+                        "name": choice,
+                        "value": choice
+
+                    } for choice in prompt.get("choices", []) if len(prompt.get("choices", [])) <= 25 ]
                 }
 
                 return option
@@ -508,7 +515,7 @@ class Commands(Bloxlink.Module):
                         "name": subcommand_name,
                         "type": 1,
                         "description": subcommand_attrs.get("slash_desc", subcommand_fn.__doc__),
-                        "options": subcommand_options if subcommand_options else None
+                        "options": prompts_to_json(subcommand_options) if subcommand_options else None,
                     })
 
             elif command.slash_args or command.arguments:
