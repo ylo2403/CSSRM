@@ -33,6 +33,7 @@ class Commands(Bloxlink.Module):
     async def __loaded__(self):
         """sync the slash commands"""
 
+        return
 
         if CLUSTER_ID == 0:
             slash_commands = [self.slash_command_to_json(c) for c in self.commands.values() if c.slash_enabled]
@@ -44,8 +45,6 @@ class Commands(Bloxlink.Module):
             else:
                 print(slash_commands, flush=True)
                 print(response.status, text, flush=True)
-
-        pass
 
     async def redirect_command(self, command_name, ):
         pass
@@ -81,50 +80,51 @@ class Commands(Bloxlink.Module):
 
                     raise CancelCommand
 
-            ignored_channels = guild_data.get("ignoredChannels", {})
-            disabled_commands = guild_data.get("disabledCommands", {})
+            if not command.bypass_channel_perms:
+                ignored_channels = guild_data.get("ignoredChannels", {})
+                disabled_commands = guild_data.get("disabledCommands", {})
 
-            if isinstance(author, User):
-                try:
-                    author = await guild.fetch_member(author.id)
-                except NotFound:
-                    raise CancelCommand
+                if isinstance(author, User):
+                    try:
+                        author = await guild.fetch_member(author.id)
+                    except NotFound:
+                        raise CancelCommand
 
-            author_perms = author.guild_permissions
+                author_perms = author.guild_permissions
 
-            if guild.owner != author and not (find(lambda r: r.name in MAGIC_ROLES, author.roles) or author_perms.manage_guild or author_perms.administrator):
-                if ignored_channels.get(channel_id):
-                    await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
+                if guild.owner != author and not (find(lambda r: r.name in MAGIC_ROLES, author.roles) or author_perms.manage_guild or author_perms.administrator):
+                    if ignored_channels.get(channel_id):
+                        await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                    if message:
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
-                    raise CancelCommand
+                        raise CancelCommand
 
-                if command.name in disabled_commands.get("global", []):
-                    await response.send(f"The server admins have **disabled** the command `{command.name}` globally.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
+                    if command.name in disabled_commands.get("global", []):
+                        await response.send(f"The server admins have **disabled** the command `{command.name}` globally.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                    if message:
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
-                    raise CancelCommand
+                        raise CancelCommand
 
-                elif disabled_commands.get("channels", {}).get(channel_id, {}).get(command.name):
-                    await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
+                    elif disabled_commands.get("channels", {}).get(channel_id, {}).get(command.name):
+                        await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                    if message:
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
-                    raise CancelCommand
+                        raise CancelCommand
 
             if not isinstance(author, Member):
                 try:

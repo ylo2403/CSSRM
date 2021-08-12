@@ -1,5 +1,5 @@
 from . import Permissions, Bloxlink
-from ..constants import OWNER
+from ..constants import OWNER, RELEASE
 from ..exceptions import PermissionError, Message
 from inspect import iscoroutinefunction
 import discord
@@ -30,6 +30,7 @@ class Executable:
         self.slash_ephemeral = getattr(executable, "slash_ephemeral", False)
         self.slash_args = getattr(executable, "slash_args", None)
         self.dm_allowed = getattr(executable, "dm_allowed", False)
+        self.bypass_channel_perms = getattr(executable, "bypass_channel_perms", False)
 
         self.usage = []
         command_args = self.arguments
@@ -55,7 +56,7 @@ class Executable:
     async def check_permissions(self, author, guild, locale, dm=False, permissions=None, **kwargs):
         permissions = permissions or self.permissions
 
-        if author.id == OWNER:
+        if RELEASE != "LOCAL" and author.id == OWNER:
             return True
 
         if permissions.developer_only or self.developer_only:

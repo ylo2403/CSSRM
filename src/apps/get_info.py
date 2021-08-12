@@ -13,6 +13,7 @@ class GetInfoExtension(Bloxlink.Module):
         self.name = "Get Roblox Info"
         self.slash_defer = True
         self.slash_ephemeral = True
+        self.bypass_channel_perms = True
 
     async def __main__(self, ExtensionArgs):
         user  = ExtensionArgs.resolved
