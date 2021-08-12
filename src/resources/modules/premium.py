@@ -201,6 +201,7 @@ class Premium(Bloxlink.Module):
 
                     return transferee_premium, _
                 else:
+                    """
                     premium_data["transferFrom"] = None
                     premium_data["transferTo"] = None
                     premium_data["transferCooldown"] = None
@@ -213,6 +214,7 @@ class Premium(Bloxlink.Module):
 
                     await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
                     await self.r.db("bloxlink").table("users").insert(transferee_data, conflict="update").run()
+                    """
 
         """
         if author_data.get("flags", {}).get("premiumAnywhere"):
