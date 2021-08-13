@@ -1,6 +1,7 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=no-name-in-module, import-error
+import discord
 
 guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
 
@@ -26,6 +27,12 @@ class UpdateUserExtension(Bloxlink.Module):
 
         if user.bot:
             raise Error("You cannot update bots!", hidden=True)
+
+        if isinstance(user, discord.User):
+            try:
+                user = await guild.fetch_member(user.id)
+            except discord.errors.NotFound:
+                raise Error("This user isn't in your server!")
 
         try:
             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
