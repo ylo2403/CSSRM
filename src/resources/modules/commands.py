@@ -84,12 +84,6 @@ class Commands(Bloxlink.Module):
                 ignored_channels = guild_data.get("ignoredChannels", {})
                 disabled_commands = guild_data.get("disabledCommands", {})
 
-                if isinstance(author, User):
-                    try:
-                        author = await guild.fetch_member(author.id)
-                    except NotFound:
-                        raise CancelCommand
-
                 author_perms = author.guild_permissions
 
                 if guild.owner != author and not (find(lambda r: r.name in MAGIC_ROLES, author.roles) or author_perms.manage_guild or author_perms.administrator):
@@ -125,12 +119,6 @@ class Commands(Bloxlink.Module):
                                 pass
 
                         raise CancelCommand
-
-            if not isinstance(author, Member):
-                try:
-                    author = await guild.fetch_member(author.id)
-                except NotFound:
-                    raise CancelCommand
 
         restriction = await get_restriction("users", author.id)
 
@@ -386,6 +374,12 @@ class Commands(Bloxlink.Module):
             if command_name:
                 for index, command in self.commands.items():
                     if index == command_name or command_name in command.aliases:
+                        if isinstance(author, User):
+                            try:
+                                author = await guild.fetch_member(author.id)
+                            except NotFound:
+                                raise CancelCommand
+
                         guild_data = guild_data or (guild and (await self.r.table("guilds").get(guild_id).run() or {"id": guild_id})) or {}
 
                         fn = command.fn
@@ -446,12 +440,6 @@ class Commands(Bloxlink.Module):
             check_verify_channel = True
 
         if guild and guild_permissions.manage_messages:
-            if not isinstance(author, Member):
-                try:
-                    author = await guild.fetch_member(author.id)
-                except NotFound:
-                    return
-
             if check_verify_channel:
                 verify_channel_id = await get_guild_value(guild, "verifyChannel")
 
