@@ -235,7 +235,7 @@ class Arguments:
                         bot_prompt = await self.say(prompt_text, embed_title=prompt_.get("embed_title"), embed_color=prompt_.get("embed_color"), footer=prompt_.get("footer"), type=error and "error", embed=embed, dm=dm, components=prompt_.get("components", []))
 
                         if dm and IS_DOCKER:
-                            message_data = (await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"]))[0]
+                            message_data = (await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"]+50))[0]
 
                             if not message_data:
                                 await self.say("Cluster which handles DMs is temporarily unavailable. Please say your message in the server instead of DMs.", type="error", embed=embed, dm=dm)
@@ -257,7 +257,7 @@ class Arguments:
                                     elif message_type == "select":
                                         select_values = message_data["values"]
 
-                            if skipped_arg == "cluster timeout":
+                            if message_data == "cluster timeout":
                                 skipped_arg = "cancel (timeout)"
 
                         else:
