@@ -296,7 +296,7 @@ class Arguments:
                             disabled_view = discord.ui.View.from_message(bot_prompt)
 
                             for child in disabled_view.children:
-                                if isinstance(child, discord.ui.Button):
+                                if hasattr(child, "disabled"):
                                     child.disabled = True
 
                             try:
