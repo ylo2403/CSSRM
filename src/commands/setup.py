@@ -8,7 +8,7 @@ import re
 NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
-get_group, generate_code = Bloxlink.get_module("roblox", attrs=["get_group", "generate_code"])
+get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
 trello, get_options = Bloxlink.get_module("trello", attrs=["trello", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 clear_guild_data = Bloxlink.get_module("cache", attrs=["clear_guild_data"])

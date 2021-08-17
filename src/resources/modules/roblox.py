@@ -9,7 +9,7 @@ from backoff import on_exception, expo
 from config import REACTIONS, PREFIX # pylint: disable=import-error, no-name-in-module
 from ..constants import (RELEASE, DEFAULTS, ORANGE_COLOR, PARTNERED_SERVER, ARROW, # pylint: disable=import-error, no-name-in-module
                          SERVER_INVITE, PURPLE_COLOR, PINK_COLOR, PARTNERS_COLOR, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, WORDS, EMBED_PERKS,
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST, EMBED_PERKS,
                          VERIFY_URL) # pylint: disable=import-error, no-name-in-module
 import json
 import random
@@ -90,20 +90,6 @@ class Roblox(Bloxlink.Module):
         data = (roblox_id, correct_username)
 
         return data
-
-    @staticmethod
-    def generate_code():
-        words = []
-
-        for _ in range(4):
-            x = random.randint(1, 2)
-
-            words.append(f"{random.choice(WORDS)} {x == 1 and 'and' or 'or'}")
-
-        words.append(random.choice(WORDS))
-
-        return " ".join(words)
-
 
     @staticmethod
     async def validate_code(roblox_id, code):
@@ -2073,7 +2059,7 @@ class Roblox(Bloxlink.Module):
 
             raise BadUsage("Unable to resolve a user")
 
-
+    """
     async def verify_as(self, author, guild=None, *, author_data=None, primary=False, trello_options=None, update_user=True, trello_board=None, response=None, guild_data=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
         if not (username or roblox_id):
             raise BadUsage("Must supply either a username or roblox_id to verify_as.")
@@ -2261,6 +2247,7 @@ class Roblox(Bloxlink.Module):
                             raise Error(f"{author.mention}, too many failed attempts. Please run this command again and retry.")
         finally:
             await cache_pop(f"discord_profiles:{author_id}")
+    """
 
 
     @staticmethod
