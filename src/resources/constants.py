@@ -61,12 +61,6 @@ elif RELEASE == "CANARY":
     EMBED_COLOR = ORANGE_COLOR
 elif RELEASE == "LOCAL":
     EMBED_COLOR = PURPLE_COLOR
-"""
-if RELEASE == "CANARY":
-    VERIFY_URL = "https://canary.blox.link/verify/"
-    ACCOUNT_SETTINGS_URL = "https://canary.blox.link/account/"
-else:
-"""
 
 VERIFY_URL = "https://blox.link/verify/"
 ACCOUNT_SETTINGS_URL = "https://blox.link/account/"
@@ -79,34 +73,7 @@ MODULE_DIR = [
 	"src/resources/modules",
 	"src/resources/events",
 	"src/commands",
-    "src/apps"
-]
-
-WORDS = [
-	"bus",
-	"roblox",
-	"book",
-	"key",
-	"shirt",
-	"pants",
-	"battery",
-	"lamp",
-	"desk",
-	"water",
-	"soda",
-	"button",
-	"can",
-	"hello",
-	"mouse",
-	"vase",
-	"rug",
-	"blanket",
-	"pillow",
-	"music",
-	"lego",
-	"glasses",
-	"controller",
-	"pencil"
+	"src/apps"
 ]
 
 NICKNAME_TEMPLATES = (
@@ -162,7 +129,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "allowOldRoles":         (None, "boolean", None, False, "Bloxlink will NOT remove roles if this is enabled."),
     "autoRoles":             (None, "boolean", None, False, "Bloxlink will give all matching/corresponding roles to people who join the server. Set eligible roles with `{prefix}bind`. Note that this being enabled will override 'autoVerification'."),
     "autoVerification":      (None, "boolean", None, False, "Bloxlink will give the Verified role to people who join the server and are linked to Bloxlink.\nNote that 'autoRoles' being enabled overrides this setting."),
-    #"dmVerifications":       (None, "boolean", None, False, "Set whether verifications default to DMs."),
     "dynamicRoles":          (None, "boolean", None, False, "Bloxlink will make missing group roles from your Linked Groups as people need them."),
     "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `{prefix}verify` responses. Note that you can use these templates: ```{templates}```"),
     "joinDM":                (lambda g, gd: bool(gd.get("verifiedDM", True)) or bool(gd.get("unverifiedDM")), None, None, False, "Customize the join DM messages of people who join the server."),
@@ -180,7 +146,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "unbanRelatedAccounts":  (None, "boolean", None, True,  "If this is enabled: when members are unbanned, their known alts are also unbanned from the server."),
     "disallowAlts":          (None, "boolean", None, True,  "If this is enabled: when someone joins the server and already has a linked account in the server, kick the old alt out."),
     "disallowBanEvaders":    (None, "choice", ("ban", "kick"), True,  "If this is enabled: when members join, and they have a banned account in the server, their new account will also be actioned."),
-    #"groupShoutChannel":     (lambda g, gd: g.get_channel(int(gd.get("groupShoutChannel", "0"))),  None, None, True, "Group shouts will be sent to your Discord channel."),
     "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
@@ -202,7 +167,6 @@ DEFAULTS = {
     "allowOldRoles": False,
     "autoRoles": True,
     "autoVerification": True,
-    #"dmVerifications": True,
     "dynamicRoles": True,
     "persistRoles": False,
     "trelloID": "No Trello Board",
@@ -212,7 +176,6 @@ DEFAULTS = {
     "unverifiedRoleName": "Unverified",
     "shorterNicknames": True,
     "ageLimit": 0,
-    #"groupShoutChannel": None,
     "whiteLabel": False,
     "promptDelete": True,
     "deleteCommands": 0,
@@ -221,7 +184,6 @@ DEFAULTS = {
     "unbanRelatedAccounts": False,
     "disallowAlts": False,
     "disallowBanEvaders": False,
-    #"groupRequired": True,
     "trelloBindMode": "merge"
 }
 
@@ -302,14 +264,14 @@ TIP_CHANCES = {
 TRELLO = {
 	"CARD_LIMIT": 100,
 	"LIST_LIMIT": 10,
-    "TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
+	"TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
 }
 
 EMBED_PERKS = {
     "GROUPS": { # title: group id, rank id, emote to show by username, backup emote
-        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkStaff:814303496538947594>", ":man_technologist:"],
-        "Bloxlink Staff":         ["3587262", -50, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
-        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkStaff:814303496538947594>", ":busts_in_silhouette:"],
+        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkHead:877088573814345728>", ":man_technologist:"],
+        "Bloxlink Staff":         ["3587262", -50, "<:BloxlinkHead:877088573814345728>", ":busts_in_silhouette:"],
+        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkHead:877088573814345728>", ":busts_in_silhouette:"],
         "Roblox Admin":           ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
         "Roblox Intern":          ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
         "Roblox Star Creator":    ["4199740", None, ":star:", ":star:"],
