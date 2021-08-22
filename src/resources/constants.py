@@ -79,7 +79,7 @@ MODULE_DIR = [
 NICKNAME_TEMPLATES = (
     "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
     "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
-    "{smart-name} \u2192 changes to: display name (@display name) if the user has a display name; otherwise, changes to their username\n"
+    "{smart-name} \u2192 changes to: display name (@username) if the user has a display name; otherwise, changes to their username\n"
     "{roblox-id} \u2192 changes to their Roblox user ID\n"
     "{roblox-age} \u2192 changes to their Roblox user age in days\n"
     "{roblox-join-date} \u2192 changes to their Roblox join date\n"
