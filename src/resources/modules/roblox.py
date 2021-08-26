@@ -2059,7 +2059,6 @@ class Roblox(Bloxlink.Module):
 
             raise BadUsage("Unable to resolve a user")
 
-    """
     async def verify_as(self, author, guild=None, *, author_data=None, primary=False, trello_options=None, update_user=True, trello_board=None, response=None, guild_data=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
         if not (username or roblox_id):
             raise BadUsage("Must supply either a username or roblox_id to verify_as.")
@@ -2247,7 +2246,6 @@ class Roblox(Bloxlink.Module):
                             raise Error(f"{author.mention}, too many failed attempts. Please run this command again and retry.")
         finally:
             await cache_pop(f"discord_profiles:{author_id}")
-    """
 
 
     @staticmethod
