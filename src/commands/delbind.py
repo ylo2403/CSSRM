@@ -156,7 +156,7 @@ class UnBindCommand(Bloxlink.Module):
                 "prompt": "Please specify the **{bind_category[0]} ID** to delete.",
                 "type": "number",
                 "name": "bind_id",
-                "show_if": lambda c: c[0] not in ("roblox staff", "devforum members")
+                "show_if": lambda c: c["bind_category"][0] not in ("roblox staff", "devforum members")
             }
         ]
 

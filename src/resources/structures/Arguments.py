@@ -214,7 +214,7 @@ class Arguments:
 
                 custom_id = None
 
-                if ((prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args)) or (prompt_.get("show_if") and last_prompt and prompt_["name"] != last_prompt["name"] and not prompt_["show_if"](resolved_args[last_prompt["name"]])):
+                if ((prompt_.get("optional") or (slash_command and prompt_.get("slash_optional"))) and not had_args.get(checked_args)) or (prompt_.get("show_if") and last_prompt and prompt_["name"] != last_prompt["name"] and not prompt_["show_if"](resolved_args)):
                     if self.skipped_args:
                         self.skipped_args.pop(0)
 
