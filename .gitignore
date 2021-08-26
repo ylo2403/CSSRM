@@ -137,3 +137,4 @@ src/resources/modules/currency.py
 slash_creator.py
 src/commands/feeds.py
 src/commands/banevaders.py
+src/commands/cm_tools.py
