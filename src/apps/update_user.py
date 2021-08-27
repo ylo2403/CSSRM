@@ -16,7 +16,7 @@ class UpdateUserExtension(Bloxlink.Module):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_UPDATER")
         self.slash_defer = True
         self.slash_ephemeral = True
-        self.bypass_channel_perms = True
+        self.premium_bypass_channel_perms = True
 
     async def __main__(self, ExtensionArgs):
         user  = ExtensionArgs.resolved

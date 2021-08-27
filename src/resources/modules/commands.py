@@ -72,7 +72,8 @@ class Commands(Bloxlink.Module):
                         raise CancelCommand
 
             if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix", "add-features", "stats"):
-                donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                if not donator_profile:
+                    donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
 
                 if not donator_profile.features.get("pro"):
                     await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
@@ -81,43 +82,27 @@ class Commands(Bloxlink.Module):
                     raise CancelCommand
 
             if not command.bypass_channel_perms:
+                if command.premium_bypass_channel_perms and not donator_profile:
+                    donator_profile, _ = await get_features(author, guild=guild)
+
                 ignored_channels = guild_data.get("ignoredChannels", {})
                 disabled_commands = guild_data.get("disabledCommands", {})
 
                 author_perms = author.guild_permissions
 
-                if guild.owner != author and not (find(lambda r: r.name in MAGIC_ROLES, author.roles) or author_perms.manage_guild or author_perms.administrator):
+                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or find(lambda r: r.name in MAGIC_ROLES, guild.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
+                    premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
+
                     if ignored_channels.get(channel_id):
-                        await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
-
-                        if message:
-                            try:
-                                await message.delete()
-                            except (Forbidden, NotFound):
-                                pass
-
+                        await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
                         raise CancelCommand
 
                     if command.name in disabled_commands.get("global", []):
-                        await response.send(f"The server admins have **disabled** the command `{command.name}` globally.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
-
-                        if message:
-                            try:
-                                await message.delete()
-                            except (Forbidden, NotFound):
-                                pass
-
+                        await response.send(f"The server admins have **disabled** the command `{command.name}` globally.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
                         raise CancelCommand
 
                     elif disabled_commands.get("channels", {}).get(channel_id, {}).get(command.name):
-                        await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.", dm=True, hidden=True, strict_post=True, no_dm_post=True)
-
-                        if message:
-                            try:
-                                await message.delete()
-                            except (Forbidden, NotFound):
-                                pass
-
+                        await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
                         raise CancelCommand
 
         restriction = await get_restriction("users", author.id)
@@ -374,11 +359,12 @@ class Commands(Bloxlink.Module):
             if command_name:
                 for index, command in self.commands.items():
                     if index == command_name or command_name in command.aliases:
-                        if isinstance(author, User):
-                            try:
-                                author = await guild.fetch_member(author.id)
-                            except NotFound:
-                                raise CancelCommand
+                        if guild:
+                            if isinstance(author, User):
+                                try:
+                                    author = await guild.fetch_member(author.id)
+                                except NotFound:
+                                    raise CancelCommand
 
                         guild_data = guild_data or (guild and (await self.r.table("guilds").get(guild_id).run() or {"id": guild_id})) or {}
 
