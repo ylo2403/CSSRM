@@ -108,7 +108,8 @@ class Utils(Bloxlink.Module):
                         try:
                             response_json = await response.json()
                         except aiohttp.client_exceptions.ContentTypeError:
-                            print(old_url, await response.text(), flush=True)
+                            raise RobloxAPIError
+
                         response_body = response_json["req"]["body"]
                         response_status = response_json["req"]["status"]
                         response.status = response_status

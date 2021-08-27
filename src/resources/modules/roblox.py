@@ -3064,7 +3064,7 @@ class RobloxUser(Bloxlink.Module):
                 # TODO: set username from database
                 self.partial = True # only set if there is a db entry for the user with the username
             else:
-                raise RobloxAPIError
+                raise
         else:
             self.complete = self.complete or everything
             self.verified = True
