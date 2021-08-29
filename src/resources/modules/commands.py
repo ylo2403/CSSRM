@@ -90,7 +90,7 @@ class Commands(Bloxlink.Module):
 
                 author_perms = author.guild_permissions
 
-                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or find(lambda r: r.name in MAGIC_ROLES, guild.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
+                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
                     premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
 
                     if ignored_channels.get(channel_id):
