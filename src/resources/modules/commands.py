@@ -96,30 +96,33 @@ class Commands(Bloxlink.Module):
                     if ignored_channels.get(channel_id):
                         await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
                         raise CancelCommand
 
                     if command.name in disabled_commands.get("global", []):
                         await response.send(f"The server admins have **disabled** the command `{command.name}` globally.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
                         raise CancelCommand
 
                     elif disabled_commands.get("channels", {}).get(channel_id, {}).get(command.name):
                         await response.send(f"The server admins have **disabled** the command `{command.name}` in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
-                        try:
-                            await message.delete()
-                        except (Forbidden, NotFound):
-                            pass
+                        if message:
+                            try:
+                                await message.delete()
+                            except (Forbidden, NotFound):
+                                pass
 
                         raise CancelCommand
 
