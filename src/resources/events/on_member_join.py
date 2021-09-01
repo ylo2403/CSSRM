@@ -32,7 +32,8 @@ class MemberJoinEvent(Bloxlink.Module):
                 if join_dm:
                     try:
                         await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please "
-                                            "complete the screening in order to access the rest of the server.")
+                                            "complete the screening in order to access the rest of the server.\n"
+                                            "Go here to learn more about Member Screening: https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ")
                     except Forbidden:
                         pass
             else:
