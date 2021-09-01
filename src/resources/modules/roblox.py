@@ -49,7 +49,7 @@ BIND_ROLE_BUG = "https://cdn.discordapp.com/attachments/385984496723427328/38663
 @Bloxlink.module
 class Roblox(Bloxlink.Module):
     def __init__(self):
-        pass
+        self.pending_verifications = {}
 
     @staticmethod
     async def get_roblox_id(username) -> Tuple[str, str]:
@@ -840,328 +840,268 @@ class Roblox(Bloxlink.Module):
         if member.bot:
             raise CancelCommand
 
-        roblox_user = None
-        accounts = []
-        donator_profile = None
-        unverified = False
-        exceptions = exceptions or ()
-        added, removed, errored, warnings, chosen_nickname = [], [], [], [], None
+        if self.pending_verifications.get(member.id):
+            raise CancelCommand("You are already queued for verification. This process can take a while depending on the size of the server due to Discord rate-limits.")
 
-        if RELEASE == "PRO":
-            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
-
-            if not donator_profile.features.get("pro"):
-                raise CancelCommand
-
-            PREFIX = "!"
-        else:
-            PREFIX = "!!"
+        self.pending_verifications[member.id] = True
 
         try:
-            roblox_user, accounts = await self.get_user(author=member, everything=True, cache=cache)
-        except UserNotVerified:
-            unverified = True
-        except RobloxAPIError as e:
-            if "RobloxAPIError" in exceptions:
-                raise RobloxAPIError from e
-        except RobloxDown:
-            if "RobloxDown" in exceptions:
-                raise RobloxDown
+            roblox_user = None
+            accounts = []
+            donator_profile = None
+            unverified = False
+            exceptions = exceptions or ()
+            added, removed, errored, warnings, chosen_nickname = [], [], [], [], None
+
+            if RELEASE == "PRO":
+                donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+
+                if not donator_profile.features.get("pro"):
+                    raise CancelCommand
+
+                PREFIX = "!"
             else:
-                raise CancelCommand
+                PREFIX = "!!"
 
-        if not roblox_user:
-            unverified = True
+            try:
+                roblox_user, accounts = await self.get_user(author=member, everything=True, cache=cache)
+            except UserNotVerified:
+                unverified = True
+            except RobloxAPIError as e:
+                if "RobloxAPIError" in exceptions:
+                    raise RobloxAPIError from e
+            except RobloxDown:
+                if "RobloxDown" in exceptions:
+                    raise RobloxDown
+                else:
+                    raise CancelCommand
 
-        async def post_log(channel_data, color):
-            if event and channel_data:
-                if not unverified:
-                    if channel_data.get("verified"):
-                        channel_id = int(channel_data["verified"]["channel"])
-                        channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
+            if not roblox_user:
+                unverified = True
 
-                        if channel:
-                            join_channel_message = channel_data["verified"]["message"]
-                            join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
-                            includes = channel_data["verified"]["includes"]
+            async def post_log(channel_data, color):
+                if event and channel_data:
+                    if not unverified:
+                        if channel_data.get("verified"):
+                            channel_id = int(channel_data["verified"]["channel"])
+                            channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
 
-                            embed   = discord.Embed(description=join_message_parsed)
-                            content = None
-                            view    = None
-                            use_embed = False
+                            if channel:
+                                join_channel_message = channel_data["verified"]["message"]
+                                join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
+                                includes = channel_data["verified"]["includes"]
 
-                            if includes:
-                                embed_description_buffer = []
+                                embed   = discord.Embed(description=join_message_parsed)
+                                content = None
+                                view    = None
+                                use_embed = False
 
-                                if includes.get("robloxAvatar"):
-                                    use_embed = True
-                                    embed.set_thumbnail(url=roblox_user.avatar)
+                                if includes:
+                                    embed_description_buffer = []
 
-                                if includes.get("robloxUsername"):
-                                    use_embed = True
-                                    embed_description_buffer.append(f"**Roblox username:** {roblox_user.username}")
+                                    if includes.get("robloxAvatar"):
+                                        use_embed = True
+                                        embed.set_thumbnail(url=roblox_user.avatar)
 
-                                if includes.get("robloxAge"):
-                                    use_embed = True
-                                    embed_description_buffer.append(f"**Roblox account age:** {roblox_user.full_join_string}")
+                                    if includes.get("robloxUsername"):
+                                        use_embed = True
+                                        embed_description_buffer.append(f"**Roblox username:** {roblox_user.username}")
 
-                                if use_embed:
-                                    embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
+                                    if includes.get("robloxAge"):
+                                        use_embed = True
+                                        embed_description_buffer.append(f"**Roblox account age:** {roblox_user.full_join_string}")
+
+                                    if use_embed:
+                                        embed.set_author(name=str(member), icon_url=member.avatar.url, url=roblox_user.profile_link)
+                                        embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
+                                                            "is through https://blox.link and NO other link.")
+                                        embed.colour = color
+
+                                        view = discord.ui.View()
+                                        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
+
+                                        if embed_description_buffer:
+                                            embed_description_buffer = "\n".join(embed_description_buffer)
+                                            embed.description = f"{embed.description}\n\n{embed_description_buffer}"
+
+                                if not use_embed:
+                                    embed = None
+                                    content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
+                                            "is through <https://blox.link> and NO other link."
+
+                                if includes.get("ping"):
+                                    content = f"{member.mention} {content or ''}"
+
+                                try:
+                                    await channel.send(content=content, embed=embed, view=view)
+                                except (discord.errors.NotFound, discord.errors.Forbidden):
+                                    pass
+                    else:
+                        if channel_data.get("unverified"):
+                            channel_id = int(channel_data["unverified"]["channel"])
+                            channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
+
+                            if channel:
+                                join_channel_message = channel_data["unverified"]["message"]
+                                join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
+                                includes = channel_data["unverified"]["includes"]
+                                format_embed = channel_data["unverified"]["embed"]
+
+                                embed   = None
+                                content = None
+
+                                if format_embed:
+                                    embed = discord.Embed(description=join_message_parsed)
+                                    embed.set_author(name=str(member), icon_url=member.avatar.url)
                                     embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
                                                         "is through https://blox.link and NO other link.")
                                     embed.colour = color
-
-                                    view = discord.ui.View()
-                                    view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=roblox_user.profile_link, emoji="👥"))
-
-                                    if embed_description_buffer:
-                                        embed_description_buffer = "\n".join(embed_description_buffer)
-                                        embed.description = f"{embed.description}\n\n{embed_description_buffer}"
-
-                            if not use_embed:
-                                embed = None
-                                content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
-                                          "is through <https://blox.link> and NO other link."
-
-                            if includes.get("ping"):
-                                content = f"{member.mention} {content or ''}"
-
-                            try:
-                                await channel.send(content=content, embed=embed, view=view)
-                            except (discord.errors.NotFound, discord.errors.Forbidden):
-                                pass
-                else:
-                    if channel_data.get("unverified"):
-                        channel_id = int(channel_data["unverified"]["channel"])
-                        channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
-
-                        if channel:
-                            join_channel_message = channel_data["unverified"]["message"]
-                            join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
-                            includes = channel_data["unverified"]["includes"]
-                            format_embed = channel_data["unverified"]["embed"]
-
-                            embed   = None
-                            content = None
-
-                            if format_embed:
-                                embed = discord.Embed(description=join_message_parsed)
-                                embed.set_author(name=str(member), icon_url=member.avatar.url)
-                                embed.set_footer(text="Disclaimer: the message above was set by the Server Admins. The ONLY way to verify with Bloxlink "
-                                                    "is through https://blox.link and NO other link.")
-                                embed.colour = color
-                            else:
-                                content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
-                                        "is through <https://blox.link> and NO other link."
-
-                            if includes.get("ping"):
-                                content = f"{member.mention} {content or ''}"
-
-                            try:
-                                await channel.send(content=content, embed=embed)
-                            except (discord.errors.NotFound, discord.errors.Forbidden):
-                                pass
-
-        if join is not False:
-            options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", return_guild_data=True)
-
-            verified_dm = options.get("verifiedDM")
-            join_channel = options.get("joinChannel")
-            unverified_dm = options.get("unverifiedDM")
-            age_limit = options.get("ageLimit")
-            disallow_alts = options.get("disallowAlts")
-            disallow_ban_evaders = options.get("disallowBanEvaders")
-
-            try:
-                age_limit = int(age_limit) #FIXME
-            except TypeError:
-                age_limit = None
-
-            if disallow_alts or disallow_ban_evaders:
-                if not donator_profile:
-                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
-
-                if donator_profile.features.get("premium"):
-                    accounts = set(accounts)
-
-                    if roblox_user: #FIXME: temp until primary accounts are saved to the accounts array
-                        accounts.add(roblox_user.id)
-
-                    if accounts and (disallow_alts or disallow_ban_evaders):
-                        for roblox_id in accounts:
-                            discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs") or []
-
-                            for discord_id in discord_ids:
-                                discord_id = int(discord_id)
-
-                                if discord_id != member.id:
-                                    if disallow_alts:
-                                        # check the server
-
-                                        try:
-                                            user_find = await guild.fetch_member(discord_id)
-                                        except discord.errors.NotFound:
-                                            pass
-                                        else:
-                                            try:
-                                                await user_find.kick(reason=f"disallowAlts is enabled - alt of {member} ({member.id})")
-                                            except discord.errors.Forbidden:
-                                                pass
-                                            else:
-                                                await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
-
-                                                raise CancelCommand
-
-                                    if disallow_ban_evaders:
-                                        # check the bans
-
-                                        try:
-                                            ban_entry = await guild.fetch_ban(discord.Object(discord_id))
-                                        except (discord.errors.NotFound, discord.errors.Forbidden):
-                                            pass
-                                        else:
-                                            action = disallow_ban_evaders == "kick" and "kick"   or "ban"
-                                            action_participle    = action == "kick" and "kicked" or "banned"
-
-                                            try:
-                                                await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))
-                                            except (discord.errors.Forbidden, discord.errors.HTTPException):
-                                                pass
-                                            else:
-                                                await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
-
-                                                raise CancelCommand
-
-                                            return added, removed, chosen_nickname, errored, warnings, roblox_user
-            try:
-                added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
-                    member,
-                    guild                   = guild,
-                    guild_data              = guild_data,
-                    roles                   = roles,
-                    trello_board            = trello_board,
-                    nickname                = nickname,
-                    roblox_user             = roblox_user,
-                    given_trello_options    = True,
-                    cache                   = cache,
-                    dm                      = dm,
-                    response                = response)
-
-            except discord.errors.NotFound as e:
-                if "NotFound" in exceptions:
-                    raise e from None
-            except RobloxAPIError as e:
-                if "RobloxAPIError" in exceptions:
-                    raise e from None
-            except Error as e:
-                if "Error" in exceptions:
-                    raise e from None
-            except CancelCommand as e:
-                if "CancelCommand" in exceptions:
-                    raise e from None
-            except RobloxDown as e:
-                if "RobloxDown" in exceptions:
-                    raise e from None
-                else:
-                    raise CancelCommand
-            except Blacklisted as e:
-                if "Blacklisted" in exceptions:
-                    raise e from None
-            except BloxlinkBypass as e:
-                if "BloxlinkBypass" in exceptions:
-                    raise e from None
-            except PermissionError as e:
-                if "PermissionError" in exceptions:
-                    raise e from None
-
-            except (UserNotVerified, discord.errors.HTTPException):
-                pass
-
-            required_groups = options.get("groupLock") # TODO: integrate with Trello
-
-            if roblox_user:
-                if event:
-                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
-
-                if age_limit:
-                    if age_limit > roblox_user.age:
-                        if dm:
-                            try:
-                                await member.send(f"_Bloxlink Age-Limit_\nYou were kicked from **{guild.name}** for not being at least "
-                                                f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
-                                                f"then please join {SERVER_INVITE} and link a different account with `{PREFIX}verify add`. "
-                                                f"Finally, use the `{PREFIX}switchuser` command and provide this ID to the command: `{guild.id}`")
-                            except discord.errors.Forbidden:
-                                pass
-
-                        try:
-                            await member.kick(reason=f"AGE-LIMIT: user age {roblox_user.age} < {age_limit}")
-                        except discord.errors.Forbidden:
-                            pass
-                        else:
-                            raise CancelCommand
-
-                        return added, removed, chosen_nickname, errored, warnings, roblox_user
-
-                if required_groups:
-                    for group_id, group_data in required_groups.items():
-                        group = roblox_user.groups.get(group_id)
-
-                        if group:
-                            if group_data.get("roleSets"):
-                                for allowed_roleset in group_data["roleSets"]:
-                                    if isinstance(allowed_roleset, list):
-                                        if allowed_roleset[0] <= group.user_rank_id <= allowed_roleset[1]:
-                                            break
-                                    else:
-                                        if (group.user_rank_id == allowed_roleset) or (allowed_roleset < 0 and abs(allowed_roleset) <= group.user_rank_id):
-                                            break
                                 else:
-                                    if dm:
-                                        dm_message = group_data.get("dmMessage")
-                                        group_url = f"https://www.roblox.com/groups/{group_id}/-"
+                                    content = f"{join_message_parsed}\n\n**Disclaimer:** the message above was set by the Server Admins. The ONLY way to verify with Bloxlink " \
+                                            "is through <https://blox.link> and NO other link."
 
-                                        if dm_message:
-                                            text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
-                                                    f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                    f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\n"
-                                                    f"These instructions were set by the Server Admins:\n\n{dm_message}")
-                                        else:
-                                            text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` doesn't have an allowed Roleset in the group "
-                                                    f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                    f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
-                                        try:
-                                            await member.send(text)
-                                        except discord.errors.Forbidden:
-                                            pass
-                                    try:
-                                        await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
-                                    except discord.errors.Forbidden:
-                                        pass
-                                    else:
-                                        raise CancelCommand
-
-                                    return added, removed, chosen_nickname, errored, warnings, roblox_user
-                        else:
-                            if dm:
-                                dm_message = group_data.get("dmMessage")
-                                group_url = f"https://www.roblox.com/groups/{group_id}/-"
-
-                                if dm_message:
-                                    text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
-                                            f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                            f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\nThese instructions were set by the Server Admins:\n\n{dm_message}`")
-                                else:
-                                    text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
-                                            f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                            f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
+                                if includes.get("ping"):
+                                    content = f"{member.mention} {content or ''}"
 
                                 try:
-                                    await member.send(text)
+                                    await channel.send(content=content, embed=embed)
+                                except (discord.errors.NotFound, discord.errors.Forbidden):
+                                    pass
+
+            if join is not False:
+                options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", return_guild_data=True)
+
+                verified_dm = options.get("verifiedDM")
+                join_channel = options.get("joinChannel")
+                unverified_dm = options.get("unverifiedDM")
+                age_limit = options.get("ageLimit")
+                disallow_alts = options.get("disallowAlts")
+                disallow_ban_evaders = options.get("disallowBanEvaders")
+
+                try:
+                    age_limit = int(age_limit) #FIXME
+                except TypeError:
+                    age_limit = None
+
+                if disallow_alts or disallow_ban_evaders:
+                    if not donator_profile:
+                        donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+
+                    if donator_profile.features.get("premium"):
+                        accounts = set(accounts)
+
+                        if roblox_user: #FIXME: temp until primary accounts are saved to the accounts array
+                            accounts.add(roblox_user.id)
+
+                        if accounts and (disallow_alts or disallow_ban_evaders):
+                            for roblox_id in accounts:
+                                discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs") or []
+
+                                for discord_id in discord_ids:
+                                    discord_id = int(discord_id)
+
+                                    if discord_id != member.id:
+                                        if disallow_alts:
+                                            # check the server
+
+                                            try:
+                                                user_find = await guild.fetch_member(discord_id)
+                                            except discord.errors.NotFound:
+                                                pass
+                                            else:
+                                                try:
+                                                    await user_find.kick(reason=f"disallowAlts is enabled - alt of {member} ({member.id})")
+                                                except discord.errors.Forbidden:
+                                                    pass
+                                                else:
+                                                    await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
+
+                                                    raise CancelCommand
+
+                                        if disallow_ban_evaders:
+                                            # check the bans
+
+                                            try:
+                                                ban_entry = await guild.fetch_ban(discord.Object(discord_id))
+                                            except (discord.errors.NotFound, discord.errors.Forbidden):
+                                                pass
+                                            else:
+                                                action = disallow_ban_evaders == "kick" and "kick"   or "ban"
+                                                action_participle    = action == "kick" and "kicked" or "banned"
+
+                                                try:
+                                                    await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))
+                                                except (discord.errors.Forbidden, discord.errors.HTTPException):
+                                                    pass
+                                                else:
+                                                    await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
+
+                                                    raise CancelCommand
+
+                                                return added, removed, chosen_nickname, errored, warnings, roblox_user
+                try:
+                    added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
+                        member,
+                        guild                   = guild,
+                        guild_data              = guild_data,
+                        roles                   = roles,
+                        trello_board            = trello_board,
+                        nickname                = nickname,
+                        roblox_user             = roblox_user,
+                        given_trello_options    = True,
+                        cache                   = cache,
+                        dm                      = dm,
+                        response                = response)
+
+                except discord.errors.NotFound as e:
+                    if "NotFound" in exceptions:
+                        raise e from None
+                except RobloxAPIError as e:
+                    if "RobloxAPIError" in exceptions:
+                        raise e from None
+                except Error as e:
+                    if "Error" in exceptions:
+                        raise e from None
+                except CancelCommand as e:
+                    if "CancelCommand" in exceptions:
+                        raise e from None
+                except RobloxDown as e:
+                    if "RobloxDown" in exceptions:
+                        raise e from None
+                    else:
+                        raise CancelCommand
+                except Blacklisted as e:
+                    if "Blacklisted" in exceptions:
+                        raise e from None
+                except BloxlinkBypass as e:
+                    if "BloxlinkBypass" in exceptions:
+                        raise e from None
+                except PermissionError as e:
+                    if "PermissionError" in exceptions:
+                        raise e from None
+
+                except (UserNotVerified, discord.errors.HTTPException):
+                    pass
+
+                required_groups = options.get("groupLock") # TODO: integrate with Trello
+
+                if roblox_user:
+                    if event:
+                        await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+
+                    if age_limit:
+                        if age_limit > roblox_user.age:
+                            if dm:
+                                try:
+                                    await member.send(f"_Bloxlink Age-Limit_\nYou were kicked from **{guild.name}** for not being at least "
+                                                    f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
+                                                    f"then please join {SERVER_INVITE} and link a different account with `{PREFIX}verify add`. "
+                                                    f"Finally, use the `{PREFIX}switchuser` command and provide this ID to the command: `{guild.id}`")
                                 except discord.errors.Forbidden:
                                     pass
+
                             try:
-                                await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
+                                await member.kick(reason=f"AGE-LIMIT: user age {roblox_user.age} < {age_limit}")
                             except discord.errors.Forbidden:
                                 pass
                             else:
@@ -1169,26 +1109,115 @@ class Roblox(Bloxlink.Module):
 
                             return added, removed, chosen_nickname, errored, warnings, roblox_user
 
-                if dm and verified_dm:
-                    if verified_dm != DEFAULTS.get("welcomeMessage"):
-                        verified_dm = f"This message was set by the Server Admins:\n{verified_dm}"
+                    if required_groups:
+                        for group_id, group_data in required_groups.items():
+                            group = roblox_user.groups.get(group_id)
 
-                    verified_dm = (await self.get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
+                            if group:
+                                if group_data.get("roleSets"):
+                                    for allowed_roleset in group_data["roleSets"]:
+                                        if isinstance(allowed_roleset, list):
+                                            if allowed_roleset[0] <= group.user_rank_id <= allowed_roleset[1]:
+                                                break
+                                        else:
+                                            if (group.user_rank_id == allowed_roleset) or (allowed_roleset < 0 and abs(allowed_roleset) <= group.user_rank_id):
+                                                break
+                                    else:
+                                        if dm:
+                                            dm_message = group_data.get("dmMessage")
+                                            group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
-                    try:
-                        await member.send(verified_dm)
-                    except (discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
+                                            if dm_message:
+                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                                        f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                        f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\n"
+                                                        f"These instructions were set by the Server Admins:\n\n{dm_message}")
+                                            else:
+                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` doesn't have an allowed Roleset in the group "
+                                                        f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                        f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
+                                            try:
+                                                await member.send(text)
+                                            except discord.errors.Forbidden:
+                                                pass
+                                        try:
+                                            await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
+                                        except discord.errors.Forbidden:
+                                            pass
+                                        else:
+                                            raise CancelCommand
 
-                if join is not None:
-                    await post_log(join_channel, GREEN_COLOR)
+                                        return added, removed, chosen_nickname, errored, warnings, roblox_user
+                            else:
+                                if dm:
+                                    dm_message = group_data.get("dmMessage")
+                                    group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
-            else:
-                if age_limit:
-                    if not donator_profile:
-                        donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                                    if dm_message:
+                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                                f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\nThese instructions were set by the Server Admins:\n\n{dm_message}`")
+                                    else:
+                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                                f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
+                                                f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
 
-                    if donator_profile.features.get("premium"):
+                                    try:
+                                        await member.send(text)
+                                    except discord.errors.Forbidden:
+                                        pass
+                                try:
+                                    await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
+                                except discord.errors.Forbidden:
+                                    pass
+                                else:
+                                    raise CancelCommand
+
+                                return added, removed, chosen_nickname, errored, warnings, roblox_user
+
+                    if dm and verified_dm:
+                        if verified_dm != DEFAULTS.get("welcomeMessage"):
+                            verified_dm = f"This message was set by the Server Admins:\n{verified_dm}"
+
+                        verified_dm = (await self.get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
+
+                        try:
+                            await member.send(verified_dm)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException):
+                            pass
+
+                    if join is not None:
+                        await post_log(join_channel, GREEN_COLOR)
+
+                else:
+                    if age_limit:
+                        if not donator_profile:
+                            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+
+                        if donator_profile.features.get("premium"):
+                            if dm:
+                                try:
+                                    if accounts:
+                                        await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to {ACCOUNT_SETTINGS_URL} and set a "
+                                                        "primary account, then try rejoining this server.")
+                                    else:
+                                        await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
+                                                        f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
+                                                        "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
+                                                        f"Join {SERVER_INVITE} for additional help.")
+                                except discord.errors.Forbidden:
+                                    pass
+
+                            try:
+                                await member.kick(reason=f"AGE-LIMIT: user not linked to Bloxlink")
+                            except discord.errors.Forbidden:
+                                pass
+                            else:
+                                raise CancelCommand
+
+                            return added, removed, chosen_nickname, errored, warnings, roblox_user
+
+                    if required_groups:
                         if dm:
                             try:
                                 if accounts:
@@ -1203,7 +1232,7 @@ class Roblox(Bloxlink.Module):
                                 pass
 
                         try:
-                            await member.kick(reason=f"AGE-LIMIT: user not linked to Bloxlink")
+                            await member.kick(reason="SERVER-LOCK: not linked to Bloxlink")
                         except discord.errors.Forbidden:
                             pass
                         else:
@@ -1211,49 +1240,28 @@ class Roblox(Bloxlink.Module):
 
                         return added, removed, chosen_nickname, errored, warnings, roblox_user
 
-                if required_groups:
-                    if dm:
+                    if dm and unverified_dm:
+                        unverified_dm = await self.get_nickname(member, unverified_dm, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False)
+
                         try:
-                            if accounts:
-                                await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to {ACCOUNT_SETTINGS_URL} and set a "
-                                                "primary account, then try rejoining this server.")
-                            else:
-                                await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
-                                                "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
-                                                f"Join {SERVER_INVITE} for additional help.")
-                        except discord.errors.Forbidden:
+                            await member.send(unverified_dm)
+                        except (discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
 
-                    try:
-                        await member.kick(reason="SERVER-LOCK: not linked to Bloxlink")
-                    except discord.errors.Forbidden:
-                        pass
-                    else:
-                        raise CancelCommand
+                    await post_log(join_channel, GREEN_COLOR)
 
+                if not unverified:
                     return added, removed, chosen_nickname, errored, warnings, roblox_user
+                else:
+                    if "UserNotVerified" in exceptions:
+                        raise UserNotVerified
 
-                if dm and unverified_dm:
-                    unverified_dm = await self.get_nickname(member, unverified_dm, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False)
+            elif join == False:
+                leave_channel = await get_guild_value(guild, "leaveChannel")
 
-                    try:
-                        await member.send(unverified_dm)
-                    except (discord.errors.Forbidden, discord.errors.HTTPException):
-                        pass
-
-                await post_log(join_channel, GREEN_COLOR)
-
-            if not unverified:
-                return added, removed, chosen_nickname, errored, warnings, roblox_user
-            else:
-                if "UserNotVerified" in exceptions:
-                    raise UserNotVerified
-
-        elif join == False:
-            leave_channel = await get_guild_value(guild, "leaveChannel")
-
-            await post_log(leave_channel, RED_COLOR)
+                await post_log(leave_channel, RED_COLOR)
+        finally:
+            self.pending_verifications.pop(member.id, None)
 
 
     async def update_member(self, author, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, author_data=None, binds=None, guild_data=None, trello_board=None, given_trello_options=False, response=None, dm=False, cache=True):
