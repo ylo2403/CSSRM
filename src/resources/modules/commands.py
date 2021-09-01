@@ -275,7 +275,7 @@ class Commands(Bloxlink.Module):
                 await response.error("This command has unexpectedly errored.")
         except CancelCommand as e:
             if e.message:
-                await response.send(e)
+                await response.send(e, mention_author=True)
         except NotImplementedError:
             await response.error("The option you specified is currently not implemented, but will be coming soon!")
         except CancelledError:
