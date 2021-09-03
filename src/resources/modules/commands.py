@@ -5,10 +5,10 @@ import asyncio
 from concurrent.futures._base import CancelledError
 from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
-from discord import Embed, Object, Member, User
+from discord import Embed, Object, MessageReference, User
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
 from ..structures import Bloxlink, Args, Command, Locale, Arguments, Response, Application # pylint: disable=import-error, no-name-in-module
-from ..constants import MAGIC_ROLES, DEFAULTS, RELEASE, CLUSTER_ID # pylint: disable=import-error, no-name-in-module
+from ..constants import MAGIC_ROLES, DEFAULTS, RELEASE, CLUSTER_ID, ORANGE_COLOR # pylint: disable=import-error, no-name-in-module
 from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
 from config import BOTS # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
@@ -23,7 +23,7 @@ get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
 BOT_ID = BOTS[RELEASE]
-COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
+COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands" if RELEASE != "LOCAL" else f"https://discord.com/api/v8/applications/{BOT_ID}/guilds/439265180988211211/commands"
 
 @Bloxlink.module
 class Commands(Bloxlink.Module):
@@ -32,8 +32,6 @@ class Commands(Bloxlink.Module):
 
     async def __loaded__(self):
         """sync the slash commands"""
-
-        return
 
         if CLUSTER_ID == 0:
             slash_commands = [self.slash_command_to_json(c) for c in self.commands.values() if c.slash_enabled]
@@ -93,7 +91,7 @@ class Commands(Bloxlink.Module):
                 if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
                     premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
 
-                    if ignored_channels.get(channel_id):
+                    if ignored_channels.get(channel_id) or (channel.category and ignored_channels.get(str(channel.category.id))):
                         await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
                         if message:
@@ -380,6 +378,23 @@ class Commands(Bloxlink.Module):
             if command_name:
                 for index, command in self.commands.items():
                     if index == command_name or command_name in command.aliases:
+                        if getattr(command, "slash_only", False):
+                            embed = Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
+                                    f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
+                                    "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
+                                    "For the technical: [Discord announcement](https://support-dev.discord.com/hc/en-us/articles/4404772028055)")
+                            embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
+                            embed.colour = ORANGE_COLOR
+
+                            reference = MessageReference(message_id=message.id, channel_id=channel.id,
+                                                         guild_id=guild and guild.id, fail_if_not_exists=False)
+
+                            try:
+                                await channel.send(embed=embed, reference=reference)
+                            except (NotFound, Forbidden):
+                                pass
+
+                            raise CancelCommand
                         if guild:
                             if isinstance(author, User):
                                 try:

@@ -176,6 +176,7 @@ class Command(Executable):
         self.aliases = getattr(command, "aliases", [])
         self.addon = getattr(command, "addon", None)
         self.slash_enabled = getattr(command, "slash_enabled", False)
+        self.slash_only = getattr(command, "slash_only", False)
 
         super().__init__(command)
 
