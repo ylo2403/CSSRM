@@ -11,6 +11,7 @@ class PingCommand(Bloxlink.Module):
     def __init__(self):
         self.dm_allowed    = True
         self.slash_enabled = True
+        self.slash_only = True
 
     async def __main__(self, CommandArgs):
         channel  = CommandArgs.channel

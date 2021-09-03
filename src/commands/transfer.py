@@ -15,15 +15,22 @@ class TransferCommand(Bloxlink.Module):
 
     def __init__(self):
         self.examples = ["@justin", "disable"]
-        self.arguments = [{
+        self.category = "Premium"
+        self.free_to_use = True
+        self.slash_enabled = True
+        self.slash_only = True
+
+    async def __main__(self, CommandArgs):
+        pass
+
+    @Bloxlink.subcommand(arguments=[{
             "prompt": "Please specify the user to transfer premium to.",
             "name": "user",
             "type": "user",
-        }]
-        self.category = "Premium"
-        self.free_to_use = True
+        }])
+    async def to(self, CommandArgs):
+        """transfer your Bloxlink Premium to a user"""
 
-    async def __main__(self, CommandArgs):
         author = CommandArgs.author
         guild = CommandArgs.guild
         transfer_to = CommandArgs.parsed_args.get("user")
@@ -32,6 +39,8 @@ class TransferCommand(Bloxlink.Module):
 
         if transfer_to.bot:
             raise Message("You cannot transfer your premium to bots!", type="confused")
+        elif transfer_to == author:
+            raise Message("You cannot transfer your premium to yourself!", type="confused")
 
         author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
 
@@ -85,9 +94,10 @@ class TransferCommand(Bloxlink.Module):
         await response.success(f"Successfully **transferred** your premium to **{transfer_to}!**")
 
 
+
     @Bloxlink.subcommand()
     async def disable(self, CommandArgs):
-        """disable your Bloxlink premium transfer"""
+        """disable your Bloxlink Premium transfer"""
 
         author = CommandArgs.author
         guild = CommandArgs.guild

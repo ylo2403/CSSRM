@@ -22,6 +22,7 @@ class StatusCommand(Bloxlink.Module):
         self.free_to_use = True
         self.dm_allowed = True
         self.slash_enabled = True
+        self.slash_only = True
 
     async def __main__(self, CommandArgs):
         user = CommandArgs.parsed_args.get("user") or CommandArgs.author

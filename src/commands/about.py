@@ -10,6 +10,7 @@ class AboutCommand(Bloxlink.Module):
         self.aliases = ["bloxlink"]
         self.dm_allowed    = True
         self.slash_enabled = True
+        self.slash_only = True
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
