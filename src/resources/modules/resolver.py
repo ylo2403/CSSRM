@@ -210,9 +210,16 @@ class Resolver(Bloxlink.Module):
             content = message.content
 
         channels = []
+
         create_missing_channel = arg.get("create_missing_channel", True)
+        allow_categories = arg.get("allow_categories", False)
         max = arg.get("max")
         multiple = arg.get("multiple")
+
+        if allow_categories:
+            lookup_channels = guild.text_channels + guild.categories
+        else:
+            lookup_channels = guild.text_channels
 
         if message and message.channel_mentions:
             for channel in message.channel_mentions:
@@ -229,9 +236,9 @@ class Resolver(Bloxlink.Module):
                     channel = None
 
                     if lookup_string.isdigit():
-                        channel = discord.utils.find(lambda c: c.id == int(lookup_string), guild.text_channels)
+                        channel = discord.utils.find(lambda c: c.id == int(lookup_string), lookup_channels)
                     else:
-                        channel = discord.utils.find(lambda c: c.name == lookup_string, guild.text_channels)
+                        channel = discord.utils.find(lambda c: c.name == lookup_string, lookup_channels)
 
                     if not channel:
                         if create_missing_channel:
