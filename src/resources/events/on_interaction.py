@@ -11,7 +11,7 @@ async def on_interaction(interaction):
     data = interaction.data
     command_name = interaction.data.get("name")
     command_id   = interaction.data.get("id")
-    command_args = []
+    command_args = {}
 
     first_response = interaction.response
     followups      = interaction.followup
@@ -48,10 +48,10 @@ async def on_interaction(interaction):
                     subcommand = arg["name"]
 
                     for arg2 in arg["options"]:
-                        command_args.append([arg2["name"], arg2["value"]])
+                        command_args[arg2["name"]] = arg2["value"]
                 else:
                     if arg.get("value") is not None:
-                        command_args.append([arg["name"], arg["value"]])
+                        command_args[arg["name"]] = arg["value"]
                     else:
                         subcommand = arg["name"]
 

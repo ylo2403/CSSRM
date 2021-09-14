@@ -202,7 +202,7 @@ class Commands(Bloxlink.Module):
 
 
 
-    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, trello_board=None, after_text=None, slash_command=False):
+    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, trello_board=None, after_text="", slash_command=False):
         my_permissions = guild and guild.me.guild_permissions
 
         try:
@@ -448,7 +448,7 @@ class Commands(Bloxlink.Module):
 
                         await self.command_checks(command, prefix, response, guild_data, author, channel, locale, CommandArgs, message, guild, subcommand_attrs, slash_command=False)
 
-                        arguments = Arguments(CommandArgs, author, channel, command, guild, message, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=False)
+                        arguments = Arguments(CommandArgs, author, channel, command, guild, message, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command={})
 
                         await self.execute_command(command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data, guild, message, trello_board, after, False)
 

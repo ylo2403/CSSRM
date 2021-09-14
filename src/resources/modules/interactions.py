@@ -62,6 +62,7 @@ class Interactions(Bloxlink.Module):
         return application_structure
 
     async def inject_extension(self, app):
+
         app_json = self.app_command_to_json(app)
         text, response = await fetch(COMMANDS_URL, "POST", body=app_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -138,6 +139,6 @@ class Interactions(Bloxlink.Module):
                 except discord.NotFound:
                     raise CancelCommand
 
-            arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments or True)
+            arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
             await execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=command_id)
