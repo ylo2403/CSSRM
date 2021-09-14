@@ -336,7 +336,7 @@ class Response(Bloxlink.Module):
                     if self.webhook_only:
                         self.webhook_only = False
 
-                        return await self.send(content=content, embed=embed, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions, ignore_errors=ignore_errors)
+                        return await self.send(content=content, embed=embed, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions, ignore_errors=ignore_errors, view=view)
 
                     else:
                         if embed:
