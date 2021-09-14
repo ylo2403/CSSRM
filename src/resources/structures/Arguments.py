@@ -169,7 +169,7 @@ class Arguments:
     def in_prompt(author):
         return active_prompts.get(author.id)
 
-    async def prompt(self, prompts, error=False, dm=False, no_dm_post=False, is_base_slash_command=False):
+    async def prompt(self, prompts, error=False, dm=False, no_dm_post=False, is_base_slash_command=False, last=False):
         active_prompts[self.author.id] = True
 
         resolved_arg_count = 0
@@ -189,6 +189,9 @@ class Arguments:
                 except discord.errors.NotFound:
                     pass
 
+                if not no_dm_post:
+                    self.dm_post = await self.response.send(f"{self.author.mention}, **please check your DMs to continue.**", ignore_errors=True, strict_post=True)
+
         if is_base_slash_command:
             for i, prompt in enumerate(prompts): # to make easy O(1) lookup to get the position to append the arg in
                 prompt_groups[prompt["name"]] = i
@@ -197,6 +200,9 @@ class Arguments:
             while resolved_arg_count != len(prompts):
                 if err_count == PROMPT["PROMPT_ERROR_COUNT"]:
                     raise CancelledPrompt("Too many failed attempts.", type="delete")
+
+                if last and resolved_arg_count +1 == len(prompts):
+                    self.skipped_args = [" ".join(self.skipped_args)]
 
                 current_input = None
                 drop_skipped_arg = False
