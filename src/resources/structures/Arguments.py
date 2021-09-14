@@ -175,13 +175,23 @@ class Arguments:
         resolved_arg_count = 0
         prompt_groups = {}
         resolved_args = {}
+        last_prompt = None
+        err_count = 0
+
+        if dm and IS_DOCKER:
+            try:
+                m = await self.author.send("Loading setup...")
+            except discord.errors.Forbidden:
+                dm = False
+            else:
+                try:
+                    await m.delete()
+                except discord.errors.NotFound:
+                    pass
 
         if is_base_slash_command:
             for i, prompt in enumerate(prompts): # to make easy O(1) lookup to get the position to append the arg in
                 prompt_groups[prompt["name"]] = i
-
-        last_prompt = None
-        err_count = 0
 
         try:
             while resolved_arg_count != len(prompts):
