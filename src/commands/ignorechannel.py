@@ -157,10 +157,16 @@ class IgnoreChannelCommand(Bloxlink.Module):
                         f"{REACTIONS['RED']} **INVALID CHANNEL:** {channel_id}"
                     )
 
-            for allowed_channel in allowed_channels:
-                desc.append(
-                    f"{REACTIONS['GREEN']} **Channel:** {allowed_channel.mention}"
-                )
+            if allowed_channels:
+                for allowed_channel in allowed_channels[:10]:
+                    desc.append(
+                        f"{REACTIONS['GREEN']} **Channel:** {allowed_channel.mention}"
+                    )
+
+                len_remaining = len(allowed_channels[10:])
+
+                if len_remaining:
+                    desc.append(f"_And {len_remaining} more..._")
 
             embed.description = "\n".join(desc)
 
