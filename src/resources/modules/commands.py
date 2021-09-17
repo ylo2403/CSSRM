@@ -90,8 +90,10 @@ class Commands(Bloxlink.Module):
 
                 if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
                     premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
+                    ignored_channel = ignored_channels.get(channel_id) or (channel.category and ignored_channels.get(str(channel.category.id)))
+                    bypass_roles = ignored_channel.get("bypassRoles", []) if ignored_channel else []
 
-                    if ignored_channels.get(channel_id) or (channel.category and ignored_channels.get(str(channel.category.id))):
+                    if ignored_channel and not find(lambda r: str(r.id) in bypass_roles, author.roles):
                         await response.send(f"The server admins have **disabled** all commands in channel {channel.mention}.{premium_upsell}", dm=True, hidden=True, strict_post=True, no_dm_post=True)
 
                         if message:
@@ -123,6 +125,24 @@ class Commands(Bloxlink.Module):
                                 pass
 
                         raise CancelCommand
+
+        if not slash_command and getattr(command, "slash_only", False):
+            embed = Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
+                    f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
+                    "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
+                    "For the technical: [Discord announcement](https://support-dev.discord.com/hc/en-us/articles/4404772028055)")
+            embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
+            embed.colour = ORANGE_COLOR
+
+            reference = MessageReference(message_id=message and message.id, channel_id=channel_id,
+                                            guild_id=guild and guild.id, fail_if_not_exists=False)
+
+            try:
+                await channel.send(embed=embed, reference=reference, delete_after=20)
+            except (NotFound, Forbidden):
+                pass
+
+            raise CancelCommand
 
         restriction = await get_restriction("users", author.id)
 
@@ -378,23 +398,6 @@ class Commands(Bloxlink.Module):
             if command_name:
                 for index, command in self.commands.items():
                     if index == command_name or command_name in command.aliases:
-                        if getattr(command, "slash_only", False):
-                            embed = Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
-                                    f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
-                                    "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
-                                    "For the technical: [Discord announcement](https://support-dev.discord.com/hc/en-us/articles/4404772028055)")
-                            embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
-                            embed.colour = ORANGE_COLOR
-
-                            reference = MessageReference(message_id=message.id, channel_id=channel.id,
-                                                         guild_id=guild and guild.id, fail_if_not_exists=False)
-
-                            try:
-                                await channel.send(embed=embed, reference=reference)
-                            except (NotFound, Forbidden):
-                                pass
-
-                            raise CancelCommand
                         if guild:
                             if isinstance(author, User):
                                 try:
