@@ -45,7 +45,10 @@ class Arguments:
         if self.subcommand:
             prompts = self.subcommand[1].get("arguments")
         else:
-            prompts = self.command.arguments
+            if self.slash_command:
+                prompts = self.command.slash_args or self.command.arguments
+            else:
+                prompts = self.command.arguments
 
         if self.slash_command:
             self.parsed_args = await self.prompt(prompts, is_base_slash_command=True) if prompts else {}
