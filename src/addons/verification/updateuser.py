@@ -88,7 +88,7 @@ class UpdateUserCommand(Bloxlink.Module):
                 users += role.members
 
                 if not users:
-                    raise Error("These role(s) have no members in it!", hidden=True)
+                    raise Error("This role has no members in it!", hidden=True)
 
             if users_[0]:
                 user = users_[0]
@@ -96,6 +96,9 @@ class UpdateUserCommand(Bloxlink.Module):
         else:
             if isinstance(users_[0], Role):
                 for role in users_:
+                    if not role.members:
+                        raise Error("This role has no members in it!", hidden=True)
+
                     users += role.members
             else:
                 users = users_
