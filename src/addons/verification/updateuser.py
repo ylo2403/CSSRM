@@ -77,17 +77,27 @@ class UpdateUserCommand(Bloxlink.Module):
                 raise Message("You do not have permission to update users; you need the `Manage Roles` permission, or "
                               "a role called `Bloxlink Updater`.", type="info", hidden=True)
 
-        if isinstance(users_[0], Role):
+        if CommandArgs.slash_command:
             if not guild.chunked:
                 await guild.chunk()
 
-            for role in users_:
+            if users_[1]:
+                role = users_[1]
+
                 users += role.members
 
-            if not users:
-                raise Error("These role(s) have no members in it!", hidden=True)
+                if not users:
+                    raise Error("These role(s) have no members in it!", hidden=True)
+
+            if users_[0]:
+                user = users_[0]
+                users.append(user)
         else:
-            users = users_
+            if isinstance(users_[0], Role):
+                for role in users_:
+                    users += role.members
+            else:
+                users = users_
 
         len_users = len(users)
 
