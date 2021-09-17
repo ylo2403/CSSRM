@@ -180,6 +180,7 @@ class Arguments:
         resolved_args = {}
         last_prompt = None
         err_count = 0
+        optional_arg_has_arg = False
 
         if dm and IS_DOCKER:
             try:
@@ -225,7 +226,10 @@ class Arguments:
                     if current_input:
                         drop_skipped_arg = True
 
-                if not current_input and (current_prompt.get("optional") or (is_base_slash_command and current_prompt.get("slash_optional"))) or (current_prompt.get("show_if") and last_prompt and current_prompt["name"] != last_prompt["name"] and not current_prompt["show_if"](resolved_args)): # check if they supplied an arg, otherwise skip this prompt
+                if current_prompt.get("optional") and current_input:
+                    optional_arg_has_arg = True
+
+                if not current_input and not optional_arg_has_arg and (current_prompt.get("optional") or (is_base_slash_command and current_prompt.get("slash_optional"))) or (current_prompt.get("show_if") and last_prompt and current_prompt["name"] != last_prompt["name"] and not current_prompt["show_if"](resolved_args)): # check if they supplied an arg, otherwise skip this prompt
                     resolved_args[current_prompt["name"]] = None
                     resolved_arg_count += 1
 
@@ -326,6 +330,7 @@ class Arguments:
                 if skipped_arg_lower in current_prompt.get("exceptions", []):
                     resolved_arg_count += 1
                     resolved_args[current_prompt["name"]] = skipped_arg_lower
+                    optional_arg_has_arg = False
                     last_prompt = current_prompt
 
                     if drop_skipped_arg:
@@ -372,6 +377,7 @@ class Arguments:
                 if resolved:
                     resolved_arg_count += 1
                     resolved_args[current_prompt["name"]] = resolved
+                    optional_arg_has_arg = False
                 else:
                     await self.say("\n".join(resolve_errors), type="error", embed=True, dm=dm)
 

@@ -2,7 +2,8 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=no-name-in-module
 from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
-from discord import Object, Role
+from discord import Object, Role, User
+from discord.errors import NotFound
 import math
 
 guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
@@ -100,6 +101,15 @@ class UpdateUserCommand(Bloxlink.Module):
                 users = users_
 
         len_users = len(users)
+
+        for i, user in enumerate(users):
+            if isinstance(user, User):
+                try:
+                    user = await guild.fetch_member(user.id)
+                except NotFound:
+                    raise Error("This user isn't in your server!")
+                else:
+                    users[i] = user
 
         if self.redis:
             redis_cooldown_key = self.REDIS_COOLDOWN_KEY.format(release=RELEASE, id=guild.id)
