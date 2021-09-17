@@ -269,9 +269,9 @@ TRELLO = {
 
 EMBED_PERKS = {
     "GROUPS": { # title: group id, rank id, emote to show by username, backup emote
-        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkHead:877088573814345728>", ":man_technologist:"],
-        "Bloxlink Staff":         ["3587262", -50, "<:BloxlinkHead:877088573814345728>", ":busts_in_silhouette:"],
-        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkHead:877088573814345728>", ":busts_in_silhouette:"],
+        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkStaff:888318386117967922>", ":man_technologist:"],
+        "Bloxlink Staff":         ["3587262", -50, "<:BloxlinkStaff:888318386117967922>", ":busts_in_silhouette:"],
+        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkStaff:888318386117967922>", ":busts_in_silhouette:"],
         "Roblox Admin":           ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
         "Roblox Intern":          ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
         "Roblox Star Creator":    ["4199740", None, ":star:", ":star:"],
