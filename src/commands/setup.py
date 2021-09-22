@@ -82,7 +82,7 @@ class SetupCommand(Bloxlink.Module):
 
         nickname = None
 
-        response.delete(await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=True, no_dm_post=True))
+        response.delete(await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=False, no_dm_post=True))
 
         parsed_args_1 = await CommandArgs.prompt([
             {
@@ -121,7 +121,7 @@ class SetupCommand(Bloxlink.Module):
                 "embed_title": "Setup Prompt",
                 "validation": self.validate_group
             }
-        ], dm=True, no_dm_post=False)
+        ], dm=False, no_dm_post=False)
 
         for k, v in parsed_args_1.items():
             if k != "_":
@@ -153,7 +153,7 @@ class SetupCommand(Bloxlink.Module):
                     "embed_title": "Setup Prompt"
 
                 }
-            ], dm=True, no_dm_post=True))["merge_replace"][0]
+            ], dm=False, no_dm_post=True))["merge_replace"][0]
 
             if merge_replace  == "next":
                 merge_replace = "skip"
@@ -180,7 +180,7 @@ class SetupCommand(Bloxlink.Module):
                     "embed_title": "Trello Deprecation"
 
                 }
-            ], dm=True, no_dm_post=True))["trello_choice"]
+            ], dm=False, no_dm_post=True))["trello_choice"]
 
             if parsed_args_3[0] == "disable":
                 guild_data.pop("trelloID")
@@ -199,7 +199,7 @@ class SetupCommand(Bloxlink.Module):
                 "components": [discord.ui.Button(label="Done", style=discord.ButtonStyle.primary)],
                 "formatting": False
             }
-        ], dm=True, no_dm_post=True, last=True)
+        ], dm=False, no_dm_post=True, last=True)
 
         if group and group != "skip":
             if merge_replace not in ("skip", "next"):
@@ -244,4 +244,4 @@ class SetupCommand(Bloxlink.Module):
 
         await clear_guild_data(guild)
 
-        await response.success("Your server is now **configured** with Bloxlink!", dm=True, no_dm_post=True)
+        await response.success("Your server is now **configured** with Bloxlink!", dm=False, no_dm_post=True)
