@@ -238,6 +238,8 @@ class Arguments:
 
                     continue
 
+                current_input = str(current_input) if current_input else ""
+
                 if not current_input:
                     try:
                         if current_prompt.get("formatting", True):
@@ -289,6 +291,7 @@ class Arguments:
 
                                 if interaction.data["component_type"] == 3:
                                     select_values = interaction.data["values"]
+                                # TODO: get interaction key and use that for the next response
                             else:
                                 interaction = None
                                 message = result
@@ -349,11 +352,11 @@ class Arguments:
 
                 for resolver_type in resolver_types:
                     resolver = get_resolver(resolver_type)
-                    resolved, error_message = await resolver(current_prompt, content=current_input, guild=self.guild, message=message or self.message, select_options=select_values)
+                    resolved, error_message = await resolver(current_prompt, content=str(current_input), guild=self.guild, message=message or self.message, select_options=select_values)
 
                     if resolved:
                         if current_prompt.get("validation"):
-                            res = [await current_prompt["validation"](content=current_input, message=not dm and message, prompt=self.prompt, guild=self.guild)]
+                            res = [await current_prompt["validation"](content=str(current_input), message=not dm and message, prompt=self.prompt, guild=self.guild)]
 
                             if isinstance(res[0], tuple):
                                 if not res[0][0]:
