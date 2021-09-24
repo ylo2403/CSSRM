@@ -177,6 +177,7 @@ class Command(Executable):
         self.addon = getattr(command, "addon", None)
         self.slash_enabled = getattr(command, "slash_enabled", False)
         self.slash_only = getattr(command, "slash_only", False)
+        self.auto_complete = getattr(command, "auto_complete", False)
 
         super().__init__(command)
 

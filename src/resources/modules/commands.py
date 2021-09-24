@@ -497,7 +497,8 @@ class Commands(Bloxlink.Module):
                         "name": choice,
                         "value": choice
 
-                    } for choice in prompt.get("choices", []) if len(prompt.get("choices", [])) <= 25 ]
+                    } for choice in prompt.get("choices", []) if len(prompt.get("choices", [])) <= 25 ],
+                    "autocomplete": bool(prompt.get("auto_complete"))
                 }
 
                 return option
@@ -505,12 +506,7 @@ class Commands(Bloxlink.Module):
             if isinstance(prompts, dict):
                 return single_prompt(prompts)
             else:
-                options = []
-
-                for prompt in prompts:
-                    options.append(single_prompt(prompt))
-
-                return options
+                return [single_prompt(prompt) for prompt in prompts]
 
         if command.slash_enabled:
             json = {

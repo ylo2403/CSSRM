@@ -62,7 +62,6 @@ class Interactions(Bloxlink.Module):
         return application_structure
 
     async def inject_extension(self, app):
-
         app_json = self.app_command_to_json(app)
         text, response = await fetch(COMMANDS_URL, "POST", body=app_json, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
@@ -71,6 +70,39 @@ class Interactions(Bloxlink.Module):
             print(app, flush=True)
             print(response.status, text, flush=True)
 
+
+    async def send_autocomplete_options(self, interaction, command_name, subcommand, command_args, focused_option):
+        command = getattr(self, "commands").get(command_name)
+
+        if command:
+            if subcommand and command.subcommands.get(subcommand):
+                fn = command.subcommands[subcommand]
+                subcommand_attrs = getattr(fn, "__subcommandattrs__", {})
+                prompts = subcommand_attrs.get("arguments")
+            else:
+                prompts = command.arguments
+
+            prompt = discord.utils.find(lambda p: p["name"] == focused_option["name"], prompts)
+
+            if prompt:
+                send_options = await prompt["auto_complete"](None, interaction, command_args, focused_option["value"])
+
+                if send_options:
+                    route = discord.http.Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=interaction.id, interaction_token=interaction.token)
+
+                    payload = {
+                        "type": 8,
+                        "data": {
+                            "choices": [
+                                {
+                                    "name": option,
+                                    "value": option
+                                } for option in send_options
+                            ]
+                        }
+                    }
+
+                    await interaction.channel._state.http.request(route, json=payload)
 
     async def execute_interaction_command(self, typex, command_name, command_id, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None):
         command = getattr(self, typex).get(command_name)
