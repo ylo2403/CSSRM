@@ -1128,12 +1128,12 @@ class Roblox(Bloxlink.Module):
                                             group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
                                             if dm_message:
-                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
                                                         f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
                                                         f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\n"
                                                         f"These instructions were set by the Server Admins:\n\n{dm_message}")
                                             else:
-                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` doesn't have an allowed Roleset in the group "
+                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` doesn't have an allowed Roleset in the group "
                                                         f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
                                                         f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
                                             try:
@@ -1154,11 +1154,11 @@ class Roblox(Bloxlink.Module):
                                     group_url = f"https://www.roblox.com/groups/{group_id}/-"
 
                                     if dm_message:
-                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
                                                 f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
                                                 f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\nThese instructions were set by the Server Admins:\n\n{dm_message}`")
                                     else:
-                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}`` is not in the group "
+                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
                                                 f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
                                                 f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
 
