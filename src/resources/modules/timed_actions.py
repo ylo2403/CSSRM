@@ -10,7 +10,6 @@ coro_async = Bloxlink.get_module("utils", attrs=["coro_async"])
 get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
 cache_clear = Bloxlink.get_module("cache", attrs=["clear"])
 load_blacklist = Bloxlink.get_module("blacklist", attrs=["load_blacklist"])
-load_boosters = Bloxlink.get_module("nitro_boosters", attrs=["load_boosters"], name_override="NitroBoosters")
 load_staff_members = Bloxlink.get_module("premium", attrs=["load_staff_members"])
 
 
@@ -32,7 +31,6 @@ class TimedActions(Bloxlink.Module):
 
             try:
                 await load_blacklist() # redis
-                await load_boosters() # redis
                 await load_staff_members() # redis
             except Exception as e:
                 Bloxlink.error(e)
