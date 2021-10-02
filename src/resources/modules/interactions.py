@@ -95,8 +95,8 @@ class Interactions(Bloxlink.Module):
                         "data": {
                             "choices": [
                                 {
-                                    "name": option,
-                                    "value": option
+                                    "name": option[0] if isinstance(option, (list, tuple)) else option,
+                                    "value": option[1] if isinstance(option, (list, tuple)) else option
                                 } for option in send_options
                             ]
                         }
