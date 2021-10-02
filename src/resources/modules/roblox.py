@@ -24,13 +24,13 @@ nickname_template_regex = re.compile(r"\{(.*?)\}")
 trello_card_bind_regex = re.compile(r"(.*?): ?(.*)")
 any_group_nickname = re.compile(r"\{group-rank-(.*?)\}")
 bracket_search = re.compile(r"\[(.*)\]")
+roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
 
 loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-is_booster = Bloxlink.get_module("nitro_boosters", attrs=["is_booster"], name_override="NitroBoosters")
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
@@ -1907,6 +1907,13 @@ class Roblox(Bloxlink.Module):
     @staticmethod
     async def get_group(group_id, full_group=False):
         group_id = str(group_id)
+
+        if not group_id.isdigit():
+            regex_search_group = roblox_group_regex.search(group_id)
+
+            if regex_search_group:
+                group_id = regex_search_group.group(1)
+
         group = await cache_get(f"groups:{group_id}")
 
         if group:
@@ -2318,10 +2325,6 @@ class Roblox(Bloxlink.Module):
                 embed.colour = PARTNERED_SERVER
 
         if tags and author:
-            if await is_booster(author):
-                user_tags.append("Bloxlink Nitro Booster")
-                embed.colour = PINK_COLOR
-
             if await cache_get(f"partners:users:{author.id}", primitives=True):
                 user_tags.append("Bloxlink Partner")
                 embed.colour = PARTNERS_COLOR
