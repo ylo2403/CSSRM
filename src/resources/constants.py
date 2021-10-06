@@ -136,7 +136,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "leaveChannel":          (lambda g, gd: bool(gd.get("leaveChannel", True)), None, None, False, "Customize the leave messages of people who leave the server."),
     "persistRoles":          (None, "boolean", None, True,  "Update members' roles/nickname as they type."),
     "allowReVerify":         (None, "boolean", None, True,  "If this is enabled: members can change their Roblox account as many times as they want in your server; otherwise, only allow 1 account change."),
-    "trelloID":              (None,  None, None,     False, "Link a Trello board that can change Bloxlink settings!"),
     "nicknameTemplate":      (None,  "string", 100,  False, "Set the universal nickname template. Note that `{prefix}bind` nicknames will override this."),
     "unverifiedRoleName":    (None,  "string", 100,  False, "Set the 'Unverified' role name -- the role that Unverified users get."),
     "shorterNicknames":      (None,  "boolean", None,False, "Brackets in group rank names will be captured instead of the full rank name, resulting in a shorter nickname."),
@@ -149,7 +148,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
-    "trelloBindMode":        (None, "choice", ("merge", "replace"), False, "Choose 'replace' if trello binds should replace the server binds, or 'merge' if trello binds should be merged with the server binds. Default = merge."),
     "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, True, "Customize the names of the Bloxlink Magic Roles.")
 }
 
