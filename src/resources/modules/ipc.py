@@ -271,6 +271,18 @@ class IPC(Bloxlink.Module):
 
             await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
 
+        elif type == "USERS":
+            data = json.dumps({
+                "nonce": nonce,
+                "cluster_id": CLUSTER_ID,
+                "data": (sum([g.member_count for g in self.client.guilds]), len(self.client.guilds)),
+                "type": "CLIENT_RESULT",
+                "original_cluster": original_cluster,
+                "waiting_for": waiting_for
+            })
+
+            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+
         elif type == "PLAYING_STATUS":
             presence_type = extras.get("presence_type", "normal")
             playing_status = extras.get("status", PLAYING_STATUS).format(prefix=PREFIX)
