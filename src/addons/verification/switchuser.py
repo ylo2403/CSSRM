@@ -182,4 +182,4 @@ class SwitchUserCommand(Bloxlink.Module):
 
         else:
             raise Message(f"{author.mention}, to verify with Bloxlink, please visit our website at " \
-                          f"<{VERIFY_URL}>. It won't take long!\nStuck? See this tutorial: <https://blox.link/tutorial/verification>")
+                          f"<{VERIFY_URL}>. It won't take long!\nStuck? See this video: <https://www.youtube.com/watch?v=0SH3n8rY9Fg&list=PLz7SOP-guESE1V6ywCCLc1IQWiLURSvBE&index=2>")
