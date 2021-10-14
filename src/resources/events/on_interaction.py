@@ -1,6 +1,7 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
 from discord import User, Message
+from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
 
 
 execute_interaction_command, send_autocomplete_options = Bloxlink.get_module("interactions", attrs=["execute_interaction_command", "send_autocomplete_options"])
@@ -44,6 +45,9 @@ async def on_interaction(interaction):
         focused_option = None
 
         if data.get("options"):
+            if RELEASE == "LOCAL":
+                print(data["options"])
+
             for arg in data["options"]:
                 if arg.get("options"):
                     subcommand = arg["name"]
