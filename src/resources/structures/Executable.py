@@ -32,6 +32,7 @@ class Executable:
         self.dm_allowed = getattr(executable, "dm_allowed", False)
         self.bypass_channel_perms = getattr(executable, "bypass_channel_perms", False)
         self.premium_bypass_channel_perms = getattr(executable, "premium_bypass_channel_perms", False)
+        self.original_executable = executable
 
         self.usage = []
         command_args = self.arguments

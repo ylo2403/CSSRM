@@ -85,7 +85,10 @@ class Interactions(Bloxlink.Module):
             prompt = discord.utils.find(lambda p: p["name"] == focused_option["name"], prompts)
 
             if prompt:
-                send_options = await prompt["auto_complete"](None, interaction, command_args, focused_option["value"])
+                try:
+                    send_options = await prompt["auto_complete"](command.original_executable, interaction, command_args, focused_option["value"]) # subcommand
+                except TypeError:
+                    send_options = await prompt["auto_complete"](interaction, command_args, focused_option["value"])
 
                 if send_options:
                     route = discord.http.Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=interaction.id, interaction_token=interaction.token)
