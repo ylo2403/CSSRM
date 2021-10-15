@@ -24,6 +24,7 @@ get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 BOT_ID = BOTS[RELEASE]
 COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands" if RELEASE != "LOCAL" else f"https://discord.com/api/v8/applications/{BOT_ID}/guilds/439265180988211211/commands"
+GUILD_COMMANDS_URL = "https://discord.com/api/v8/applications/{BOT_ID}/guilds/{GUILD_ID}/commands"
 
 @Bloxlink.module
 class Commands(Bloxlink.Module):
@@ -34,15 +35,34 @@ class Commands(Bloxlink.Module):
         """sync the slash commands"""
 
         if CLUSTER_ID == 0:
-            slash_commands = [self.slash_command_to_json(c) for c in self.commands.values() if c.slash_enabled]
+            slash_commands = []
+            all_guild_slash_commands = {}
 
-            text, response = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+            for command in self.commands.values():
+                if command.slash_enabled and not command.slash_guilds:
+                    slash_commands.append(self.slash_command_to_json(command))
 
-            if response.status == 200:
-                Bloxlink.log("Successfully synced Slash Commands")
+                if command.slash_guilds:
+                    for guild_id in command.slash_guilds:
+                        all_guild_slash_commands[guild_id] = all_guild_slash_commands.get(guild_id) or []
+                        all_guild_slash_commands[guild_id].append(self.slash_command_to_json(command))
+
+            for guild_slash_command_id, guild_slash_commands in all_guild_slash_commands.items():
+                text2, response2 = await fetch(GUILD_COMMANDS_URL.format(BOT_ID=BOT_ID, GUILD_ID=guild_slash_command_id), "PUT", body=guild_slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+
+                if response2.status == 200:
+                    Bloxlink.log(f"Successfully synced Slash Commands for guild {guild_slash_command_id}")
+                else:
+                    print(slash_commands, flush=True)
+                    print(response2.status, text2, flush=True)
+
+            text1, response1 = await fetch(COMMANDS_URL, "PUT", body=slash_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+
+            if response1.status == 200:
+                Bloxlink.log("Successfully synced the Global Slash Commands")
             else:
                 print(slash_commands, flush=True)
-                print(response.status, text, flush=True)
+                print(response1.status, text1, flush=True)
 
     async def redirect_command(self, command_name, ):
         pass

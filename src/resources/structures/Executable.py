@@ -29,6 +29,7 @@ class Executable:
         self.slash_defer = getattr(executable, "slash_defer", False)
         self.slash_ephemeral = getattr(executable, "slash_ephemeral", False)
         self.slash_args = getattr(executable, "slash_args", None)
+        self.slash_guilds = getattr(executable, "slash_guilds", [])
         self.dm_allowed = getattr(executable, "dm_allowed", False)
         self.bypass_channel_perms = getattr(executable, "bypass_channel_perms", False)
         self.premium_bypass_channel_perms = getattr(executable, "premium_bypass_channel_perms", False)
