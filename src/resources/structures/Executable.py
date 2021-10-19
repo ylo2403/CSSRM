@@ -14,6 +14,7 @@ flag_pattern = re.compile(r"--?(.+?)(?: ([^-]*)|$)")
 
 class Executable:
     def __init__(self, executable):
+        self.name = ""
         self.description = executable.__doc__ or "N/A"
         self.full_description = getattr(executable, "full_description", self.description)
         self.permissions = getattr(executable, "permissions", Permissions())
@@ -173,6 +174,8 @@ class Executable:
 
 class Command(Executable):
     def __init__(self, command):
+        super().__init__(command)
+
         self.name = command.__class__.__name__[:-7].lower()
         self.subcommands = {}
         self.aliases = getattr(command, "aliases", [])
@@ -181,12 +184,11 @@ class Command(Executable):
         self.slash_only = getattr(command, "slash_only", False)
         self.auto_complete = getattr(command, "auto_complete", False)
 
-        super().__init__(command)
-
 
 class Application(Executable):
     def __init__(self, application):
+        super().__init__(application)
+
         self.type = application.type
         self.name = application.name
-
-        super().__init__(application)
+        self.slash_enabled = True

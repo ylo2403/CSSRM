@@ -310,7 +310,7 @@ class BloxlinkStructure(AutoShardedClient):
 
     @staticmethod
     def extension(*args, **kwargs):
-        return Bloxlink.get_module("interactions", attrs="new_extension", name_override_pattern="Extension_")(*args, **kwargs)
+        return Bloxlink.get_module("commands", attrs="new_extension", name_override_pattern="Extension_")(*args, **kwargs)
 
     @staticmethod
     def subcommand(**kwargs):
