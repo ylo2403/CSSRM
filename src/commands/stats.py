@@ -49,7 +49,7 @@ class StatsCommand(Bloxlink.Module):
                     total_mem += cluster_data[1]
 
             if errored:
-                guilds = f"{total_guilds} ({len(self.client.guilds)}) ({errored} errored)"
+                guilds = f"{total_guilds} ({len(self.client.guilds)}) ({errored} non-reporting nodes)"
             else:
                 guilds = f"{total_guilds} ({len(self.client.guilds)})"
 
