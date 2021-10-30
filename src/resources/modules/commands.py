@@ -423,7 +423,7 @@ class Commands(Bloxlink.Module):
 
             if command_name:
                 for index, command in self.commands.items():
-                    if index == command_name or command_name in command.aliases:
+                    if index == command_name or command_name in getattr(command, "aliases", []):
                         if guild:
                             if isinstance(author, discord.User):
                                 try:
