@@ -33,7 +33,7 @@ class Commands(Bloxlink.Module):
     async def __loaded__(self):
         """sync the slash commands and context-menus"""
 
-        if CLUSTER_ID == 0
+        if CLUSTER_ID == 0:
             interaction_commands = []
             all_guild_commands = {}
 
