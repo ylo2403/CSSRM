@@ -1,23 +1,29 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.exceptions import RobloxNotFound, Error, UserNotVerified, RobloxAPIError # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import RobloxNotFound, Error, RobloxAPIError # pylint: disable=import-error, no-name-in-module
 from resources.constants import LIMITS # pylint: disable=import-error, no-name-in-module
 from discord import Embed, Object
 import re
-import traceback
 
 
-get_group, get_user, parse_accounts = Bloxlink.get_module("roblox", attrs=["get_group", "get_user", "parse_accounts"])
-user_resolver = Bloxlink.get_module("resolver", attrs="user_resolver")
+get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
-RESTRICTION_NAME_MAP = {
+RESTRICTION_NAME_DB_USER_MAP = {
     "groups": "Groups",
     "users": "Users",
-    "robloxAccounts": "Roblox Accounts"
+    "robloxAccounts": "Roblox Accounts",
+    "roles": "Roles"
 }
 
+RESTRICTION_NAME_COMMAND_DB_MAP = {
+    "user": "users",
+    "group_url": "groups",
+    "discord_user": "users",
+    "roblox_username": "robloxAccounts",
+    "discord_role": "roles"
+}
 
 @Bloxlink.command
 class RestrictCommand(Bloxlink.Module):
@@ -29,101 +35,113 @@ class RestrictCommand(Bloxlink.Module):
         self.aliases = ["restriction"]
         self.slash_enabled = True
         self.slash_only = True
+        self._remove_data_regex = re.compile("(.*)-(.*)")
 
-        self._roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
+    async def auto_complete_group(self, interaction, command_args, focused_option):
+        if not focused_option:
+            return
 
-    async def resolve_restriction(self, content, message, prompt, guild):
-        if content.isdigit():
-            # if there's a group and roblox account with the same ID
-            try:
-                group = await get_group(content, full_group=True)
-            except (RobloxNotFound, RobloxAPIError):
-                pass
+        try:
+            group = await get_group(focused_option, full_group=True)
+        except (RobloxNotFound, RobloxAPIError):
+            return []
+
+        return [
+            [f"{group.name} ({group.group_id})", group.group_id]
+        ]
+
+    async def auto_complete_roblox_user(self, interaction, command_args, focused_option):
+        if not focused_option:
+            return []
+
+        try:
+            if focused_option.isdigit():
+                roblox_user, _ = await get_user(roblox_id=focused_option, cache=True)
             else:
-                try:
-                    account, _ = await get_user(roblox_id=content)
-                except (RobloxNotFound, RobloxAPIError):
-                    pass
-                else:
-                    restrict_what = (await prompt([
-                        {
-                            "prompt": "There's some ambiguity! There's both a Roblox account and Group with this ID.\n\n"
-                                      "Are you trying to restrict a **group** or a **roblox account**?",
-                            "name": "restrict_what",
-                            "type": "choice",
-                            "choices": ("group", "roblox account")
-                        }
-                    ]))["restrict_what"]
+                roblox_user, _ = await get_user(username=focused_option, cache=True)
 
-                    if restrict_what == "group":
-                        return ("groups", "Group", group, group.group_id, group.name)
-                    else:
-                        return ("robloxAccounts", "Roblox account", account, account.id, account.username)
-
-        # group check
-        regex_search_group = self._roblox_group_regex.search(content)
-
-        if regex_search_group:
-            group_id = regex_search_group.group(1)
-        else:
-            group_id = content
-
-        try:
-            group = await get_group(group_id, full_group=True)
         except (RobloxNotFound, RobloxAPIError):
-            pass
+            return []
+
+        return [[f"{roblox_user.username} ({roblox_user.id})", roblox_user.id]]
+
+
+    async def auto_complete_restrictions(self, interaction, command_args, focused_option):
+        focused_option = focused_option.lower()
+
+        guild = interaction.guild
+        guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {}
+        restrictions = guild_data.get("restrictions") or {}
+        parsed_restrictions = []
+
+        for restriction_name, title_name in RESTRICTION_NAME_DB_USER_MAP.items():
+            if restrictions.get(restriction_name):
+                for restriction_id, restriction_data in restrictions[restriction_name].items():
+                    restriction_data["title"] = title_name[:-1] # remove ending "s"
+                    restriction_data["internal_name"] = restriction_name
+                    restriction_data["id"] = restriction_id
+
+                    parsed_restrictions.append(restriction_data)
+
+
+        if focused_option:
+            return [
+                [f"{restriction['title']}: {restriction['name']}", f"{restriction['internal_name']}-{restriction['id']}"] for restriction in parsed_restrictions if restriction["name"].lower().startswith(focused_option)
+            ][:25]
         else:
-            return ("groups", "Group", group, group.group_id, group.name)
+            return [
+                [f"{restriction['title']}: {restriction['name']}", f"{restriction['internal_name']}-{restriction['id']}"] for restriction in parsed_restrictions
+            ][:25]
 
-        # roblox username/id check
-        username = roblox_id = None
-
-        if content.isdigit():
-            roblox_id = content
-        else:
-            username = content
-        try:
-            account, _ = await get_user(username=username, roblox_id=roblox_id)
-        except (RobloxNotFound, RobloxAPIError):
-            pass
-        else:
-            return ("robloxAccounts", "Roblox account", account, account.id, account.username)
-
-        # user check
-        user, _ = await user_resolver({}, message=message, guild=guild, content=content)
-
-        if user:
-            return ("users", "Discord user", user, user.id, str(user))
-
-        return None, "No results were found! Please either provide a Group URL/ID, a Discord user, or a Roblox username/id."
 
     async def __main__(self, CommandArgs):
-        if CommandArgs.string_args:
-            await self.add(CommandArgs)
-        else:
-            subcommand = (await CommandArgs.prompt([{
-                "prompt": "Would you like to **add** a new restriction, **view** your restrictions, "
-                          "or **remove** an active restriction?",
-                "name": "subcommand",
-                "type": "choice",
-                "choices": ("add", "remove", "view")
-            }]))["subcommand"]
+        pass
 
-            if subcommand == "add":
-                await self.add(CommandArgs)
-            elif subcommand == "view":
-                await self.view(CommandArgs)
-            elif subcommand == "remove":
-                await self.remove(CommandArgs)
-
-    @Bloxlink.subcommand()
+    @Bloxlink.subcommand(arguments=[
+        {
+            "prompt": "Restrict a Roblox user from verifying in your server.",
+            "name": "roblox_username",
+            "type": "string",
+            "auto_complete": auto_complete_roblox_user,
+            "optional": True
+        },
+        {
+            "prompt": "Restrict members from a Roblox group from verifying in your server.",
+            "name": "group_url",
+            "type": "string",
+            "auto_complete": auto_complete_group,
+            "optional": True
+        },
+        {
+            "prompt": "Restrict a Discord user from verifying in your server.",
+            "name": "discord_user",
+            "type": "user",
+            "optional": True
+        },
+        {
+            "prompt": "Restrict people with a Discord role from verifying.",
+            "name": "discord_role",
+            "type": "role",
+            "optional": True
+        },
+        {
+            "prompt": "Why are you restricting this user? This note will be available to you later.",
+            "name": "reason",
+            "type": "string",
+            "optional": True
+        },
+    ])
     async def add(self, CommandArgs):
-        """add a new Roblox user or group to your restrictions"""
-        guild_data = CommandArgs.guild_data
-        response   = CommandArgs.response
-        author     = CommandArgs.author
-        guild      = CommandArgs.guild
-        prefix     = CommandArgs.prefix
+        """restrict certain people or groups from verifying in your server"""
+
+        guild_data   = CommandArgs.guild_data
+        parsed_args  = CommandArgs.parsed_args
+        response     = CommandArgs.response
+        author       = CommandArgs.author
+        guild        = CommandArgs.guild
+        prefix       = CommandArgs.prefix
+
+        reason       = parsed_args["reason"]
 
         restrictions = guild_data.get("restrictions", {})
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
@@ -140,46 +158,42 @@ class RestrictCommand(Bloxlink.Module):
                 if len_restrictions >= LIMITS["RESTRICTIONS"]["PREMIUM"]:
                     raise Error("You have the max restrictions for this server! Please delete some before adding more.")
 
-        parsed_args = await CommandArgs.prompt([
-            {
-                "prompt": "Please either mention a user, give a Group URL, or a Roblox username.",
-                "name": "resolvable",
-                "validation": self.resolve_restriction
-            },
-            {
-                "prompt": "What's the reason for this restriction? __This will be publicly displayed to "
-                          "people who try to verify and are restricted **in this server**.__\n\nOptionally, say `skip` to set "
-                          "a default text.",
-                "name": "reason",
-                "exceptions": ("skip",)
-            }
-        ])
 
-        resolvable = parsed_args["resolvable"]
-        reason     = parsed_args["reason"] if parsed_args["reason"] != "skip" else None
+        for command_arg, value in parsed_args.items():
+            if value and command_arg in RESTRICTION_NAME_COMMAND_DB_MAP:
+                display_name = None
+                idx = None
+                command_arg_db_name = RESTRICTION_NAME_COMMAND_DB_MAP[command_arg]
 
-        restrictions[resolvable[0]] = restrictions.get(resolvable[0], {})
-        restrictions[resolvable[0]][str(resolvable[3])] = {"name": resolvable[4], "addedBy": str(author.id), "reason": reason}
+                try:
+                    if command_arg == "group_url":
+                        group = await get_group(value)
+                        display_name = group.name
+                        idx = group.group_id
+                    elif command_arg == "discord_user":
+                        display_name = str(value)
+                        idx = value.id
+                    elif command_arg == "roblox_username":
+                        roblox_user, _ = await get_user(roblox_id=value)
+                        display_name = roblox_user.username
+                        idx = roblox_user.id
+                    elif command_arg == "discord_role":
+                        display_name = str(value)
+                        idx = value.id
 
-        if resolvable[0] == "users":
-            # poison ban
-            try:
-                _, accounts = await get_user("username", author=resolvable[2], everything=False, basic_details=True)
-            except UserNotVerified:
-                pass
-            else:
-                restrictions["robloxAccounts"] = restrictions.get("robloxAccounts", {})
-                parsed_accounts = await parse_accounts(accounts) # TODO: poison ban their discord accounts as well?
+                except RobloxNotFound:
+                    raise Error(f"This `{command_arg_db_name}` could not be found!")
 
-                for roblox_account in parsed_accounts.values():
-                    restrictions["robloxAccounts"][roblox_account.id] = {"name": roblox_account.username, "addedBy": str(author.id), "reason": reason}
+                restrictions[command_arg_db_name] = restrictions.get(command_arg_db_name, {})
+                restrictions[command_arg_db_name][str(idx)] = {"name": display_name, "addedBy": str(author.id), "reason": reason}
+
 
         guild_data["restrictions"] = restrictions
         await set_guild_value(guild, "restrictions", restrictions)
 
         await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
-        await response.success(f"Successfully **added** {resolvable[1]} **{resolvable[4]}** to your restrictions.")
+        await response.success(f"Successfully **updated** your restrictions!")
 
     @Bloxlink.subcommand()
     async def view(self, CommandArgs):
@@ -198,12 +212,18 @@ class RestrictCommand(Bloxlink.Module):
 
         for restriction_type, restriction_data in restrictions.items():
             if restriction_data:
-                embed.add_field(name=RESTRICTION_NAME_MAP[restriction_type], value="\n".join(["**" + y['name'] + '** (' + x + ')' + ' | Reason: ' + str(y['reason']) + ' | Added by: ' + y['addedBy'] for x,y in restriction_data.items()]))
+                embed.add_field(name=RESTRICTION_NAME_DB_USER_MAP[restriction_type], value="\n".join(["**" + y['name'] + '** (' + x + ')' + ' | Reason: ' + str(y['reason']) + ' | Added by: ' + (f'<@{y["addedBy"]}>' if y['addedBy'] else y['addedBy']) for x,y in restriction_data.items()]))
 
         await response.send(embed=embed)
 
 
-    @Bloxlink.subcommand()
+    @Bloxlink.subcommand(arguments=[
+        {
+            "prompt": "Please choose your restriction to remove, or search for one.",
+            "name": "restriction_data",
+            "auto_complete": auto_complete_restrictions
+        }
+    ])
     async def remove(self, CommandArgs):
         """allow a user or group back in your server"""
 
@@ -213,24 +233,22 @@ class RestrictCommand(Bloxlink.Module):
         guild_data = CommandArgs.guild_data
         restrictions = guild_data.get("restrictions", {})
 
-        resolvable = (await CommandArgs.prompt([{
-            "prompt": "Please either mention a user, give a Group URL, or a Roblox username.",
-            "name": "resolvable",
-            "validation": self.resolve_restriction
-        }]))["resolvable"]
+        remove_data = CommandArgs.parsed_args["restriction_data"]
+        directory_name, remove_id = self._remove_data_regex.search(remove_data).groups()
 
-        if restrictions.get(resolvable[0], {}).get(str(resolvable[3])):
-            restrictions[resolvable[0]].pop(str(resolvable[3]))
+        if directory_name and remove_id:
+            if restrictions.get(directory_name).get(remove_id):
+                restrictions[directory_name].pop(remove_id)
 
-            if not restrictions[resolvable[0]]:
-                restrictions.pop(resolvable[0], None)
+                if not restrictions[directory_name]:
+                    restrictions.pop(directory_name, None)
 
-            guild_data["restrictions"] = restrictions
-            await set_guild_value(guild, "restrictions", restrictions)
+                guild_data["restrictions"] = restrictions
+                await set_guild_value(guild, "restrictions", restrictions)
 
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-            await response.success(f"Successfully **removed** this **{resolvable[1]}** from your restrictions.")
+                await response.success(f"Successfully **removed** this **{directory_name[:-1]}** from your restrictions.")
 
-        else:
-            raise Error(f"This **{resolvable[1]}** isn't restricted!")
+            else:
+                raise Error(f"This **{directory_name[:-1]}** isn't restricted!")
