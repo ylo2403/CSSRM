@@ -1,5 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.exceptions import RobloxNotFound, Error, RobloxAPIError # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import RobloxNotFound, Error, RobloxAPIError, Message # pylint: disable=import-error, no-name-in-module
 from resources.constants import LIMITS # pylint: disable=import-error, no-name-in-module
 from discord import Embed, Object
 import re
@@ -143,6 +143,8 @@ class RestrictCommand(Bloxlink.Module):
 
         reason       = parsed_args["reason"]
 
+        got_entry = False
+
         restrictions = guild_data.get("restrictions", {})
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
 
@@ -170,22 +172,29 @@ class RestrictCommand(Bloxlink.Module):
                         group = await get_group(value)
                         display_name = group.name
                         idx = group.group_id
+                        got_entry = True
                     elif command_arg == "discord_user":
                         display_name = str(value)
                         idx = value.id
+                        got_entry = True
                     elif command_arg == "roblox_username":
                         roblox_user, _ = await get_user(roblox_id=value)
                         display_name = roblox_user.username
                         idx = roblox_user.id
+                        got_entry = True
                     elif command_arg == "discord_role":
                         display_name = str(value)
                         idx = value.id
+                        got_entry = True
 
                 except RobloxNotFound:
                     raise Error(f"This `{command_arg_db_name}` could not be found!")
 
                 restrictions[command_arg_db_name] = restrictions.get(command_arg_db_name, {})
                 restrictions[command_arg_db_name][str(idx)] = {"name": display_name, "addedBy": str(author.id), "reason": reason}
+
+        if not got_entry:
+            raise Message("You need to supply at least one argument!", type="silly")
 
 
         guild_data["restrictions"] = restrictions
@@ -234,7 +243,13 @@ class RestrictCommand(Bloxlink.Module):
         restrictions = guild_data.get("restrictions", {})
 
         remove_data = CommandArgs.parsed_args["restriction_data"]
-        directory_name, remove_id = self._remove_data_regex.search(remove_data).groups()
+        remove_data_match = self._remove_data_regex.search(remove_data)
+
+        if not remove_data_match:
+            raise Message("You must select an option from the dropdown!", type="silly")
+        else:
+            directory_name, remove_id = self._remove_data_regex.search(remove_data)
+
 
         if directory_name and remove_id:
             if restrictions.get(directory_name).get(remove_id):
