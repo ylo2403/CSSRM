@@ -148,7 +148,8 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
-    "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, True, "Customize the names of the Bloxlink Magic Roles.")
+    "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, True, "Customize the names of the Bloxlink Magic Roles."),
+    "antiPhish":             (None, "boolean", None, True, "Whether Bloxlink removes known phishing links.")
 }
 
 PROMPT = {
@@ -182,7 +183,8 @@ DEFAULTS = {
     "unbanRelatedAccounts": False,
     "disallowAlts": False,
     "disallowBanEvaders": False,
-    "trelloBindMode": "merge"
+    "trelloBindMode": "merge",
+    "antiPhish": True
 }
 
 ARROW = "\u2192"
