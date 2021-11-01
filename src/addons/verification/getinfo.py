@@ -1,5 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message, UserNotVerified
+from src.resources.exceptions import UserNotVerified # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 
@@ -69,4 +70,6 @@ class GetInfoCommand(Bloxlink.Module):
         except RobloxNotFound:
             raise Error("This Roblox account doesn't exist.")
         except RobloxAPIError:
-            raise Error("This Roblox account doesn't exist.")
+            raise Error("The Roblox API appears to be down so I was unable to retrieve the information. Please try again later.")
+        except UserNotVerified:
+            raise Error("This user is not linked to Bloxlink!")
