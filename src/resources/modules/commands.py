@@ -34,7 +34,6 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
-            return
             interaction_commands = []
             all_guild_commands = {}
 
