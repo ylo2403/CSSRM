@@ -36,14 +36,14 @@ class UpdateUserCommand(Bloxlink.Module):
                 "prompt": "Please select the user to update.",
                 "name": "user",
                 "type": "user",
-                "optional": True
+                "optional": False
             },
-            {
-                "prompt": "Please select the role of members to update.",
-                "name": "role",
-                "type": "role",
-                "optional": True
-            }
+            # {
+            #     "prompt": "Please select the role of members to update.",
+            #     "name": "role",
+            #     "type": "role",
+            #     "optional": True
+            # }
         ]
         self.category = "Administration"
         self.cooldown = 2
