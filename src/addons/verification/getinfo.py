@@ -1,6 +1,5 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message, UserNotVerified
-from src.resources.exceptions import UserNotVerified # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 
