@@ -676,7 +676,6 @@ class Commands(Bloxlink.Module):
     async def execute_interaction_command(self, typex, command_name, command_id, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None):
         command = self.commands.get(command_name)
 
-
         if typex == "extensions" and not isinstance(command, Application):
             raise CancelCommand
         elif typex == "commands" and not isinstance(command, Command):
