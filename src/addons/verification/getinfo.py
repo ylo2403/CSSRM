@@ -28,6 +28,7 @@ class GetInfoCommand(Bloxlink.Module):
         self.slash_enabled = True
         self.slash_defer = True
         self.slash_only = True
+        self.aliases = ["robloxsearch", "rs"] # FIXME
 
     async def auto_complete_roblox_user(self, interaction, command_args, focused_option):
         if not focused_option:
