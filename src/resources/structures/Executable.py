@@ -23,6 +23,7 @@ class Executable:
         self.examples = getattr(executable, "examples", [])
         self.hidden = getattr(executable, "hidden", self.category == "Developer")
         self.free_to_use = getattr(executable, "free_to_use", False)
+        self.addon = getattr(executable, "addon", None) # FIXME
         self.fn = executable.__main__
         self.cooldown = getattr(executable, "cooldown", 0)
         self.premium = self.permissions.premium or self.category == "Premium"
@@ -33,6 +34,7 @@ class Executable:
         self.slash_guilds = getattr(executable, "slash_guilds", [])
         self.dm_allowed = getattr(executable, "dm_allowed", False)
         self.bypass_channel_perms = getattr(executable, "bypass_channel_perms", False)
+        self.aliases = getattr(executable, "aliases", []) # FIXME
         self.premium_bypass_channel_perms = getattr(executable, "premium_bypass_channel_perms", False)
         self.original_executable = executable
 
@@ -178,8 +180,6 @@ class Command(Executable):
 
         self.name = command.__class__.__name__[:-7].lower()
         self.subcommands = {}
-        self.aliases = getattr(command, "aliases", [])
-        self.addon = getattr(command, "addon", None)
         self.slash_enabled = getattr(command, "slash_enabled", False)
         self.slash_only = getattr(command, "slash_only", False)
         self.auto_complete = getattr(command, "auto_complete", False)

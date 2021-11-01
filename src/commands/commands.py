@@ -1,6 +1,7 @@
-from resources.structures import Bloxlink, InteractionPaginator # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.structures import Bloxlink, InteractionPaginator, Application # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.exceptions import Error # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from resources.constants import ARROW, OWNER, HELP_DESCRIPTION # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.constants import OWNER # pylint: disable=import-error, no-name-in-module, no-name-in-module
+
 import discord
 
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs=["get_enabled_addons"])
@@ -111,12 +112,11 @@ class CommandsCommand(Bloxlink.Module):
             enabled_addons = guild and await get_enabled_addons(guild) or {}
 
             for command_name, command in commands.items():
-                if (command.hidden or (command.addon and str(command.addon) not in enabled_addons)) and author.id != OWNER:
+                if (command.hidden or isinstance(command, Application) or (command.addon and str(command.addon) not in enabled_addons)) and author.id != OWNER:
                     continue
 
                 commands_categories[command.category] = commands_categories.get(command.category) or []
                 commands_categories[command.category].append(f"**[{prefix}{command_name}](https://blox.link/commands/{command_name})**\n<:Reply:872019019677450240>{command.description}")
-
 
             paginator = InteractionPaginator(commands_categories, response, max_items=8, use_fields=False, default_category="Miscellaneous", description="Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.")
 
