@@ -25,21 +25,27 @@ class MessageEvent:
 			if message.guild:
 				# anti-phish check
 				anti_phish = await get_guild_value(message.guild, ["antiPhish", DEFAULTS.get("antiPhish")])
-				if anti_phish:
-					domain_match = self.domain_regex.search(message.content)
-					if domain_match:
-						json_data, response = await fetch("https://anti-fish.bitflow.dev/check", "GET",
-													headers={"User-Agent": "Bloxlink (https://blox.link)"},
-													json=True, raise_on_failure=False, body={
-														"message": message.content
-													})
-						if response.status == 200 and json_data.get("match") is True:
-							try:
-								await message.delete()
-							except (discord.errors.Forbidden, discord.errors.NotFound):
-								pass
 
-							return
+				try:
+					if anti_phish:
+						domain_match = self.domain_regex.search(message.content)
+
+						if domain_match:
+							json_data, response = await fetch("https://anti-fish.bitflow.dev/check", "GET",
+														headers={"User-Agent": "Bloxlink (https://blox.link)"},
+														json=True, raise_on_failure=False, body={
+															"message": message.content
+														})
+							if response.status == 200 and json_data.get("match") is True:
+								try:
+									await message.delete()
+								except (discord.errors.Forbidden, discord.errors.NotFound):
+									pass
+
+								return
+
+				except Exception as e:
+					print(e, flush=True)
 
 			try:
 				await parse_message(message)

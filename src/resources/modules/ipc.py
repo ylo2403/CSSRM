@@ -86,6 +86,16 @@ class IPC(Bloxlink.Module):
 
                     return
 
+                except RobloxAPIError as e:
+                    print(e, flush=True)
+
+                    try:
+                        await member.send("An unknown Roblox API error occured. Please try again later.")
+                    except Forbidden:
+                        pass
+
+                    return
+
                 try:
                     added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         member,

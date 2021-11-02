@@ -48,7 +48,7 @@ class TransferCommand(Bloxlink.Module):
 
         author_premium_data = author_data.get("premium", {})
 
-        transfer_cooldown = author_premium_data.get("transferCooldown") or 0
+        transfer_cooldown = author_premium_data.get("transferCooldown") if isinstance(author_premium_data, dict) and author_premium_data else 0
         on_cooldown = transfer_cooldown > time_now
 
         if on_cooldown:
