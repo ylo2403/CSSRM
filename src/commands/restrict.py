@@ -248,7 +248,7 @@ class RestrictCommand(Bloxlink.Module):
         if not remove_data_match:
             raise Message("You must select an option from the dropdown!", type="silly")
         else:
-            directory_name, remove_id = self._remove_data_regex.group(0), self._remove_data_regex.group(1)
+            directory_name, remove_id = remove_data_match.group(0), remove_data_match.group(1)
 
         if directory_name and remove_id:
             if restrictions.get(directory_name).get(remove_id):
