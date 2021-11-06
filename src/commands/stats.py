@@ -18,6 +18,7 @@ class StatsCommand(Bloxlink.Module):
         self.aliases = ["statistics", "nerdinfo"]
         self.dm_allowed = True
         self.slash_enabled = True
+        self.slash_defer = True
 
         if len(SHARD_RANGE) > 1:
             self.shard_range = f"{SHARD_RANGE[0]}-{SHARD_RANGE[len(SHARD_RANGE)-1]}"

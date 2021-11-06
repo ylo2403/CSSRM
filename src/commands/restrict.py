@@ -240,7 +240,7 @@ class RestrictCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         guild_data = CommandArgs.guild_data
-        restrictions = guild_data.get("restrictions", {})
+        restrictions = guild_data.get("restrictions") or {}
 
         remove_data = CommandArgs.parsed_args["restriction_data"]
         remove_data_match = self._remove_data_regex.search(remove_data)
@@ -251,7 +251,7 @@ class RestrictCommand(Bloxlink.Module):
             directory_name, remove_id = remove_data_match.group(0), remove_data_match.group(1)
 
         if directory_name and remove_id:
-            if restrictions.get(directory_name).get(remove_id):
+            if restrictions.get(directory_name, {}).get(remove_id):
                 restrictions[directory_name].pop(remove_id)
 
                 if not restrictions[directory_name]:
