@@ -1,74 +1,62 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message, UserNotVerified
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import UserNotVerified, Message, Error # pylint: disable=import-error, no-name-in-module
 
 get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
 
 
-@Bloxlink.command
-class GetInfoCommand(Bloxlink.Module):
-    """retrieve the Roblox information of a user"""
+class GetinfoCommand(Bloxlink.Module):
+    """retrieve the Roblox information for a member"""
 
     def __init__(self):
+        self.aliases = ["whois", "get-info"]
         self.arguments = [
             {
-                "prompt": "Please enter a Roblox username or Roblox ID.",
-                "name": "roblox_name",
-                "auto_complete": self.auto_complete_roblox_user,
-                "optional": True
-            },
-          {
-                "prompt": "Please specify a Discord user.",
-                "name": "discord_user",
+                "prompt": "Please specify the user.",
                 "type": "user",
+                "name": "user",
                 "optional": True
             }
         ]
-        self.cooldown = 5
-        self.dm_allowed = True
+
+        self.examples = [
+            "justin",
+            "@justin",
+            "84117866944663552",
+            "@justin --avatar",
+            "@justin --avatar --groups"
+        ]
+        self.cooldown      = 5
+        self.dm_allowed    = True
         self.slash_enabled = True
-        self.slash_defer = True
-        self.slash_only = True
-        self.aliases = ["robloxsearch", "rs", "whois"] # FIXME
+        self.slash_defer     = True
 
-    async def auto_complete_roblox_user(self, interaction, command_args, focused_option):
-        if not focused_option:
-            return []
-
-        try:
-            if focused_option.isdigit():
-                roblox_user, _ = await get_user(roblox_id=focused_option, cache=True)
-            else:
-                roblox_user, _ = await get_user(username=focused_option, cache=True)
-
-        except (RobloxNotFound, RobloxAPIError):
-            return []
-
-        return [[f"{roblox_user.username} ({roblox_user.id})", roblox_user.id]]
-
-
+    @Bloxlink.flags
     async def __main__(self, CommandArgs):
+        target   = CommandArgs.parsed_args["user"] or CommandArgs.author
+        flags    = CommandArgs.flags
+        guild    = CommandArgs.guild
         response = CommandArgs.response
-        guild = CommandArgs.guild
+        prefix   = CommandArgs.prefix
 
-        roblox_id    = CommandArgs.parsed_args["roblox_name"]
-        discord_user = CommandArgs.parsed_args["discord_user"]
+        if target.bot:
+            raise Message("Bots can't have Roblox accounts!", type="info")
 
-        if roblox_id and discord_user:
-            raise Message("Please only specify a Roblox username OR a Discord user!", type="silly")
+        valid_flags = ["username", "id", "avatar", "premium", "badges", "groups", "description", "age", "banned", "devforum"]
 
-        elif not (roblox_id or discord_user):
-            discord_user = CommandArgs.author
+        if not all(f in valid_flags for f in flags.keys()):
+            raise Error(f"Invalid flag! Valid flags are: `{', '.join(valid_flags)}`")
 
+        #async with response.loading():
         if guild:
             role_binds, group_ids, _ = await get_binds(guild_data=CommandArgs.guild_data, trello_board=CommandArgs.trello_board)
         else:
             role_binds, group_ids = {}, {}
 
         try:
-            _, _ = await get_user(author=discord_user, roblox_id=roblox_id, group_ids=(group_ids, role_binds), send_embed=True, guild=guild, response=response, everything=True)
-        except RobloxNotFound:
-            raise Error("This Roblox account doesn't exist.")
-        except RobloxAPIError:
-            raise Error("The Roblox API appears to be down so I was unable to retrieve the information. Please try again later.")
+            account, accounts = await get_user(*flags.keys(), author=target, guild=guild, group_ids=(group_ids, role_binds), send_embed=True, response=response, everything=not bool(flags), basic_details=not bool(flags))
         except UserNotVerified:
-            raise Error("This user is not linked to Bloxlink!")
+            raise Error(f"**{target}** is not linked to Bloxlink.")
+        else:
+            if not account:
+                raise Message(f"This Discord user has no primary account set! They may use `{prefix}switchuser` to set one.", type="info")
+
