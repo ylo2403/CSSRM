@@ -34,6 +34,7 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
+
             interaction_commands = []
             all_guild_commands = {}
 
@@ -156,7 +157,7 @@ class Commands(Bloxlink.Module):
             embed = discord.Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
                     f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
                     "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
-                    "For the technical: [Discord announcement](https://support-dev.discord.com/hc/en-us/articles/4404772028055)")
+                    "**Don't see Slash Commands?** Re-authorize the bot here (__you don't need to kick it__): https://blox.link/invite")
             embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
             embed.colour = ORANGE_COLOR
 
@@ -164,7 +165,7 @@ class Commands(Bloxlink.Module):
                                             guild_id=guild and guild.id, fail_if_not_exists=False)
 
             try:
-                await channel.send(embed=embed, reference=reference, delete_after=20)
+                await channel.send(embed=embed, reference=reference, delete_after=30)
             except (discord.errors.NotFound, discord.errors.Forbidden):
                 pass
 
