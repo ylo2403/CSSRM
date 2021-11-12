@@ -34,6 +34,7 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
+            return
 
             interaction_commands = []
             all_guild_commands = {}
@@ -671,7 +672,10 @@ class Commands(Bloxlink.Module):
                         }
                     }
 
-                    await interaction.channel._state.http.request(route, json=payload)
+                    try:
+                        await interaction.channel._state.http.request(route, json=payload)
+                    except discord.errors.NotFound:
+                        pass
 
     async def execute_interaction_command(self, typex, command_name, command_id, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None):
         command = self.commands.get(command_name)

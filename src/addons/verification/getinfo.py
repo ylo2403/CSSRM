@@ -69,12 +69,13 @@ class GetInfoCommand(Bloxlink.Module):
         else:
             role_binds, group_ids = {}, {}
 
-        roblox_id = self.autocomplete_regex.search(roblox_info)
+        if roblox_info:
+            roblox_id = self.autocomplete_regex.search(roblox_info)
 
-        if not roblox_id:
-            roblox_name = roblox_info
-        else:
-            roblox_id = roblox_id.group(1)
+            if not roblox_id:
+                roblox_name = roblox_info
+            else:
+                roblox_id = roblox_id.group(1)
 
         try:
             _, _ = await get_user(author=discord_user, roblox_id=roblox_id, username=roblox_name, group_ids=(group_ids, role_binds), send_embed=True, guild=guild, response=response, everything=True)
