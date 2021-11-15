@@ -1,17 +1,16 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
-from config import REACTIONS # pylint: disable=no-name-in-module
+from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
-from discord import Object, Role, User
+from discord import Object, User
 from discord.errors import NotFound
 import math
 
 guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
-parse_message = Bloxlink.get_module("commands", attrs=["parse_message"])
 get_features = Bloxlink.get_module("premium", attrs="get_features")
 
 
-class UpdateUserCommand(Bloxlink.Module):
+class UpdateCommand(Bloxlink.Module):
     """force update user(s) with roles and nicknames"""
 
     def __init__(self):
@@ -22,28 +21,17 @@ class UpdateUserCommand(Bloxlink.Module):
         self.aliases = ["update", "updateroles", "update-user"]
         self.arguments = [
             {
-                "prompt": "Please specify user(s) or role(s) to update. For example: `@user1 @user2 @user3` or `@role`",
-                "type": ["user", "role"],
-                "name": "users",
-                "multiple": True,
-                "optional": True,
-                "guild_members_only": True,
-                "create_missing_role": False
-            }
-        ]
-        self.slash_args = [
-            {
                 "prompt": "Please select the user to update.",
                 "name": "user",
                 "type": "user",
-                "optional": False
+                "optional": True
             },
-            # {
-            #     "prompt": "Please select the role of members to update.",
-            #     "name": "role",
-            #     "type": "role",
-            #     "optional": True
-            # }
+            {
+                "prompt": "Please select the role of members to update.",
+                "name": "role",
+                "type": "role",
+                "optional": True
+            }
         ]
         self.category = "Administration"
         self.cooldown = 2
@@ -54,13 +42,13 @@ class UpdateUserCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
+        command  = CommandArgs.command
 
         user_slash = CommandArgs.parsed_args.get("user")
         role_slash = CommandArgs.parsed_args.get("role")
         users_ = CommandArgs.parsed_args.get("users") or ([user_slash, role_slash] if user_slash or role_slash else None)
         prefix = CommandArgs.prefix
 
-        message = CommandArgs.message
         author = CommandArgs.author
         guild = CommandArgs.guild
 
@@ -70,39 +58,26 @@ class UpdateUserCommand(Bloxlink.Module):
 
         if not (users_ and CommandArgs.has_permission):
             if not users_:
-                if message:
-                    message.content = f"{prefix}getrole"
-                    return await parse_message(message)
-                else:
-                    raise Message(f"To update yourself, please run the `{prefix}getrole` command.", hidden=True, type="info")
+                await command.redirect(CommandArgs, "getrole")
+                raise CancelCommand
             else:
                 raise Message("You do not have permission to update users; you need the `Manage Roles` permission, or "
                               "a role called `Bloxlink Updater`.", type="info", hidden=True)
 
-        if CommandArgs.slash_command:
-            if not guild.chunked:
-                await guild.chunk()
+        if not guild.chunked:
+            await guild.chunk()
 
-            if users_[1]:
-                role = users_[1]
+        if users_[1]:
+            role = users_[1]
 
-                users += role.members
+            users += role.members
 
-                if not users:
-                    raise Error("This role has no members in it!", hidden=True)
+            if not users:
+                raise Error("This role has no members in it!", hidden=True)
 
-            if users_[0]:
-                user = users_[0]
-                users.append(user)
-        else:
-            if isinstance(users_[0], Role):
-                for role in users_:
-                    if not role.members:
-                        raise Error("This role has no members in it!", hidden=True)
-
-                    users += role.members
-            else:
-                users = users_
+        if users_[0]:
+            user = users_[0]
+            users.append(user)
 
         len_users = len(users)
 
