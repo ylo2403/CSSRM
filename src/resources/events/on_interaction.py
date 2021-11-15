@@ -31,12 +31,13 @@ async def on_interaction(interaction):
                 resolved = Message(state=interaction._state, channel=channel, data=list(data["resolved"]["messages"].values())[0])
 
         try:
-            await execute_interaction_command("extensions", command_name, command_id, guild=guild, channel=channel, user=user,
+            await execute_interaction_command("extensions", command_name, guild=guild, channel=channel, user=user,
                                               first_response=first_response, interaction=interaction, followups=followups,
                                               resolved=resolved
                                               )
         except CancelCommand:
             pass
+
     else: # slash command
         if not command_name:
             return
@@ -77,8 +78,7 @@ async def on_interaction(interaction):
         try:
             await execute_interaction_command("commands", command_name, guild=guild, channel=channel,
                                                 user=user, first_response=first_response,
-                                                interaction=interaction,
-                                                followups=followups, command_id=command_id,
+                                                interaction=interaction, followups=followups,
                                                 subcommand=subcommand, arguments=command_args)
         except CancelCommand:
             pass

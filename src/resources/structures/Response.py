@@ -121,7 +121,7 @@ class ResponseLoading:
 
 
 class Response(Bloxlink.Module):
-    def __init__(self, CommandArgs, author, channel, guild=None, message=None, slash_command=False):
+    def __init__(self, CommandArgs, author, channel, guild=None, message=None, slash_command=False, forwarded=False):
         self.message = message
         self.guild   = guild
         self.author  = author
@@ -136,6 +136,7 @@ class Response(Bloxlink.Module):
         self.slash_command = slash_command
         self.sent_first_slash_command = False
         self.first_slash_command = None
+        self.forwarded = forwarded
 
         if getattr(self.command, "addon", False):
             if hasattr(self.command.addon, "whitelabel"):
@@ -183,11 +184,11 @@ class Response(Bloxlink.Module):
             if view:
                 kwargs["view"] = view
 
-            if self.sent_first_slash_command:
-                msg = InteractionWebhook(await self.slash_command[1].send(**kwargs), True) # webhook
-            else:
+            if not (self.sent_first_slash_command or self.forwarded):
                 await self.slash_command[0].send_message(**kwargs) # no return
                 msg = InteractionWebhook(self.slash_command[2], False)
+            else:
+                msg = InteractionWebhook(await self.slash_command[1].send(**kwargs), True) # webhook
 
             if not self.first_slash_command:
                 self.first_slash_command = msg

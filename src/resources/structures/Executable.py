@@ -1,6 +1,6 @@
-from . import Permissions, Bloxlink
-from ..constants import OWNER, RELEASE
-from ..exceptions import PermissionError, Message
+from . import Permissions, Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..constants import OWNER, RELEASE # pylint: disable=import-error, no-name-in-module
+from ..exceptions import PermissionError, Message, CancelCommand # pylint: disable=import-error, no-name-in-module
 from inspect import iscoroutinefunction
 import discord
 import re
@@ -184,6 +184,16 @@ class Command(Executable):
         self.slash_only = getattr(command, "slash_only", False)
         self.auto_complete = getattr(command, "auto_complete", False)
 
+    async def redirect(self, CommandArgs, new_command_name, new_channel=None):
+        execute_interaction_command = Bloxlink.get_module("commands", attrs=["execute_interaction_command"])
+
+        try:
+            await execute_interaction_command("commands", new_command_name, guild=CommandArgs.guild, channel=new_channel or CommandArgs.channel,
+                                              user=CommandArgs.author, first_response=CommandArgs.first_response,
+                                              interaction=CommandArgs.interaction, followups=CommandArgs.followups,
+                                              subcommand=None, arguments=None, forwarded=True)
+        except CancelCommand:
+            pass
 
 class Application(Executable):
     def __init__(self, application):

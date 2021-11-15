@@ -34,8 +34,6 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
-            return
-
             interaction_commands = []
             all_guild_commands = {}
 
@@ -70,10 +68,6 @@ class Commands(Bloxlink.Module):
             else:
                 print(interaction_commands, flush=True)
                 print(response1.status, text1, flush=True)
-
-    async def redirect_command(self, command_name, ):
-        # TODO
-        pass
 
     async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
         channel_id      = str(channel.id) if channel else None
@@ -677,7 +671,7 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, command_id, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None):
+    async def execute_interaction_command(self, typex, command_name, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False):
         command = self.commands.get(command_name)
 
         if typex == "extensions" and not isinstance(command, Application):
@@ -734,7 +728,7 @@ class Commands(Bloxlink.Module):
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
 
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, user, channel, guild, None, slash_command=(first_response, followups, interaction))
+            response = Response(CommandArgs, user, channel, guild, None, slash_command=(first_response, followups, interaction), forwarded=forwarded)
 
             if Arguments.in_prompt(user):
                 await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)
@@ -744,7 +738,7 @@ class Commands(Bloxlink.Module):
 
             await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
 
-            if command.slash_defer:
+            if command.slash_defer and not forwarded:
                 try:
                     await response.slash_defer(command.slash_ephemeral)
                 except discord.NotFound:
@@ -752,4 +746,4 @@ class Commands(Bloxlink.Module):
 
             arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
-            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=command_id)
+            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=True)
