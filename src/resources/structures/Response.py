@@ -184,7 +184,7 @@ class Response(Bloxlink.Module):
             if view:
                 kwargs["view"] = view
 
-            if not (self.sent_first_slash_command or self.forwarded):
+            if not self.sent_first_slash_command:
                 await self.slash_command[0].send_message(**kwargs) # no return
                 msg = InteractionWebhook(self.slash_command[2], False)
             else:

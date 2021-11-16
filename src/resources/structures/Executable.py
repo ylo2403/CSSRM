@@ -184,14 +184,14 @@ class Command(Executable):
         self.slash_only = getattr(command, "slash_only", False)
         self.auto_complete = getattr(command, "auto_complete", False)
 
-    async def redirect(self, CommandArgs, new_command_name, new_channel=None):
+    async def redirect(self, CommandArgs, new_command_name, *, arguments=None, new_channel=None):
         execute_interaction_command = Bloxlink.get_module("commands", attrs=["execute_interaction_command"])
 
         try:
             await execute_interaction_command("commands", new_command_name, guild=CommandArgs.guild, channel=new_channel or CommandArgs.channel,
                                               user=CommandArgs.author, first_response=CommandArgs.first_response,
                                               interaction=CommandArgs.interaction, followups=CommandArgs.followups,
-                                              subcommand=None, arguments=None, forwarded=True)
+                                              subcommand=None, arguments=arguments, forwarded=True)
         except CancelCommand:
             pass
 
