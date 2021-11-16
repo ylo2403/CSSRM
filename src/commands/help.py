@@ -1,4 +1,5 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error
+from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-modules
+from resources.exceptions import CancelCommand
 from discord import File
 from io import BytesIO
 
@@ -11,6 +12,13 @@ class HelpCommand(Bloxlink.Module):
     def __init__(self):
         self.dm_allowed    = True
         self.slash_enabled = True
+        self.arguments = [
+            {
+                "prompt": "Please specify the command name",
+                "optional": True,
+                "name": "command_name"
+            }
+        ]
 
         self.images = None
         self.urls = [
@@ -33,6 +41,12 @@ class HelpCommand(Bloxlink.Module):
         prefix   = CommandArgs.prefix
         channel  = CommandArgs.channel
         guild    = CommandArgs.guild
+
+        command_name = CommandArgs.parsed_args["command_name"]
+
+        if command_name:
+            await response.command.redirect(CommandArgs, "commands", arguments={"command_name": command_name})
+            raise CancelCommand
 
         if CommandArgs.slash_command or (guild and not channel.permissions_for(guild.me).attach_files):
             urls = "\n".join(self.urls)
