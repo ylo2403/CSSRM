@@ -191,7 +191,7 @@ class Command(Executable):
             await execute_interaction_command("commands", new_command_name, guild=CommandArgs.guild, channel=new_channel or CommandArgs.channel,
                                               user=CommandArgs.author, first_response=CommandArgs.first_response,
                                               interaction=CommandArgs.interaction, followups=CommandArgs.followups,
-                                              subcommand=None, arguments=arguments, forwarded=True)
+                                              subcommand=None, arguments=arguments, command_args=CommandArgs, forwarded=True)
         except CancelCommand:
             pass
 

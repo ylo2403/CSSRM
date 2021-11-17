@@ -34,6 +34,8 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
+            return
+
             interaction_commands = []
             all_guild_commands = {}
 
@@ -671,7 +673,7 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False):
+    async def execute_interaction_command(self, typex, command_name, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
         command = self.commands.get(command_name)
 
         if typex == "extensions" and not isinstance(command, Application):
@@ -729,6 +731,10 @@ class Commands(Bloxlink.Module):
 
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
             response = Response(CommandArgs, user, channel, guild, None, slash_command=(first_response, followups, interaction), forwarded=forwarded)
+
+            if command_args:
+                response.sent_first_slash_command = getattr(command_args, "sent_first_slash_command", response.sent_first_slash_command)
+                response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)
 
             if Arguments.in_prompt(user):
                 await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)

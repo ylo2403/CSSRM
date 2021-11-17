@@ -4,6 +4,7 @@ from discord import File
 from io import BytesIO
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
+parse_message = Bloxlink.get_module("commands", attrs="parse_message")
 
 @Bloxlink.command
 class HelpCommand(Bloxlink.Module):
@@ -45,7 +46,13 @@ class HelpCommand(Bloxlink.Module):
         command_name = CommandArgs.parsed_args["command_name"]
 
         if command_name:
-            await response.command.redirect(CommandArgs, "commands", arguments={"command_name": command_name})
+            if CommandArgs.slash_command:
+                await response.command.redirect(CommandArgs, "commands", arguments={"command_name": command_name})
+            else:
+                message = CommandArgs.message
+                message.content = f"{CommandArgs.prefix}commands {command_name}"
+                await parse_message(message)
+
             raise CancelCommand
 
         if CommandArgs.slash_command or (guild and not channel.permissions_for(guild.me).attach_files):
