@@ -1,7 +1,7 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import DEFAULTS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand, RobloxDown # pylint: disable=import-error, no-name-in-module
-from discord.errors import Forbidden
+import discord
 
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
@@ -18,7 +18,15 @@ class MemberUpdateEvent(Bloxlink.Module):
         async def on_member_update(before, after):
             guild = before.guild
 
-            if self.redis and not before.bot and (before.pending and not after.pending) and "COMMUNITY" in guild.features:
+            if guild.verification_level == discord.VerificationLevel.highest:
+                try:
+                    await after.send(f"This server ({guild.name}) requires that you verify your phone number. Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
+                except discord.errors.Forbidden:
+                    pass
+
+                return
+
+            if not before.bot and (before.pending and not after.pending) and "COMMUNITY" in guild.features:
                 options = await get_guild_value(guild, ["autoRoles", DEFAULTS.get("autoRoles")], ["autoVerification", DEFAULTS.get("autoVerification")])
 
                 auto_roles = options.get("autoRoles")
@@ -32,5 +40,5 @@ class MemberUpdateEvent(Bloxlink.Module):
                     except RobloxDown:
                         try:
                             await after.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             pass

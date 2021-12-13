@@ -2,7 +2,7 @@ from os import getpid
 import json
 import uuid
 import asyncio
-from discord import Status, Game, Streaming
+from discord import Status, Game, Streaming, VerificationLevel
 from discord.errors import NotFound, Forbidden
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT, DEFAULTS # pylint: disable=import-error, no-name-in-module
@@ -75,6 +75,22 @@ class IPC(Bloxlink.Module):
                         member = await guild.fetch_member(discord_id)
                     except NotFound:
                         return
+
+                if member.pending:
+                    try:
+                        await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please go into the server and complete the screening before you're allowed in.")
+                    except Forbidden:
+                        pass
+
+                    return
+
+                if guild.verification_level == VerificationLevel.highest:
+                    try:
+                        await member.send(f"This server ({guild.name}) requires that you verify your phone number. Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
+                    except Forbidden:
+                        pass
+
+                    return
 
                 try:
                     roblox_user, _ = await get_user(roblox_id=roblox_id)

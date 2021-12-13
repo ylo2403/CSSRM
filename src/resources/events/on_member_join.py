@@ -1,7 +1,7 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import DEFAULTS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand, RobloxDown # pylint: disable=import-error, no-name-in-module
-from discord.errors import Forbidden
+import discord
 
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
@@ -28,13 +28,21 @@ class MemberJoinEvent(Bloxlink.Module):
 
             join_dm = verified_dm or unverified_dm
 
+            if guild.verification_level == discord.VerificationLevel.highest:
+                try:
+                    await member.send(f"This server ({guild.name}) requires that you verify your phone number. Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
+                except discord.errors.Forbidden:
+                    pass
+
+                return
+
             if member.pending and "COMMUNITY" in guild.features:
                 if join_dm:
                     try:
                         await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please "
                                             "complete the screening in order to access the rest of the server.\n"
                                             "Go here to learn more about Member Screening: https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ")
-                    except Forbidden:
+                    except discord.errors.Forbidden:
                         pass
             else:
                 if auto_verification or auto_roles:
@@ -45,5 +53,5 @@ class MemberJoinEvent(Bloxlink.Module):
                     except RobloxDown:
                         try:
                             await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
-                        except Forbidden:
+                        except discord.errors.Forbidden:
                             pass
