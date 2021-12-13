@@ -30,7 +30,7 @@ class MemberJoinEvent(Bloxlink.Module):
 
             if guild.verification_level == discord.VerificationLevel.highest:
                 try:
-                    await member.send(f"This server ({guild.name}) requires that you verify your phone number. Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
+                    await member.send(f"This server ({guild.name}) requires that you **verify your phone number.** Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
                 except discord.errors.Forbidden:
                     pass
 
