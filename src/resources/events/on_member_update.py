@@ -19,11 +19,6 @@ class MemberUpdateEvent(Bloxlink.Module):
             guild = before.guild
 
             if guild.verification_level == discord.VerificationLevel.highest:
-                try:
-                    await after.send(f"This server ({guild.name}) requires that you **verify your phone number.** Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
-                except discord.errors.Forbidden:
-                    pass
-
                 return
 
             if not before.bot and (before.pending and not after.pending) and "COMMUNITY" in guild.features:
