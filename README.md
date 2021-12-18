@@ -1,4 +1,7 @@
 # Bloxlink
+:bangbang: | Bloxlink is currently undergoing a [full rewrite](https://github.com/bloxlink/bloxlink-http); please do not contribute large features to this codebase as I do not intend on changing it too much.
+:---: | :---
+
 Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.
 
 ## Dependencies
