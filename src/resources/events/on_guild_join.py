@@ -11,7 +11,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
               "servers with premium from Patreon.com. If you are indeed subscribed " \
-              "on patreon, then please use the `{prefix}transfer` command on the normal " \
+              "on patreon, then please use the `{prefix}transfer to` command on the normal " \
               "Bloxlink bot and transfer your premium **to the server owner**. You may " \
               "revoke the premium transfer with `{prefix}transfer disable`. Also note that " \
               "it may take up to 10 minutes for the bot to register your premium from Patreon " \
@@ -20,7 +20,7 @@ NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
 
 WELCOME_MESSAGE = "\n\n".join([
                     "Thanks for adding Bloxlink! <:BloxlinkHappy:506622933339340830>",
-                    ":exclamation: Run `{prefix}help` to view a list of commands.",
+                    ":exclamation: Run `{prefix}commands` to view a list of commands.",
                     ":gear: Run `{prefix}setup` for an all-in-one command to set-up your server with Bloxlink.",
                     ":gear: If you're looking to change specific settings, use the `{prefix}settings` command.",
                     ":woman_office_worker: if you're looking to link Roblox groups, use the `{prefix}bind` command.",
