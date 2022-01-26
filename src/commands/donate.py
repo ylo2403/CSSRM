@@ -34,7 +34,7 @@ class DonateCommand(Bloxlink.Module):
                             f"on __every server you own__ and receive these perks:\n{PREMIUM_PERKS.format(prefix=prefix)}" \
 
         embed.add_field(name="Frequently Asked Questions", value="1.) Can I transfer premium to someone else?\n"
-                                                                f"> Yes, use the `{prefix}transfer` command. "
+                                                                f"> Yes, use the `{prefix}transfer to` command. "
                                                                  "You'll be able to disable the transfer whenever you want "
                                                                 f"with `{prefix}transfer disable`.\n"
                                                                  "2.) How do I receive my perks after donating?\n"
