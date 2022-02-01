@@ -192,7 +192,7 @@ ARROW = "\u2192"
 MAGIC_ROLES = {
     "Bloxlink Admin": "These users can use ANY Bloxlink command.",
     "Bloxlink Bypass": "Bloxlink will NOT update these users.",
-    "Bloxlink Updater": "These users can use !updateuser on others."
+    "Bloxlink Updater": "These users can use /update on others."
 }
 
 OWNER = 84117866944663552
