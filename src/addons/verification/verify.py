@@ -91,11 +91,22 @@ class VerifyCommand(Bloxlink.Module):
             raise Error(e.message)
 
         else:
-            welcome_message, embed, view = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
+            welcome_message, card, embed = await format_update_embed(
+                roblox_user,
+                author,
+                guild=guild,
+                added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
+                guild_data=guild_data
+            )
+
+            message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, mention_author=True)
+
+            if card:
+                card.response = response
+                card.message = message
+                card.view.message = message
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
-
-            await response.send(content=welcome_message, embed=embed, view=view, mention_author=True)
 
 
     @Bloxlink.subcommand()
@@ -201,7 +212,7 @@ class VerifyCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         try:
-            primary_account, accounts = await get_user("username", author=author, everything=False, basic_details=True)
+            primary_account, accounts, _ = await get_user("username", user=author, everything=False, basic_details=True)
         except UserNotVerified:
             raise Message("You have no accounts linked to Bloxlink!", type="info")
         else:

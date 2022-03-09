@@ -11,7 +11,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 
 NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
               "servers with premium from Patreon.com. If you are indeed subscribed " \
-              "on patreon, then please use the `{prefix}transfer to` command on the normal " \
+              "on patreon, then please use the `/transfer to` command on the normal " \
               "Bloxlink bot and transfer your premium **to the server owner**. You may " \
               "revoke the premium transfer with `{prefix}transfer disable`. Also note that " \
               "it may take up to 10 minutes for the bot to register your premium from Patreon " \

@@ -11,11 +11,7 @@ execute_interaction_command, send_autocomplete_options = Bloxlink.get_module("co
 async def on_interaction(interaction):
     data = interaction.data
     command_name = interaction.data.get("name")
-    command_id   = interaction.data.get("id")
     command_args = {}
-
-    first_response = interaction.response
-    followups      = interaction.followup
 
     guild   = interaction.guild
     channel = interaction.channel
@@ -32,9 +28,7 @@ async def on_interaction(interaction):
 
         try:
             await execute_interaction_command("extensions", command_name, guild=guild, channel=channel, user=user,
-                                              first_response=first_response, interaction=interaction, followups=followups,
-                                              resolved=resolved
-                                              )
+                                              interaction=interaction, resolved=resolved)
         except CancelCommand:
             pass
 
@@ -67,9 +61,6 @@ async def on_interaction(interaction):
                     else:
                         subcommand = arg["name"]
 
-        if not guild:
-            return
-
         if focused_option:
             await send_autocomplete_options(interaction, command_name, subcommand, command_args, focused_option)
             return
@@ -77,8 +68,7 @@ async def on_interaction(interaction):
         # execute slash command
         try:
             await execute_interaction_command("commands", command_name, guild=guild, channel=channel,
-                                                user=user, first_response=first_response,
-                                                interaction=interaction, followups=followups,
-                                                subcommand=subcommand, arguments=command_args)
+                                              user=user, interaction=interaction, subcommand=subcommand,
+                                              arguments=command_args)
         except CancelCommand:
             pass

@@ -170,12 +170,6 @@ class SettingsCommand(Bloxlink.Module):
                 return await parse_message(message)
             else:
                 await response.send(f"You can change this with `{prefix}shoutproxy`!")
-        elif choice == "whiteLabel":
-            if message:
-                message.content = f"{prefix}whitelabel"
-                return await parse_message(message)
-            else:
-                await response.send(f"You can change this with `{prefix}whitelabel`!")
         elif choice == "magicRoles":
             if message:
                 message.content = f"{prefix}magicroles"

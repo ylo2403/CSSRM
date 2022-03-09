@@ -1,12 +1,12 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.exceptions import Error, UserNotVerified, Message # pylint: disable=import-error, no-name-in-module
+from resources.structures import Bloxlink, Card # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message, UserNotVerified # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
-get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
+get_user, get_accounts = Bloxlink.get_module("robloxnew.users", attrs=["get_user", "get_accounts"], name_override="users")
 
 
 @Bloxlink.extension
 class GetInfoExtension(Bloxlink.Module):
-    """update a user's roles and nickname"""
+    """retrieve the Roblox information of a user"""
 
     def __init__(self):
         self.type = 2
@@ -16,25 +16,32 @@ class GetInfoExtension(Bloxlink.Module):
         self.premium_bypass_channel_perms = True
 
     async def __main__(self, ExtensionArgs):
-        user  = ExtensionArgs.resolved
-        guild = ExtensionArgs.guild
+        user   = ExtensionArgs.resolved
+        guild  = ExtensionArgs.guild
+        author = ExtensionArgs.author
 
-        guild_data = ExtensionArgs.guild_data
-        response   = ExtensionArgs.response
-        prefix     = ExtensionArgs.prefix
+        response = ExtensionArgs.response
 
         if user.bot:
             raise Error("Bots cannot have Roblox accounts!", hidden=True)
 
-        if guild:
-            role_binds, group_ids, _ = await get_binds(guild_data=guild_data)
-        else:
-            role_binds, group_ids = {}, {}
-
         try:
-            account, accounts = await get_user(author=user, guild=guild, group_ids=(group_ids, role_binds), send_embed=True, send_ephemeral=True, response=response, everything=True)
+            roblox_user, _  = await get_user(user=user, guild=guild, cache=True, includes=True)
+        except RobloxNotFound:
+            raise Error("This Roblox account doesn't exist.")
+        except RobloxAPIError:
+            raise Error("The Roblox API appears to be down so I was unable to retrieve the information. Please try again later.")
         except UserNotVerified:
-            raise Error(f"**{user}** is not linked to Bloxlink.", hidden=True)
+            raise Error("This user is not linked to Bloxlink!")
         else:
-            if not account:
-                raise Message(f"This Discord user has no primary account set! They may use `{prefix}switchuser` to set one.", type="info", hidden=True)
+            author_accounts = await get_accounts(author)
+
+            card = Card(user, author, author_accounts, roblox_user, "getinfo", guild, from_interaction=True)
+            await card()
+
+            card.response = response
+
+            message = await response.send(files=[card.front_card_file], view=card.view)
+
+            card.message = message
+            card.view.message = message

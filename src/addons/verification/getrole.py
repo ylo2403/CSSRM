@@ -1,4 +1,4 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.structures import Bloxlink, Card # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.exceptions import Message, UserNotVerified, Error, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
 import discord
@@ -6,6 +6,7 @@ import discord
 format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["format_update_embed", "guild_obligations"])
 get_options = Bloxlink.get_module("trello", attrs="get_options")
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
+get_accounts = Bloxlink.get_module("robloxnew.users", attrs=["get_accounts"], name_override="users")
 
 
 
@@ -26,7 +27,6 @@ class GetRoleCommand(Bloxlink.Module):
         guild = CommandArgs.guild
         author = CommandArgs.author
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         trello_options = {}
 
@@ -72,8 +72,19 @@ class GetRoleCommand(Bloxlink.Module):
             raise Error(e.message)
 
         else:
-            welcome_message, embed, view = await format_update_embed(roblox_user, author, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
+            welcome_message, card, embed = await format_update_embed(
+                roblox_user,
+                author,
+                guild=guild,
+                added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
+                guild_data=guild_data
+            )
+
+            message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, mention_author=True)
+
+            if card:
+                card.response = response
+                card.message = message
+                card.view.message = message
 
             await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
-
-            await response.send(content=welcome_message, embed=embed, view=view, mention_author=True)

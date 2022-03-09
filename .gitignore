@@ -138,3 +138,16 @@ slash_creator.py
 src/commands/feeds.py
 src/commands/banevaders.py
 src/commands/cm_tools.py
+src/resources/modules/luau.py
+src/commands/test.py
+src/addons/verification/demote.py
+src/addons/verification/exile.py
+src/addons/verification/promote.py
+src/commands/betabind.py
+src/commands/custombind.py
+src/commands/game.py
+src/commands/groupstats.py
+src/commands/iteminfo.py
+src/commands/potion.py
+src/commands/redeem.py
+src/commands/registergame.py

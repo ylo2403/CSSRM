@@ -95,7 +95,7 @@ class ResponseLoading:
             pass
 
     def __enter__(self):
-        if not self.response.slash_command:
+        if not self.response.interaction:
             loop.create_task(self._send_loading())
         return self
 
@@ -106,11 +106,11 @@ class ResponseLoading:
             loop.create_task(self._remove_loading(error=True))
 
     async def __aenter__(self):
-        if not self.response.slash_command:
+        if not self.response.interaction:
             await self._send_loading()
 
     async def __aexit__(self, tb_type, tb_value, traceback):
-        if not self.response.slash_command:
+        if not self.response.interaction:
             if tb_type is None:
                 await self._remove_loading(success=True)
             elif tb_type == Message:
@@ -121,7 +121,7 @@ class ResponseLoading:
 
 
 class Response(Bloxlink.Module):
-    def __init__(self, CommandArgs, author, channel, guild=None, message=None, slash_command=False, forwarded=False):
+    def __init__(self, CommandArgs, author, channel, guild=None, message=None, interaction=None, forwarded=False):
         self.message = message
         self.guild   = guild
         self.author  = author
@@ -133,28 +133,9 @@ class Response(Bloxlink.Module):
         self.delete_message_queue = []
         self.bot_responses        = []
 
-        self.slash_command = slash_command
-        self.sent_first_slash_command = False
+        self.interaction = interaction
         self.first_slash_command = None
         self.forwarded = forwarded
-
-        if getattr(self.command, "addon", False):
-            if hasattr(self.command.addon, "whitelabel"):
-                self.webhook_only = getattr(self.command.addon, "whitelabel")
-            else:
-                self.webhook_only = bool(CommandArgs.guild_data.get("customBot", {}))
-        else:
-            self.webhook_only = bool(CommandArgs.guild_data.get("customBot", {}))
-
-        if self.webhook_only:
-            if isinstance(self.webhook_only, bool):
-                self.bot_name   = self.args.guild_data["customBot"].get("name", "Bloxlink")
-                self.bot_avatar = self.args.guild_data["customBot"].get("avatar", "")
-            else:
-                self.bot_name   = self.webhook_only[0]
-                self.bot_avatar = self.webhook_only[1]
-        else:
-            self.bot_name = self.bot_avatar = None
 
     def loading(self, text="Please wait until the operation completes."):
         return ResponseLoading(self, text)
@@ -164,10 +145,11 @@ class Response(Bloxlink.Module):
             if message:
                 self.delete_message_queue.append(message.id)
 
+    def renew(self, interaction):
+        self.interaction = interaction
+
     async def slash_defer(self, ephemeral=False):
-        await self.slash_command[0].defer(ephemeral=ephemeral)
-        self.sent_first_slash_command = True
-        self.args.sent_first_slash_command = True
+        await self.interaction.response.defer(ephemeral=ephemeral)
         self.args.first_slash_command = None
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
@@ -176,39 +158,35 @@ class Response(Bloxlink.Module):
         if fail_on_dm and isinstance(dest, (DMChannel, User, Member)):
             return None
 
-        if isinstance(dest, Webhook):
-            msg = await dest.send(content, username=self.bot_name, avatar_url=self.bot_avatar, embed=embed, files=files, wait=True, allowed_mentions=allowed_mentions, view=view or ui.View())
-
-        elif self.slash_command and send_as_slash_command:
+        if self.interaction and send_as_slash_command:
             kwargs = {"content": content, "ephemeral": hidden}
             if embed:
                 kwargs["embeds"] = [embed]
             if view:
                 kwargs["view"] = view
 
-            if not self.sent_first_slash_command:
-                await self.slash_command[0].send_message(**kwargs) # no return
-                msg = InteractionWebhook(self.slash_command[2], False)
+            if files:
+                kwargs["files"] = files
+
+            if not self.interaction.response.is_done():
+                await self.interaction.response.send_message(**kwargs)
+                msg = InteractionWebhook(self.interaction, False)
             else:
-                msg = InteractionWebhook(await self.slash_command[1].send(**kwargs), True) # webhook
+                msg = InteractionWebhook(await self.interaction.followup.send(**kwargs), True) # webhook
 
             if not self.first_slash_command:
                 self.first_slash_command = msg
                 self.args.first_slash_command = msg
-            if not self.sent_first_slash_command:
-                self.sent_first_slash_command = True
-                self.args.sent_first_slash_command = True
 
         else:
             msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)
-
 
         self.bot_responses.append(msg.id)
 
         return msg
 
     async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False, reply=True, reference=None, mention_author=False, fail_on_dm=False, view=None):
-        if (dm and not IS_DOCKER) or (self.slash_command and hidden):
+        if (dm and not IS_DOCKER) or (self.interaction and hidden):
             dm = False
 
         if dm or isinstance(self.channel, DMChannel):
@@ -217,7 +195,7 @@ class Response(Bloxlink.Module):
             reference = None
             mention_author = False
 
-        if reply and not self.slash_command:
+        if reply and not self.interaction:
             if reference:
                 reference = MessageReference(message_id=reference.id, channel_id=reference.channel.id,
                                              guild_id=reference.guild and reference.guild.id, fail_if_not_exists=False)
@@ -230,48 +208,7 @@ class Response(Bloxlink.Module):
         content = str(content) if content else None
 
         channel = original_channel = channel_override or (dm and self.author) or self.channel
-        webhook = None
         msg = None
-
-        if not dm and not self.slash_command and self.webhook_only and self.guild and hasattr(channel, "webhooks"):
-            my_permissions = self.guild.me.guild_permissions
-
-            if my_permissions.manage_webhooks:
-                profile, _ = await get_features(Object(id=self.guild.owner_id), guild=self.guild)
-
-                if profile.features.get("premium"):
-                    webhook = await cache_get(f"webhooks:{channel.id}")
-
-                    if not webhook:
-                        try:
-                            for webhook in await channel.webhooks():
-                                if webhook.token:
-                                    await cache_set(f"webhooks:{channel.id}", webhook)
-                                    break
-                            else:
-                                webhook = await channel.create_webhook(name="Bloxlink Webhooks")
-                                await cache_set(f"webhooks:{channel.id}", webhook)
-
-                        except (Forbidden, NotFound):
-                            self.webhook_only = False
-
-                            try:
-                                msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                                         "create the webhook! Please give me the `Manage Webhooks` permission.")
-                            except (Forbidden, NotFound):
-                                pass
-                            else:
-                                self.bot_responses.append(msg.id)
-            else:
-                self.webhook_only = False
-
-                try:
-                    msg = await channel.send("Customized Bot is enabled, but I couldn't "
-                                             "create the webhook! Please give me the `Manage Webhooks` permission.")
-                except (Forbidden, NotFound):
-                    pass
-                else:
-                    self.bot_responses.append(msg.id)
 
         paginate = False
         pages = None
@@ -287,12 +224,13 @@ class Response(Bloxlink.Module):
 
         if not paginate:
             try:
-                msg = await self.send_to(webhook or channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reference=reference, mention_author=mention_author, view=view)
+                msg = await self.send_to(channel, content, files=files, embed=embed, allowed_mentions=allowed_mentions, send_as_slash_command=send_as_slash_command, hidden=hidden, reference=reference, mention_author=mention_author, view=view)
 
                 if dm and not (no_dm_post or isinstance(self.channel, (DMChannel, User, Member))):
                     await self.send_to(self.channel, "**Please check your DMs!**", reference=reference, mention_author=mention_author)
 
-            except (Forbidden, NotFound):
+            except (Forbidden, NotFound) as e:
+                print(e)
                 channel = channel_override or (not strict_post and (dm and self.channel or self.author) or channel) # opposite channel
                 reply = False
                 reference = None
@@ -303,9 +241,6 @@ class Response(Bloxlink.Module):
                               f"Please make sure I have these permissions: `Read Message History`, `Send Messages`, and `Embed Links`.\n{content or ''}"[:2000]
                 else:
                     content = f"{original_channel.mention}, I was unable to DM you! Here's the message here instead:\n{content or ''}"[:2000]
-
-                if webhook:
-                    await cache_pop(f"webhooks:{channel.id}")
 
                 if strict_post:
                     if not ignore_errors:
@@ -338,17 +273,11 @@ class Response(Bloxlink.Module):
 
             except HTTPException:
                 if not ignore_http_check:
-                    if self.webhook_only:
-                        self.webhook_only = False
-
-                        return await self.send(content=content, embed=embed, dm=dm, hidden=hidden, no_dm_post=no_dm_post, strict_post=strict_post, files=files, send_as_slash_command=send_as_slash_command, allowed_mentions=allowed_mentions, ignore_errors=ignore_errors, view=view)
+                    if embed:
+                        paginate = True
 
                     else:
-                        if embed:
-                            paginate = True
-
-                        else:
-                            raise HTTPException
+                        raise HTTPException
         if paginate:
             paginator = Paginate(self.author, channel, embed, self, field_limit=paginate_field_limit, original_channel=self.channel, hidden=hidden, pages=pages, dm=dm)
 
@@ -358,7 +287,7 @@ class Response(Bloxlink.Module):
         return msg
 
     async def error(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
-        emoji = self.webhook_only and ":cry:" or "<:BloxlinkDead:823633973967716363>"
+        emoji = "<:BloxlinkDead:823633973967716363>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -366,7 +295,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", **kwargs)
 
     async def confused(self, text, *, embed_color=0xE74C3C, embed=None, dm=False, **kwargs):
-        emoji = self.webhook_only and ":cry:" or "<:BloxlinkConfused:823633690910916619>"
+        emoji = "<:BloxlinkConfused:823633690910916619>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -374,7 +303,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", **kwargs)
 
     async def success(self, success, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":thumbsup:" or "<:BloxlinkHappy:823633735446167552>"
+        emoji = "<:BloxlinkHappy:823633735446167552>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -382,7 +311,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {success}", embed=embed, dm=dm, **kwargs)
 
     async def silly(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":sweat_smile:" or "<:BloxlinkSilly:823634273604468787>"
+        emoji = "<:BloxlinkSilly:823634273604468787>"
 
         if embed and not dm:
             embed.color = embed_color
@@ -390,7 +319,7 @@ class Response(Bloxlink.Module):
         return await self.send(f"{emoji} {text}", embed=embed, dm=dm, **kwargs)
 
     async def info(self, text, embed=None, embed_color=0x36393E, dm=False, **kwargs):
-        emoji = self.webhook_only and ":mag_right:" or "<:BloxlinkDetective:823633815171629098>"
+        emoji = "<:BloxlinkDetective:823633815171629098>"
 
         if embed and not dm:
             embed.color = embed_color

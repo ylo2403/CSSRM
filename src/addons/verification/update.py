@@ -161,6 +161,8 @@ class UpdateCommand(Bloxlink.Module):
                         except Blacklisted as b:
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['ERROR']} {user.mention} has an active restriction.")
+                        except CancelCommand:
+                            pass
                         else:
                             if len_users <= 10:
                                 await response.send(f"{REACTIONS['DONE']} **Updated** {user.mention}")
@@ -185,9 +187,20 @@ class UpdateCommand(Bloxlink.Module):
                         event             = True,
                         exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError", "RobloxDown", "RobloxAPIError"))
 
-                    _, embed, view = await format_update_embed(roblox_user, user, added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None, prefix=prefix, guild_data=guild_data)
+                    _, card, embed = await format_update_embed(
+                        roblox_user, user,
+                        added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
+                        guild_data=guild_data,
+                        author = author,
+                        guild = guild,
+                    )
 
-                    await response.send(embed=embed, view=view)
+                    message = await response.send(embed=embed, files=[card.front_card_file] if card else None, view=card.view if card else None)
+
+                    if card:
+                        card.response = response
+                        card.message = message
+                        card.view.message = message
 
                 except BloxlinkBypass:
                     raise Message("Since this user has the Bloxlink Bypass role, I was unable to update their roles/nickname.", type="info")

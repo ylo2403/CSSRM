@@ -56,9 +56,9 @@ class RestrictCommand(Bloxlink.Module):
 
         try:
             if focused_option.isdigit():
-                roblox_user, _ = await get_user(roblox_id=focused_option, cache=True)
+                roblox_user = (await get_user(roblox_id=focused_option, cache=True))[0]
             else:
-                roblox_user, _ = await get_user(username=focused_option, cache=True)
+                roblox_user = (await get_user(username=focused_option, cache=True))[0]
 
         except (RobloxNotFound, RobloxAPIError):
             return []
@@ -78,6 +78,7 @@ class RestrictCommand(Bloxlink.Module):
             if restrictions.get(restriction_name):
                 for restriction_id, restriction_data in restrictions[restriction_name].items():
                     restriction_data["title"] = title_name[:-1] # remove ending "s"
+                    restriction_data["name"] = restriction_data["name"] or "Group Name Error"
                     restriction_data["internal_name"] = restriction_name
                     restriction_data["id"] = restriction_id
 
@@ -178,7 +179,7 @@ class RestrictCommand(Bloxlink.Module):
                         idx = value.id
                         got_entry = True
                     elif command_arg == "roblox_username":
-                        roblox_user, _ = await get_user(roblox_id=value)
+                        roblox_user = (await get_user(roblox_id=value))[0]
                         display_name = roblox_user.username
                         idx = roblox_user.id
                         got_entry = True

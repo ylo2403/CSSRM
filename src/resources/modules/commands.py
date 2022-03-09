@@ -45,8 +45,11 @@ class Commands(Bloxlink.Module):
                 else:
                     command_json = self.app_command_to_json(command)
 
-                if command.slash_enabled and not command.slash_guilds:
-                    interaction_commands.append(command_json)
+                if command.slash_enabled:
+                    if command.slash_guilds and RELEASE == "LOCAL":
+                        interaction_commands.append(command_json)
+                    elif not command.slash_guilds:
+                        interaction_commands.append(command_json)
 
                 if command.slash_guilds:
                     for guild_id in command.slash_guilds:
@@ -213,7 +216,7 @@ class Commands(Bloxlink.Module):
                 await self.cache.set(redis_cooldown_key, True, expire_time=command.cooldown)
 
         if not (command.dm_allowed or guild):
-            await response.send("This command does not support DM; please run it in a server.", hidden=True)
+            await response.send("This command does not support DM. Please run it in a server.", hidden=True)
             raise CancelCommand
 
         try:
@@ -469,7 +472,7 @@ class Commands(Bloxlink.Module):
                             CommandArgs.flags = flags
 
                         locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-                        response = Response(CommandArgs, author, channel, guild, message, slash_command=False)
+                        response = Response(CommandArgs, author, channel, guild, message, interaction=None)
 
                         CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
 
@@ -673,7 +676,7 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, guild, channel, user, first_response, followups, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
+    async def execute_interaction_command(self, typex, command_name, guild, channel, user, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
         command = self.commands.get(command_name)
 
         if typex == "extensions" and not isinstance(command, Application):
@@ -720,8 +723,6 @@ class Commands(Bloxlink.Module):
                 guild = guild,
                 channel = channel,
                 author = user,
-                first_response = first_response,
-                followups = followups,
                 interaction = interaction,
                 slash_command = True,
                 resolved = resolved
@@ -730,10 +731,9 @@ class Commands(Bloxlink.Module):
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
 
             locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, user, channel, guild, None, slash_command=(first_response, followups, interaction), forwarded=forwarded)
+            response = Response(CommandArgs, user, channel, guild, None, interaction=interaction, forwarded=forwarded)
 
             if command_args:
-                response.sent_first_slash_command = getattr(command_args, "sent_first_slash_command", response.sent_first_slash_command)
                 response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)
 
             if Arguments.in_prompt(user):

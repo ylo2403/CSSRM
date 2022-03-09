@@ -6,10 +6,10 @@ from discord.utils import find
 
 
 get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
-get_user, verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds", "get_binds"])
+verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds, get_binds = Bloxlink.get_module("roblox", attrs=["verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds", "get_binds"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
-
+get_user = Bloxlink.get_module("robloxnew.users", attrs=["get_user"], name_override="users")
 
 class SwitchUserCommand(Bloxlink.Module):
     """change your linked Roblox account in a server"""
@@ -48,7 +48,7 @@ class SwitchUserCommand(Bloxlink.Module):
             author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
 
             try:
-                primary_account, accounts = await get_user("username", author=author, everything=False, basic_details=True)
+                primary_account, accounts = await get_user(user=author)
 
                 if accounts:
                     parsed_accounts = await parse_accounts(accounts)
@@ -114,7 +114,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     try:
                         member = await guild.fetch_member(author.id)
                     except (Forbidden, NotFound):
-                        await verify_member(author, roblox_id, guild=guild, author_data=author_data, allow_reverify=allow_reverify, primary_account=parsed_args["primary"] == "yes")
+                        await verify_member(author, roblox_id, guild=guild, user_data=author_data, allow_reverify=allow_reverify, primary_account=parsed_args["primary"] == "yes")
                         raise Message("You're not a member of the provided server, so I was only able to update your account internally.", type="success")
 
                     try:

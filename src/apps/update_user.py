@@ -3,7 +3,7 @@ from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass
 from config import REACTIONS # pylint: disable=no-name-in-module, import-error
 import discord
 
-guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
+guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
 
 
 @Bloxlink.extension

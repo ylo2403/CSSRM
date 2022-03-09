@@ -20,25 +20,12 @@ class PingCommand(Bloxlink.Module):
 
         t_1 = time.perf_counter()
 
-        if response.webhook_only:
-            m = await response.send(locale("commands.ping.pinging"))
-        else:
-            try:
-                await channel.trigger_typing()
-            except (NotFound, Forbidden):
-                pass
+        try:
+            await channel.trigger_typing()
+        except (NotFound, Forbidden):
+            pass
 
         t_2 = time.perf_counter()
         time_delta = round((t_2-t_1)*1000)
 
-        if response.webhook_only:
-            try:
-                await m.delete()
-            except NotFound:
-                pass
-            except Forbidden:
-                raise PermissionError(locale("permissions.oneError", permission="Manage Messages"))
-            else:
-                await response.send(locale("commands.ping.pong", time_delta=time_delta))
-        else:
-            await response.send(locale("commands.ping.pong", time_delta=time_delta), hidden=True)
+        await response.send(locale("commands.ping.pong", time_delta=time_delta), hidden=True)

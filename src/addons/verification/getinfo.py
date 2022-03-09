@@ -1,8 +1,8 @@
-from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.structures import Bloxlink, Card # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from resources.exceptions import Error, RobloxNotFound, RobloxAPIError, Message, UserNotVerified # pylint: disable=import-error, no-name-in-module, no-name-in-module
 import re
 
-get_user, get_binds = Bloxlink.get_module("roblox", attrs=["get_user", "get_binds"])
+get_user, get_accounts = Bloxlink.get_module("robloxnew.users", attrs=["get_user", "get_accounts"], name_override="users")
 
 
 @Bloxlink.command
@@ -39,19 +39,20 @@ class GetInfoCommand(Bloxlink.Module):
 
         try:
             if focused_option.isdigit():
-                roblox_user, _ = await get_user(roblox_id=focused_option, cache=False)
+                roblox_user = (await get_user(roblox_id=focused_option))[0]
             else:
-                roblox_user, _ = await get_user("username", "id", username=focused_option, everything=False, basic_details=False, cache=False)
+                roblox_user = (await get_user(roblox_name=focused_option))[0]
 
         except (RobloxNotFound, RobloxAPIError):
             return []
 
-        return [[f"{roblox_user.username} ({roblox_user.id})", f"roblox-id-{roblox_user.id}"]]
+        return [[f"{roblox_user.name} ({roblox_user.id})", f"roblox-id-{roblox_user.id}"]]
 
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
         guild = CommandArgs.guild
+        author = CommandArgs.author
 
         roblox_info  = CommandArgs.parsed_args["roblox_name"]
         discord_user = CommandArgs.parsed_args["discord_user"]
@@ -64,11 +65,6 @@ class GetInfoCommand(Bloxlink.Module):
         elif not (roblox_info or discord_user):
             discord_user = CommandArgs.author
 
-        if guild:
-            role_binds, group_ids, _ = await get_binds(guild_data=CommandArgs.guild_data, trello_board=CommandArgs.trello_board)
-        else:
-            role_binds, group_ids = {}, {}
-
         if roblox_info:
             roblox_id = self.autocomplete_regex.search(roblox_info)
 
@@ -78,10 +74,22 @@ class GetInfoCommand(Bloxlink.Module):
                 roblox_id = roblox_id.group(1)
 
         try:
-            _, _ = await get_user(author=discord_user, roblox_id=roblox_id, username=roblox_name, group_ids=(group_ids, role_binds), send_embed=True, guild=guild, response=response, everything=True)
+            roblox_user, _  = await get_user(user=discord_user, roblox_id=roblox_id, roblox_name=roblox_name, guild=guild, cache=True, includes=True)
         except RobloxNotFound:
             raise Error("This Roblox account doesn't exist.")
         except RobloxAPIError:
             raise Error("The Roblox API appears to be down so I was unable to retrieve the information. Please try again later.")
         except UserNotVerified:
             raise Error("This user is not linked to Bloxlink!")
+        else:
+            author_accounts = await get_accounts(author)
+
+            card = Card(discord_user or author, author, author_accounts, roblox_user, "getinfo", guild, from_interaction=True)
+            await card()
+
+            card.response = response
+
+            message = await response.send(files=[card.front_card_file], view=card.view)
+
+            card.message = message
+            card.view.message = message

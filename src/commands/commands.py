@@ -118,6 +118,8 @@ class CommandsCommand(Bloxlink.Module):
                 commands_categories[command.category] = commands_categories.get(command.category) or []
                 commands_categories[command.category].append(f"**[{prefix}{command_name}](https://blox.link/commands/{command_name})**\n<:Reply:872019019677450240>{command.description}")
 
-            paginator = InteractionPaginator(commands_categories, response, max_items=8, use_fields=False, default_category="Miscellaneous", description="Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.")
+            paginator = InteractionPaginator(commands_categories, response, max_items=8, use_fields=False, default_category="Miscellaneous",
+                                            description="Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.",
+                                            footer="/help <command name> to view more information | ")
 
             await paginator()

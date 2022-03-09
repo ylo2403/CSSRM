@@ -26,7 +26,7 @@ class MemberBanEvent(Bloxlink.Module):
                 if donator_profile.features.get("premium"):
                     if ban_related_accounts:
                         try:
-                            account, accounts = await get_user(author=user, guild=guild)
+                            account, accounts, _ = await get_user(user=user, guild=guild)
                         except UserNotVerified:
                             pass
                         else:

@@ -49,6 +49,10 @@ class TransferCommand(Bloxlink.Module):
         author_premium_data = author_data.get("premium", {}) or {}
 
         transfer_cooldown = author_premium_data.get("transferCooldown") if isinstance(author_premium_data, dict) and author_premium_data else 0
+
+        if transfer_cooldown is None:
+            transfer_cooldown = 0
+
         on_cooldown = transfer_cooldown > time_now
 
         if on_cooldown:
@@ -63,7 +67,7 @@ class TransferCommand(Bloxlink.Module):
             raise Message("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
                          f"with `{prefix}transfer disable`.", type="confused")
 
-        prem_data, _ = await get_features(author, author_data=author_data, cache=False, rec=False, partner_check=False)
+        prem_data, _ = await get_features(author, user_data=author_data, cache=False, rec=False, partner_check=False)
 
         if not prem_data.features.get("premium"):
             raise Error("You must have premium in order to transfer it!")

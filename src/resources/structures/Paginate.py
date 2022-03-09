@@ -27,20 +27,34 @@ class InteractionPaginatorSelect(discord.ui.Select):
 
 
 class InteractionPaginator(discord.ui.View):
-    def __init__(self, items, response, embed=discord.Embed(), max_items=5, use_fields=True, default_category=None, description=None):
+    def __init__(self, items, response, embed=None, max_items=5, initialize_components=True, use_fields=True, use_embed_pictures=False, default_category=None, description=None, ephemeral=False, footer=""):
         super().__init__()
 
         self.categories = list(items.keys())
         self.response = response
-        self.embed = embed
+        self.embed = embed or discord.Embed()
         self.max_items = max_items
         self.items = items
         self.use_fields = use_fields
+        self.use_embed_pictures = use_embed_pictures
         self.description = description
+        self.initialize_components = initialize_components
+        self.ephemeral = ephemeral
+        self.footer = footer
+        self.from_interaction = not isinstance(response, (discord.User, discord.Member))
+
+        self.on_page_change = None
+
+        self.i = None
 
         self.message = self.back_button = self.forward_button = self.fast_forward_button = self.fast_rewind_button = self.select_menu = None
 
         self.current_category = default_category or self.categories[0]
+        self.current_items = []
+
+    async def page_change(self):
+        if self.on_page_change:
+            await self.on_page_change() # pylint: disable=not-callable
 
     async def fast_rewind_press(self, interaction):
        await self.start_position()
@@ -50,14 +64,16 @@ class InteractionPaginator(discord.ui.View):
 
         self.i = math.ceil((len(all_items) / self.max_items)) * self.max_items
 
-        current_items = all_items[self.i-self.max_items:self.i]
+        self.current_items = all_items[self.i-self.max_items:self.i]
 
-        self.populate_embed(current_items)
+        self.populate_embed()
 
         self.check_buttons()
 
         self.back_button.disabled = False
         self.fast_rewind_button.disabled = False
+
+        await self.page_change()
 
         await self.message.edit(embed=self.embed, view=self)
 
@@ -65,33 +81,43 @@ class InteractionPaginator(discord.ui.View):
         self.i = self.i-self.max_items
 
         all_items = self.items[self.current_category]
-        current_items = all_items[self.i-self.max_items:self.i]
+        self.current_items = all_items[self.i-self.max_items:self.i]
 
-        self.populate_embed(current_items)
+        self.populate_embed()
 
         self.check_buttons()
 
-        self.forward_button.disabled = False
-        self.fast_forward_button.disabled = False
+        if self.forward_button:
+            self.forward_button.disabled = False
+
+        if self.fast_forward_button:
+            self.fast_forward_button.disabled = False
+
+        await self.page_change()
 
         await self.message.edit(embed=self.embed, view=self)
 
     async def forward_press(self, interaction):
         all_items = self.items[self.current_category]
-        current_items = all_items[self.i:self.i+self.max_items]
+        self.current_items = all_items[self.i:self.i+self.max_items]
 
         self.i = self.i+self.max_items
 
-        self.populate_embed(current_items)
+        self.populate_embed()
 
         self.check_buttons()
 
-        self.back_button.disabled = False
-        self.fast_rewind_button.disabled = False
+        if self.back_button:
+            self.back_button.disabled = False
+
+        if self.fast_rewind_button:
+            self.fast_rewind_button.disabled = False
+
+        await self.page_change()
 
         await self.message.edit(embed=self.embed, view=self)
 
-    def populate_embed(self, current_items):
+    def populate_embed(self):
         all_items = self.items[self.current_category]
 
         if self.description:
@@ -102,56 +128,94 @@ class InteractionPaginator(discord.ui.View):
         if self.use_fields:
             self.embed.clear_fields()
 
-            for entry in current_items:
+            for entry in self.current_items:
                 self.embed.add_field(name=entry[0], value=entry[1], inline=False)
-        else:
-            self.embed.description = self.embed.description + "\n".join(current_items)
 
-        self.embed.set_footer(text=f"!help <command name> to view more information | Page {self.i // self.max_items} of {((math.ceil(len(all_items) / self.max_items)) or 1)}")
+        elif self.use_embed_pictures:
+            if self.max_items > 1:
+                raise RuntimeError("self.max_items must be 1 to use use_embed_pictures.")
+
+            if not self.current_items:
+                self.embed.description = "_No items to show._"
+                self.embed.set_image(url=discord.Embed.Empty)
+            else:
+                item = self.current_items[0]
+
+                if isinstance(item, tuple):
+                    self.embed.description = f"**{item[0]}**"
+                    self.embed.set_image(url=item[1])
+                else:
+                    self.embed.set_image(url=item)
+        else:
+            self.embed.description = self.embed.description + "\n".join(self.current_items)
+
+        self.embed.set_footer(text=f"{self.footer} Page {self.i // self.max_items} of {((math.ceil(len(all_items) / self.max_items)) or 1)}")
 
     def check_buttons(self):
         all_items = self.items[self.current_category]
 
+        if self.forward_button:
+            self.forward_button.disabled = False
+
+        if self.back_button:
+            self.back_button.disabled = False
+
         if self.i >= len(all_items):
-            self.forward_button.disabled = True
-            self.fast_forward_button.disabled = True
+            if self.forward_button:
+                self.forward_button.disabled = True
+
+            if self.fast_forward_button:
+                self.fast_forward_button.disabled = True
 
         if self.i == self.max_items:
-            self.back_button.disabled = True
-            self.fast_rewind_button.disabled = True
+            if self.back_button:
+                self.back_button.disabled = True
+
+            if self.fast_rewind_button:
+                self.fast_rewind_button.disabled = True
+
+    def initialize_buttons(self, *buttons):
+        if not buttons or "fast_rewind_button" in buttons:
+            if self.fast_rewind_button:
+                self.remove_item(self.fast_rewind_button)
+
+            self.fast_rewind_button = discord.ui.Button(emoji=FAST_REWIND, disabled=True, style=discord.ButtonStyle.primary)
+            self.fast_rewind_button.callback = self.fast_rewind_press
+            self.add_item(self.fast_rewind_button)
+
+        if not buttons or "back_button" in buttons:
+            if self.back_button:
+                self.remove_item(self.back_button)
+
+            self.back_button = discord.ui.Button(emoji=BACK, disabled=True, style=discord.ButtonStyle.primary)
+            self.back_button.callback = self.back_press
+            self.add_item(self.back_button)
+
+        if not buttons or "forward_button" in buttons:
+            if self.forward_button:
+                self.remove_item(self.forward_button)
+
+            self.forward_button = discord.ui.Button(emoji=FORWARD, style=discord.ButtonStyle.primary)
+            self.forward_button.callback = self.forward_press
+            self.add_item(self.forward_button)
+
+        if not buttons or "fast_forward_button" in buttons:
+            if self.fast_forward_button:
+                self.remove_item(self.fast_forward_button)
+
+            self.fast_forward_button = discord.ui.Button(emoji=FAST_FORWARD, style=discord.ButtonStyle.primary)
+            self.fast_forward_button.callback = self.fast_forward_press
+            self.add_item(self.fast_forward_button)
 
     async def start_position(self):
         self.i = 0
 
         all_items = self.items[self.current_category]
-        current_items = all_items[self.i:self.i+self.max_items]
+        self.current_items = all_items[self.i:self.i+self.max_items]
 
         self.i = self.i+self.max_items
 
-        self.populate_embed(current_items)
-
-        if self.back_button or self.forward_button:
-            self.remove_item(self.back_button)
-            self.remove_item(self.forward_button)
-            self.remove_item(self.fast_rewind_button)
-            self.remove_item(self.fast_forward_button)
-
-        self.fast_rewind_button  = discord.ui.Button(emoji=FAST_REWIND, disabled=True, style=discord.ButtonStyle.primary)
-        self.back_button         = discord.ui.Button(emoji=BACK, disabled=True, style=discord.ButtonStyle.primary)
-        self.forward_button      = discord.ui.Button(emoji=FORWARD, style=discord.ButtonStyle.primary)
-        self.fast_forward_button = discord.ui.Button(emoji=FAST_FORWARD, style=discord.ButtonStyle.primary)
-
-        self.add_item(self.fast_rewind_button)
-        self.add_item(self.back_button)
-        self.add_item(self.forward_button)
-        self.add_item(self.fast_forward_button)
-
-        self.fast_rewind_button.callback  = self.fast_rewind_press
-        self.back_button.callback         = self.back_press
-        self.forward_button.callback      = self.forward_press
-        self.fast_forward_button.callback = self.fast_forward_press
-
-        self.check_buttons()
+        self.populate_embed()
 
         if self.categories:
             if self.select_menu:
@@ -160,10 +224,19 @@ class InteractionPaginator(discord.ui.View):
             self.select_menu = InteractionPaginatorSelect(self.categories, self)
             self.add_item(self.select_menu)
 
+        if self.initialize_components:
+            self.initialize_buttons()
+
+        self.check_buttons()
+        await self.page_change()
+
         if self.message:
             await self.message.edit(embed=self.embed, view=self)
         else:
-            self.message = await self.response.send(embed=self.embed, view=self)
+            if self.from_interaction:
+                self.message = await self.response.send(embed=self.embed, view=self, hidden=self.ephemeral)
+            else:
+                self.message = await self.response.send(embed=self.embed, view=self)
 
     async def __call__(self):
         await self.start_position()

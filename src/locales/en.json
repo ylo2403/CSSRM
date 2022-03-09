@@ -84,8 +84,8 @@
 			"group": "group",
 			"entireGroup": "entire group",
 			"errors": {
-				"noPremiumBindLimitExceeded": "You've exceeded the free bind limit of **{free_bind_count}.** Please delete some with `{prefix}delbind` before adding any more.\nPremium users may bind up to **{prem_bind_count}** binds! See `{prefix}donate` for instructions on receiving premium.",
-				"premiumBindLimitExceeded": "You've exceeded the premium bind limit of **{prem_bind_count}.** Please delete some with `{prefix}delbind` before adding any more.",
+				"noPremiumBindLimitExceeded": "You've exceeded the free bind limit of **{free_bind_count}.** Please delete some with `{prefix}unbind` before adding any more.\nPremium users may bind up to **{prem_bind_count}** binds! See `{prefix}donate` for instructions on receiving premium.",
+				"premiumBindLimitExceeded": "You've exceeded the premium bind limit of **{prem_bind_count}.** Please delete some with `{prefix}unbind` before adding any more.",
 				"trelloError": "In order for me to create Trello binds, please add `@bloxlink` to your Trello board."
 			},
 			"prompts": {

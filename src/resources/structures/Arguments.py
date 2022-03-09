@@ -277,7 +277,7 @@ class Arguments:
                             task_1 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("message", check=self._check_prompt(dm), timeout=PROMPT["PROMPT_TIMEOUT"])))
                             task_2 = asyncio.create_task(suppress_timeout_errors(Bloxlink.wait_for("interaction", check=self._check_interaction(), timeout=PROMPT["PROMPT_TIMEOUT"])))
 
-                            result_set, pending = await asyncio.wait({task_1, task_2}, return_when=asyncio.FIRST_COMPLETED, timeout=PROMPT["PROMPT_TIMEOUT"])
+                            result_set, _ = await asyncio.wait({task_1, task_2}, return_when=asyncio.FIRST_COMPLETED, timeout=PROMPT["PROMPT_TIMEOUT"])
 
                             if not result_set:
                                 raise CancelledPrompt(f"timeout ({PROMPT['PROMPT_TIMEOUT']}s)", dm=dm)
@@ -289,9 +289,10 @@ class Arguments:
                                 message = None
                                 custom_id = interaction.data["custom_id"]
 
+                                #self.response.renew(interaction)
+
                                 if interaction.data["component_type"] == 3:
                                     select_values = interaction.data["values"]
-                                # TODO: get interaction key and use that for the next response
                             else:
                                 interaction = None
                                 message = result

@@ -16,7 +16,7 @@ import async_timeout
 
 eval = Bloxlink.get_module("evalm", attrs="__call__")
 post_event, suppress_timeout_errors = Bloxlink.get_module("utils", attrs=["post_event", "suppress_timeout_errors"])
-guild_obligations, get_user, get_nickname = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname"])
+guild_obligations, get_user, get_nickname, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname", "format_update_embed"])
 get_guild_value = Bloxlink.get_module("cache", attrs="get_guild_value")
 
 
@@ -93,7 +93,7 @@ class IPC(Bloxlink.Module):
                     return
 
                 try:
-                    roblox_user, _ = await get_user(roblox_id=roblox_id)
+                    roblox_user = (await get_user(roblox_id=roblox_id))[0]
                 except RobloxDown:
                     try:
                         await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
@@ -168,15 +168,29 @@ class IPC(Bloxlink.Module):
                     verified_dm, guild_data = await get_guild_value(guild, ["joinDM", ""], return_guild_data=True)
                     server_message = ""
 
+                    _, card, embed = await format_update_embed(
+                        roblox_user,
+                        member,
+                        guild=guild,
+                        added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname,
+                        guild_data=guild_data,
+                        from_interaction=False
+                    )
+
                     if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
                         server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
                         server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500]
 
                     try:
-                        await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"
-                                          f"{server_message}")
+                        msg = await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"
+                                                f"{server_message}", files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed)
                     except Forbidden:
                         pass
+                    else:
+                        if card:
+                            card.response = member
+                            card.message = msg
+                            card.view.message = msg
 
                     await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 

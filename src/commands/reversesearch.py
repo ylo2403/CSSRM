@@ -42,7 +42,7 @@ class ReverseSearchCommand(Bloxlink.Module):
 
         #async with response.loading():
         try:
-            account, _ = await get_user(username=username and target, roblox_id=ID and target)
+            account = (await get_user(username=username and target, roblox_id=ID and target))[0]
         except RobloxNotFound:
             raise Error("This Roblox account doesn't exist.")
         else:

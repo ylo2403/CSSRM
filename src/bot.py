@@ -1,16 +1,17 @@
 from os import environ
+import discord.http
 import asyncio
 import logging
 import signal
-import sys
 import os
 from resources.constants import MODULE_DIR # pylint: disable=import-error, no-name-in-module
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.secrets import TOKEN # , SENTRY_URL, VALID_SECRETS # pylint: disable=import-error, no-name-in-module
 
 logger = logging.getLogger()
-logging.basicConfig(level=getattr("logging", environ.get("DEBUG_MODE", "WARNING"), "WARNING"))
+logging.basicConfig(level=getattr(logging, environ.get("LOG_LEVEL", "WARNING")))
 
+discord.http._set_api_version(9)
 
 loop = asyncio.get_event_loop()
 

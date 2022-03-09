@@ -8,6 +8,7 @@ from time import time
 from math import ceil
 
 is_patron = Bloxlink.get_module("patreon", attrs="is_patron")
+fetch = Bloxlink.get_module("utils", attrs="fetch")
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
 
 @Bloxlink.module
@@ -39,10 +40,11 @@ class Premium(Bloxlink.Module):
                     await cache_set(f"bloxlink_staff:{member.id}", "true", expire=43800) # 1 month
 
 
-    async def is_staff(self, author):
-        return await cache_get(f"bloxlink_staff:{author.id}", primitives=True)
+    async def is_staff(self, user):
+        return await cache_get(f"bloxlink_staff:{user.id}", primitives=True)
 
-    async def add_features(self, user, features, *, days=-1, code=None, premium_anywhere=False, guild=None,):
+
+    async def add_features(self, user, features, *, days=-1, premium_anywhere=False, guild=None,):
         user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
         user_data_premium = user_data.get("premium") or {}
         prem_expiry = user_data_premium.get("expiry", 1)
@@ -60,11 +62,6 @@ class Premium(Bloxlink.Module):
             days = prem_expiry
         elif days == "-":
             days = 1
-
-        if code:
-            # delete_code()
-            # add code to redeemed
-            pass
 
         if "pro" in features:
             user_data_premium["pro"] = days # TODO: convert to -1
@@ -99,8 +96,8 @@ class Premium(Bloxlink.Module):
             await cache_pop(f"premium_cache:{guild.id}")
 
 
-    async def has_selly_premium(self, author, author_data):
-        premium = author_data.get("premium") or {}
+    async def has_selly_premium(self, user, user_data):
+        premium = user_data.get("premium") or {}
         expiry = premium.get("expiry", 1)
         pro_expiry = premium.get("pro", 1)
 
@@ -120,8 +117,8 @@ class Premium(Bloxlink.Module):
         }
 
 
-    async def has_patreon_premium(self, author, author_data):
-        patron_data = await is_patron(author)
+    async def has_patreon_premium(self, user, user_data):
+        patron_data = await is_patron(user)
 
         return patron_data
 
@@ -158,9 +155,9 @@ class Premium(Bloxlink.Module):
             await cache_pop(f"premium_cache:{guild.id}")
 
 
-    async def get_features(self, author=None, guild=None, author_data=None, cache=True, cache_as_guild=True, rec=True, partner_check=True):
-        author = author or guild.owner
-        profile = DonatorProfile(author)
+    async def get_features(self, user=None, guild=None, user_data=None, cache=True, cache_as_guild=True, rec=True, partner_check=True):
+        user = user or guild.owner
+        profile = DonatorProfile(user)
 
         if cache:
             if guild and cache_as_guild:
@@ -169,13 +166,13 @@ class Premium(Bloxlink.Module):
                 if guild_premium_cache:
                     return guild_premium_cache[0], guild_premium_cache[1]
             else:
-                premium_cache = await cache_get(f"premium_cache:{author.id}")
+                premium_cache = await cache_get(f"premium_cache:{user.id}")
 
                 if premium_cache:
                     return premium_cache[0], premium_cache[1]
 
-        author_data = author_data or await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
-        premium_data = author_data.get("premium") or {}
+        user_data = user_data or await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
+        premium_data = user_data.get("premium") or {}
 
         if rec:
             if premium_data.get("transferTo"):
@@ -183,21 +180,21 @@ class Premium(Bloxlink.Module):
                     if guild and cache_as_guild:
                         await cache_set(f"premium_cache:{guild.id}", (profile, premium_data["transferTo"]))
                     else:
-                        await cache_set(f"premium_cache:{author.id}", (profile, premium_data["transferTo"]))
+                        await cache_set(f"premium_cache:{user.id}", (profile, premium_data["transferTo"]))
 
                 return profile, premium_data["transferTo"]
 
             elif premium_data.get("transferFrom"):
                 transfer_from = premium_data["transferFrom"]
                 transferee_data = await self.r.db("bloxlink").table("users").get(str(transfer_from)).run() or {}
-                transferee_premium, _ = await self.get_features(Object(id=transfer_from), author_data=transferee_data, rec=False, cache=False, partner_check=False)
+                transferee_premium, _ = await self.get_features(Object(id=transfer_from), user_data=transferee_data, rec=False, cache=False, partner_check=False)
 
                 if transferee_premium.features.get("premium"):
                     if cache:
                         if guild and cache_as_guild:
                             await cache_set(f"premium_cache:{guild.id}", (transferee_premium, _))
                         else:
-                            await cache_set(f"premium_cache:{author.id}", (transferee_premium, _))
+                            await cache_set(f"premium_cache:{user.id}", (transferee_premium, _))
 
                     return transferee_premium, _
                 else:
@@ -210,32 +207,32 @@ class Premium(Bloxlink.Module):
                     transferee_data["premium"]["transferFrom"] = None
                     transferee_data["premium"]["transferCooldown"] = None
 
-                    author_data["premium"] = premium_data
+                    user_data["premium"] = premium_data
 
-                    await self.r.db("bloxlink").table("users").insert(author_data, conflict="update").run()
+                    await self.r.db("bloxlink").table("users").insert(user_data, conflict="update").run()
                     await self.r.db("bloxlink").table("users").insert(transferee_data, conflict="update").run()
                     """
 
         """
-        if author_data.get("flags", {}).get("premiumAnywhere"):
+        if user_data.get("flags", {}).get("premiumAnywhere"):
             profile.attributes["PREMIUM_ANYWHERE"] = True
             profile.add_note("This user can use premium in _any_ server.")
             profile.add_features("premium", "pro")
         """
 
-        if await self.is_staff(author):
+        if await self.is_staff(user):
             profile.add_features("premium", "pro")
             profile.days = 0
             profile.add_note("This user can use premium in _any_ server.")
             profile.attributes["PREMIUM_ANYWHERE"] = True
         else:
-            data_patreon = await self.has_patreon_premium(author, author_data)
+            data_patreon = await self.has_patreon_premium(user, user_data)
 
             if data_patreon:
                 profile.load_patreon(data_patreon)
                 profile.add_features("premium", "pro")
             else:
-                data_selly = await self.has_selly_premium(author, author_data)
+                data_selly = await self.has_selly_premium(user, user_data)
 
                 if data_selly["premium"]:
                     profile.add_features("premium")
@@ -256,6 +253,6 @@ class Premium(Bloxlink.Module):
             if guild and cache_as_guild:
                 await cache_set(f"premium_cache:{guild.id}", (profile, None))
             else:
-                await cache_set(f"premium_cache:{author.id}", (profile, None))
+                await cache_set(f"premium_cache:{user.id}", (profile, None))
 
         return profile, None
