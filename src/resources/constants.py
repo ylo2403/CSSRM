@@ -1,7 +1,6 @@
 from os import environ as env
 from time import time
 from re import search
-from discord import Game
 from discord.utils import find
 
 RELEASE = env.get("RELEASE", "LOCAL")
@@ -29,7 +28,10 @@ for _ in range(SHARDS_PER_CLUSTER):
   SHARD_RANGE.append(shard)
   _to_add += 1
 
-SELF_HOST = True # changes bot behavior, such as using the Bloxlink API for requests
+if RELEASE == "LOCAL":
+    SELF_HOST = True # changes bot behavior, such as using the Bloxlink API for requests
+else:
+    SELF_HOST = False
 
 STARTED = time()
 
@@ -73,8 +75,9 @@ MODULE_DIR = [
 	"src/resources/modules",
 	"src/resources/events",
 	"src/commands",
-	"src/apps"
+    "src/apps"
 ]
+
 
 NICKNAME_TEMPLATES = (
     "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
@@ -121,7 +124,6 @@ UNVERIFIED_TEMPLATES = (
 ESCAPED_NICKNAME_TEMPLATES = NICKNAME_TEMPLATES.replace("{", "{{").replace("}", "}}")
 
 OPTIONS = {                # fn,  type, max length or choices, premium only, desc
-    "prefix":                (lambda g, gd: RELEASE == "PRO" and gd.get("proPrefix") or gd.get("prefix") or DEFAULTS.get("prefix"), "string", 10,    False, "The prefix is used before commands to activate them"),
     "verifiedRoleName":      (None, "string", 100,    False, "The Verified role is given to people who are linked on Bloxlink. You can change the name of the role here."),
     "verifiedRoleEnabled":   (None, "boolean", None, False, "The Verified role is given to people who are linked on Bloxlink. Enable/disable it here."),
     "unverifiedRoleEnabled": (None, "boolean", None, False, "The Unverified role is given to people who aren't linked on Bloxlink. Enable/disable it here."),
@@ -145,7 +147,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "unbanRelatedAccounts":  (None, "boolean", None, True,  "If this is enabled: when members are unbanned, their known alts are also unbanned from the server."),
     "disallowAlts":          (None, "boolean", None, True,  "If this is enabled: when someone joins the server and already has a linked account in the server, kick the old alt out."),
     "disallowBanEvaders":    (None, "choice", ("ban", "kick"), True,  "If this is enabled: when members join, and they have a banned account in the server, their new account will also be actioned."),
-    "whiteLabel":            (lambda g, gd: bool(gd.get("customBot")),  None, None, True,      "Modify the username and profile picture of __most__ Bloxlink responses."),
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
     "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, True, "Customize the names of the Bloxlink Magic Roles."),
@@ -168,14 +169,12 @@ DEFAULTS = {
     "autoVerification": True,
     "dynamicRoles": True,
     "persistRoles": False,
-    "trelloID": "No Trello Board",
     "allowReVerify": True,
     "welcomeMessage": ":wave: Welcome to **{server-name}**, {roblox-name}! Visit <" + VERIFY_URL + "> to change your account.",
     "nicknameTemplate": "{smart-name}",
     "unverifiedRoleName": "Unverified",
     "shorterNicknames": True,
     "ageLimit": 0,
-    "whiteLabel": False,
     "promptDelete": True,
     "deleteCommands": 0,
     "inactiveRole": None,
@@ -184,7 +183,7 @@ DEFAULTS = {
     "disallowAlts": False,
     "disallowBanEvaders": False,
     "trelloBindMode": "merge",
-    "antiPhish": True
+    "antiPhish": True,
 }
 
 ARROW = "\u2192"
@@ -219,11 +218,16 @@ TABLE_STRUCTURE = {
         "commands",
         "miscellaneous",
         "restrictedUsers",
-        "addonData"
+        "addonData",
+        "applications",
+        "ads",
+        "codes",
+        "robloxProfiles"
     ],
     "canary": [
         "guilds",
-        "addonData"
+        "addonData",
+        "robloxProfiles"
     ],
     "patreon": [
         "refreshTokens",
@@ -249,8 +253,6 @@ AVATARS = {
     "PRIDE": "https://cdn.discordapp.com/attachments/480614508633522176/730969660010266644/rainbow_resized.png"
 }
 
-STREAMERS = (84117866944663552, 194962036784889858, 84388454456127488)
-
 if RELEASE == "LOCAL":
     CACHE_CLEAR = 2
 else:
@@ -262,20 +264,15 @@ TIP_CHANCES = {
 }
 
 TRELLO = {
-	"CARD_LIMIT": 100,
+	"CARD_LIMIT": 200,
 	"LIST_LIMIT": 10,
-	"TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
+    "TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
 }
 
-EMBED_PERKS = {
-    "GROUPS": { # title: group id, rank id, emote to show by username, backup emote
-        "Bloxlink Developer":     ["3587262", -200, "<:BloxlinkDeveloper:895199922880663562>", ":man_technologist:"],
-        "Bloxlink Moderator":     ["3587262", 100, "<:BloxlinkModerator:895199977192693790>", ":busts_in_silhouette:"],
-        "Bloxlink Support Staff": ["3587262", 50, "<:BloxlinkStaff:888318386117967922>", ":busts_in_silhouette:"],
-        "Bloxlink Contractor":    ["3587262", 30, "<:BloxlinkStaff:888318386117967922>", ":busts_in_silhouette:"],
-        "Roblox Admin":           ["1200769", None, "<:robloxadmin:813892098150498355>", ":man_detective:"],
-        "Roblox Intern":          ["2868472", 100, "<:robloxadmin:813892098150498355>", ":man_detective:"],
-        "Roblox Star Creator":    ["4199740", None, ":star:", ":star:"],
-        "Roblox Event Organizer": ["9420522", 100, ":boomerang:", ":boomerang:"]
-    }
-}
+IGNORED_SERVERS = [
+    903359999688990770
+]
+
+RBX_STAFF = 0x1
+RBX_STAR = 0x2
+BLOXLINK_STAFF = 0x4

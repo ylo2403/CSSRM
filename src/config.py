@@ -1,13 +1,14 @@
 from resources.constants import RELEASE, IS_DOCKER # pylint: disable=import-error
 
-# More optional settings can be set, such as a Trello key/token. Look at the docker-compose.yml for additional values.
 
 PREFIX = "!"
 
+
 WEBHOOKS = { # discord webhook links
-	"LOGS":  None,
-	"ERRORS": None
+	"LOGS": "",
+	"ERRORS": ""
 }
+
 
 REACTIONS = { # discord emote mention strings
 	"LOADING": "<a:BloxlinkLoading:530113171734921227>",
@@ -22,6 +23,7 @@ REACTIONS = { # discord emote mention strings
 	"GREEN": "<:green:881783400632037426>",
 	"BLANK": "<:blank:881783214014885908>"
 }
+
 
 RETHINKDB_HOST = "rethinkdb"
 RETHINKDB_PASSWORD = None
@@ -49,3 +51,5 @@ RESTRICTIONS_TRELLO = "" # Your Trello board link to load restrictions.
 						 	# card name: label:id
 							# card desc: restriction text
 							# The label has no effect on restrictions. It's for visual purposes only.
+
+PROXY_URL = ""
