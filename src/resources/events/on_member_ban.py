@@ -52,4 +52,4 @@ class MemberBanEvent(Bloxlink.Module):
                                             except Forbidden:
                                                 pass
                                             else:
-                                                await post_event(guild, None, "moderation", f"{user_find.mention} is an alt of {user.mention} and has been `banned`.", RED_COLOR)
+                                                await post_event(guild, "moderation", f"{user_find.mention} is an alt of {user.mention} and has been `banned`.", RED_COLOR)

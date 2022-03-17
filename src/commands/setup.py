@@ -11,7 +11,7 @@ VERIFIED_DEFAULT = "Verified"
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
 trello, get_options = Bloxlink.get_module("trello", attrs=["trello", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-clear_guild_data = Bloxlink.get_module("cache", attrs=["clear_guild_data"])
+set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
@@ -74,6 +74,7 @@ class SetupCommand(Bloxlink.Module):
         group_ids = guild_data.get("groupIDs", {})
 
         settings_buffer = []
+        insertion = {}
 
         parsed_args_1 = {}
         parsed_args_2 = {}
@@ -226,22 +227,20 @@ class SetupCommand(Bloxlink.Module):
 
         if verified:
             if verified_lower == "disable":
-                guild_data["verifiedRoleEnabled"] = False
+                insertion["verifiedRoleEnabled"] = False
             elif verified_lower not in ("next", "skip"):
-                guild_data["verifiedRoleName"] = verified
-                guild_data["verifiedRoleEnabled"] = True
+                insertion["verifiedRoleName"] = verified
+                insertion["verifiedRoleEnabled"] = True
 
         if group_ids:
-            guild_data["groupIDs"] = group_ids
+            insertion["groupIDs"] = group_ids
 
-        if nickname not in ("skip", "next"):
-            guild_data["nicknameTemplate"] = nickname
+        if nickname != "skip":
+            insertion["nicknameTemplate"] = nickname
 
 
-        await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+        await set_guild_value(guild, **insertion)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **set-up** the server.", BROWN_COLOR)
-
-        await clear_guild_data(guild)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **set-up** the server.", BROWN_COLOR)
 
         await response.success("Your server is now **configured** with Bloxlink!", dm=False, no_dm_post=True)

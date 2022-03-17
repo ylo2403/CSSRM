@@ -8,6 +8,7 @@ from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRe
 verify_as, get_user, get_nickname, get_roblox_id, parse_accounts, unverify_member, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["verify_as", "get_user", "get_nickname", "get_roblox_id", "parse_accounts", "unverify_member", "format_update_embed", "guild_obligations"])
 get_options = Bloxlink.get_module("trello", attrs="get_options")
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
+set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
 
 
@@ -106,20 +107,12 @@ class VerifyCommand(Bloxlink.Module):
                 card.message = message
                 card.view.message = message
 
-            await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+            await post_event(guild, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
 
     @Bloxlink.subcommand()
     async def add(self, CommandArgs):
         """link a new account to Bloxlink"""
-
-        if CommandArgs.guild:
-            guild_data = CommandArgs.guild_data
-
-            if not guild_data.get("hasBot"):
-                guild_data["hasBot"] = True
-
-                await self.r.table("guilds").insert(guild_data, conflict="update").run()
 
         view = discord.ui.View()
         view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=VERIFY_URL, emoji="🔗"))
@@ -141,7 +134,6 @@ class VerifyCommand(Bloxlink.Module):
         author = CommandArgs.author
 
         guild = CommandArgs.guild
-        guild_data = CommandArgs.guild_data
 
         if not guild:
             return await response.send("This sub-command can only be used in a server!")
@@ -193,12 +185,9 @@ class VerifyCommand(Bloxlink.Module):
                 except (TrelloNotFound, TrelloBadRequest):
                     pass
 
-            await self.r.table("guilds").insert({
-                "id": str(guild.id),
-                "welcomeMessage": welcome_message
-            }, conflict="update").run()
+            await set_guild_value(guild, welcomeMessage=welcome_message)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}`.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}`.", BROWN_COLOR)
 
         raise Message(f"Successfully saved your new `{choice}`!", type="success")
 
@@ -245,7 +234,7 @@ class VerifyCommand(Bloxlink.Module):
             embed = discord.Embed(title="Linked Roblox Accounts")
             embed.add_field(name="Primary Account", value=primary_account_str)
             embed.add_field(name="Secondary Accounts", value=parsed_accounts_str or "No secondary account saved")
-            embed.set_author(name=author, icon_url=author.avatar.url)
+            embed.set_author(name=author, icon_url=author.avatar.url if author.avatar else None)
 
             await response.send(embed=embed, dm=True, strict_post=True)
 

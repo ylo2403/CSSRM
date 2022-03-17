@@ -13,7 +13,7 @@ ALL_USER_API_SCOPES = ["groups", "badges", "avatar"]
 
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
-cache_set, cache_get = Bloxlink.get_module("cache", attrs=["set", "get"])
+cache_set, cache_get, get_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "get_user_value"])
 get_linked_group_ids = Bloxlink.get_module("robloxnew.binds", attrs=["get_linked_group_ids"], name_override="binds")
 
 

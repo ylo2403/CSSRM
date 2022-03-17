@@ -4,6 +4,8 @@ from resources.constants import DEFAULTS # pylint: disable=import-error, no-name
 from discord.utils import find
 from discord.errors import Forbidden, NotFound, HTTPException
 
+set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+
 
 class VerifyChannelCommand(Bloxlink.Module):
     """create a special channel where messages are deleted"""
@@ -84,10 +86,7 @@ class VerifyChannelCommand(Bloxlink.Module):
                 raise Error("Please do not delete the created channels while I'm setting them up...")
 
 
-        await self.r.table("guilds").insert({
-            "id": str(guild.id),
-            "verifyChannel": str(verify_channel.id)
-        }, conflict="update").run()
+        await set_guild_value(guild, verifyChannel=str(verify_channel.id))
 
         await response.success(f"All done! Your new verification channel is {verify_channel.mention} and " \
                                 "is now managed by Bloxlink.")

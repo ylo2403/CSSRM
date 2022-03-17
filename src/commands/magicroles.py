@@ -91,7 +91,7 @@ class MagicRolesCommand(Bloxlink.Module):
 
         await self.r.table("guilds").insert(guild_data, conflict="update").run()
         await set_guild_value(guild, "magicRoles", magic_roles)
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **added** a new `magicRole`!", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **added** a new `magicRole`!", BROWN_COLOR)
 
         await response.success("Successfully **saved** your new Magic Role! Go assign it to some people! :sparkles:")
 
@@ -189,7 +189,7 @@ class MagicRolesCommand(Bloxlink.Module):
                 await self.r.table("guilds").insert(guild_data, conflict="replace").run()
                 await set_guild_value(guild, "magicRoles", magic_roles)
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **removed** a `magicRole`!", BROWN_COLOR)
+            await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **removed** a `magicRole`!", BROWN_COLOR)
 
             if not removed_builtin_magic_role:
                 await response.success("Successfully **removed** this Magic Role!")

@@ -93,15 +93,3 @@ class StatsCommand(Bloxlink.Module):
         embed.set_footer(text=f"Shards: {self.shard_range} | Node: {CLUSTER_ID}{'/'+(str(clusters-1)) if clusters > 1 else ''}")
 
         await response.send(embed=embed)
-
-        if IS_DOCKER and RELEASE == "MAIN":
-            await self.r.table("miscellaneous").insert({
-                "id": "stats",
-                "stats": {
-                    "guilds": total_guilds,
-                    "memory": total_mem,
-                    "uptime": uptime,
-                    "clusters": clusters
-                }
-
-            }, conflict="update").run()

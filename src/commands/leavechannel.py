@@ -128,7 +128,7 @@ class LeaveChannelCommand(Bloxlink.Module):
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully {change_text} your leave message.", type="success")
 
@@ -228,6 +228,6 @@ class LeaveChannelCommand(Bloxlink.Module):
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully {change_text} your leave message.", type="success")

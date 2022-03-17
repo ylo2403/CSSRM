@@ -48,13 +48,8 @@ class Utils(Bloxlink.Module):
         except asyncio.TimeoutError:
             pass
 
-    async def post_event(self, guild, guild_data, event_name, text, color=None):
-        if guild_data:
-            log_channels = guild_data.get("logChannels")
-        else:
-            log_channels = await get_guild_value(guild, "logChannels")
-
-        log_channels = log_channels or {}
+    async def post_event(self, guild, event_name, text, color=None):
+        log_channels = await get_guild_value(guild, "logChannels") or {}
         log_channel  = log_channels.get(event_name) or log_channels.get("all")
 
         if log_channel:
@@ -69,7 +64,7 @@ class Utils(Bloxlink.Module):
                 except (Forbidden, NotFound):
                     pass
 
-    async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20):
+    async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20, proxy=True):
         params  = params or {}
         headers = headers or {}
         new_json = {}
@@ -78,7 +73,7 @@ class Utils(Bloxlink.Module):
         if text or bytes:
             json = False
 
-        if PROXY_URL and "roblox.com" in url:
+        if proxy and PROXY_URL and "roblox.com" in url:
             old_url = url
             new_json["url"] = url
             new_json["data"] = body or {}
@@ -185,6 +180,67 @@ class Utils(Bloxlink.Module):
             print(f"URL {old_url} timed out", flush=True)
             raise RobloxDown
 
+    # async def fetch(self, url, method="GET", params=None, headers=None, json=None, body=None, text=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20):
+    #     params  = params or {}
+    #     headers = headers or {}
+
+    #     url = requote_uri(url)
+
+    #     if RELEASE == "LOCAL":
+    #         Bloxlink.log(f"Making HTTP request: {url}")
+
+    #     for k, v in params.items():
+    #         if isinstance(v, bool):
+    #             params[k] = "true" if v else "false"
+
+    #     if bytes or json:
+    #         text = False
+
+    #     # if "roblox.com" in url:
+    #     proxy = "aaa"
+    #     # else:
+    #     #     proxy = None
+
+    #     try:
+    #         async with a_timeout(timeout): # I noticed sometimes the aiohttp timeout parameter doesn't work. This is added as a backup.
+    #             async with self.session.request(method, url, json=body, params=params, headers=headers, timeout=timeout, proxy=proxy) as response:
+    #                 if response.status == 503:
+    #                     raise RobloxDown
+
+    #                 if raise_on_failure:
+    #                     if response.status >= 500:
+    #                         if retry != 0:
+    #                             retry -= 1
+    #                             await asyncio.sleep(1.0)
+
+    #                             return await self.fetch(url, raise_on_failure=raise_on_failure, bytes=bytes, json=json, text=text, params=params, headers=headers, retry=retry, timeout=timeout)
+
+    #                         raise RobloxAPIError
+
+    #                     elif response.status == 400:
+    #                         raise RobloxAPIError
+    #                     elif response.status == 404:
+    #                         raise RobloxNotFound
+
+    #                 if bytes:
+    #                     return await response.read(), response
+    #                 elif text:
+    #                     return await response.text(), response
+    #                 elif json:
+    #                     return await response.json(), response
+
+    #     except ServerDisconnectedError:
+    #         if retry != 0:
+    #             return await self.fetch(url, retry=retry-1, raise_on_failure=raise_on_failure, bytes=bytes, json=json, text=text, params=params, headers=headers, timeout=timeout)
+    #         else:
+    #             raise ServerDisconnectedError
+
+    #     except ClientOSError:
+    #         # TODO: raise HttpError with non-roblox URLs
+    #         raise RobloxAPIError
+
+    #     except asyncio.TimeoutError:
+    #         raise RobloxDown
 
     async def get_prefix(self, guild=None, trello_board=None):
         if RELEASE == "PRO" and guild:

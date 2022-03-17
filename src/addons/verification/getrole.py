@@ -22,17 +22,9 @@ class GetRoleCommand(Bloxlink.Module):
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        trello_board = CommandArgs.trello_board
-        guild_data = CommandArgs.guild_data
         guild = CommandArgs.guild
         author = CommandArgs.author
         response = CommandArgs.response
-
-        trello_options = {}
-
-        if trello_board:
-            trello_options, _ = await get_options(trello_board)
-            guild_data.update(trello_options)
 
         try:
             old_nickname = author.display_name
@@ -40,7 +32,6 @@ class GetRoleCommand(Bloxlink.Module):
             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                 author,
                 guild                = guild,
-                guild_data           = guild_data,
                 join                 = True,
                 roles                = True,
                 nickname             = True,
@@ -87,4 +78,4 @@ class GetRoleCommand(Bloxlink.Module):
                 card.message = message
                 card.view.message = message
 
-            await post_event(guild, guild_data, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+            await post_event(guild, "verification", f"{author.mention} ({author.id}) has **verified** as `{roblox_user.username}`.", GREEN_COLOR)

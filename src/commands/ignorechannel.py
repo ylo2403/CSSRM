@@ -89,21 +89,17 @@ class IgnoreChannelCommand(Bloxlink.Module):
         else:
             ignored_channels.pop(channel_id, None)
 
-        guild_data["ignoredChannels"] = ignored_channels
-
-        await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-
-        await set_guild_value(guild, "ignoredChannels", ignored_channels)
+        await set_guild_value(guild, ignoredChannels=ignored_channels)
 
         if current_status:
             await response.success(f"Successfully **disabled** commands from {channel.mention} from non-admins.\n"
                                    "If you would like to grant a certain person access to use commands, give them a role called "
                                    "`Bloxlink Bypass`."
             )
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **disabled** all commands for channel {channel.mention}.", BROWN_COLOR)
+            await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **disabled** all commands for channel {channel.mention}.", BROWN_COLOR)
         else:
             await response.success(f"Successfully **enabled** commands from {channel.mention}.")
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **enabled** all commands for channel {channel.mention}.", BROWN_COLOR)
+            await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **enabled** all commands for channel {channel.mention}.", BROWN_COLOR)
 
 
     @Bloxlink.subcommand()

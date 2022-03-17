@@ -1008,7 +1008,7 @@ class Roblox(Bloxlink.Module):
                                                 except discord.errors.Forbidden:
                                                     pass
                                                 else:
-                                                    await post_event(guild, guild_data, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
+                                                    await post_event(guild, "moderation", f"{user_find.mention} is an alt of {member.mention} and has been `kicked`.", RED_COLOR)
 
                                                     raise CancelCommand
 
@@ -1028,7 +1028,7 @@ class Roblox(Bloxlink.Module):
                                                 except (discord.errors.Forbidden, discord.errors.HTTPException):
                                                     pass
                                                 else:
-                                                    await post_event(guild, guild_data, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
+                                                    await post_event(guild, "moderation", f"{member.mention} is an alt of {ban_entry.user.mention} and has been `{action_participle}`.", RED_COLOR)
 
                                                     raise CancelCommand
 
@@ -1081,7 +1081,7 @@ class Roblox(Bloxlink.Module):
 
                 if roblox_user:
                     if event:
-                        await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+                        await post_event(guild, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
                     if age_limit:
                         if age_limit > roblox_user.age:

@@ -354,7 +354,7 @@ class SettingsCommand(Bloxlink.Module):
 
         await set_guild_value(guild, choice, parsed_value)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}` option.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `{choice}` option.", BROWN_COLOR)
 
         raise Message(success_text, type="success")
 
@@ -428,7 +428,7 @@ class SettingsCommand(Bloxlink.Module):
                     await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
 
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **deleted** all server information.", BROWN_COLOR)
+            await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **deleted** all server information.", BROWN_COLOR)
 
             await clear_guild_data(guild)
 
@@ -518,7 +518,7 @@ class SettingsCommand(Bloxlink.Module):
                     await trello_board.sync(card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
 
 
-            await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **deleted** all binds.", BROWN_COLOR)
+            await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **deleted** all binds.", BROWN_COLOR)
 
             await clear_guild_data(guild)
 

@@ -6,8 +6,8 @@ import re
 
 
 get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 RESTRICTION_NAME_DB_USER_MAP = {
@@ -70,8 +70,7 @@ class RestrictCommand(Bloxlink.Module):
         focused_option = focused_option.lower()
 
         guild = interaction.guild
-        guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {}
-        restrictions = guild_data.get("restrictions") or {}
+        restrictions = await get_guild_value(guild, "restrictions")
         parsed_restrictions = []
 
         for restriction_name, title_name in RESTRICTION_NAME_DB_USER_MAP.items():
@@ -198,10 +197,7 @@ class RestrictCommand(Bloxlink.Module):
             raise Message("You need to supply at least one argument!", type="silly")
 
 
-        guild_data["restrictions"] = restrictions
-        await set_guild_value(guild, "restrictions", restrictions)
-
-        await self.r.table("guilds").insert(guild_data, conflict="update").run()
+        await set_guild_value(guild, restrictions=restrictions)
 
         await response.success(f"Successfully **updated** your restrictions!")
 
@@ -258,10 +254,10 @@ class RestrictCommand(Bloxlink.Module):
                 if not restrictions[directory_name]:
                     restrictions.pop(directory_name, None)
 
-                guild_data["restrictions"] = restrictions
-                await set_guild_value(guild, "restrictions", restrictions)
+                if not restrictions:
+                    restrictions = None
 
-                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+                await set_guild_value(guild, restrictions=restrictions)
 
                 await response.success(f"Successfully **removed** this **{directory_name[:-1]}** from your restrictions.")
 

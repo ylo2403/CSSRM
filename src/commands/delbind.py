@@ -311,7 +311,7 @@ class UnBindCommand(Bloxlink.Module):
 
             await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-            await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
+            await post_event(guild, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
 
             await clear_guild_data(guild)
 
@@ -359,8 +359,6 @@ class UnBindCommand(Bloxlink.Module):
 
                 await self.r.table("guilds").insert(guild_data, conflict="replace").run()
 
-        await post_event(guild, guild_data, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
-
-        await clear_guild_data(guild)
+        await post_event(guild, "bind", f"{author.mention} ({author.id}) has **removed** some `binds`.", BLURPLE_COLOR)
 
         raise Message("All bind removals were successful.", type="success")

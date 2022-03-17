@@ -192,7 +192,7 @@ class IPC(Bloxlink.Module):
                             card.message = msg
                             card.view.message = msg
 
-                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+                    await post_event(guild, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
 
 
         elif type == "EVAL":

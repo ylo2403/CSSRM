@@ -132,7 +132,7 @@ class LogChannelCommand(Bloxlink.Module):
 
         await set_guild_value(guild, "logChannels", log_channels)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `log channels`.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `log channels`.", BROWN_COLOR)
 
         await response.success(f"Successfully **{action}** your log channel!")
 
