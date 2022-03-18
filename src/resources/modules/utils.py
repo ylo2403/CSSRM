@@ -241,35 +241,3 @@ class Utils(Bloxlink.Module):
 
     #     except asyncio.TimeoutError:
     #         raise RobloxDown
-
-    async def get_prefix(self, guild=None, trello_board=None):
-        if RELEASE == "PRO" and guild:
-            prefix = await get_guild_value(guild, "proPrefix")
-
-            if prefix:
-                return prefix, None
-
-        if trello_board:
-            try:
-                List = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings")
-
-                if List:
-                    card = await List.get_card(lambda c: c.name[:6] == "prefix")
-
-                    if card:
-                        if card.name == "prefix":
-                            if card.desc:
-                                return card.desc.strip(), card
-
-                        else:
-                            match = self.option_regex.search(card.name)
-
-                            if match:
-                                return match.group(2), card
-
-            except asyncio.TimeoutError:
-                pass
-
-        prefix = guild and await get_guild_value(guild, ["prefix", PREFIX])
-
-        return prefix or PREFIX, None

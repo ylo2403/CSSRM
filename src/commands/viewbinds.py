@@ -19,10 +19,9 @@ class ViewBindsCommand(Bloxlink.Module):
         guild = CommandArgs.guild
 
         guild_data = CommandArgs.guild_data
-        trello_board = CommandArgs.trello_board
         prefix = CommandArgs.prefix
 
-        role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
+        role_binds, group_ids, _ = await get_binds(guild_data=guild_data)
 
         if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) == 0:
             raise Message(f"You have no bounded roles! Please use `{CommandArgs.prefix}bind` "

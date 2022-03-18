@@ -9,8 +9,7 @@ from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
 from config import REACTIONS, PREFIX # pylint: disable=import-error, no-name-in-module
 from ..constants import (BLOXLINK_STAFF, RELEASE, DEFAULTS, ARROW,SERVER_INVITE, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, TRELLO, SELF_HOST,
-                         VERIFY_URL, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, SELF_HOST, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
 import json
 import re
 import asyncio
@@ -20,7 +19,6 @@ import traceback
 
 
 nickname_template_regex = re.compile(r"\{(.*?)\}")
-trello_card_bind_regex = re.compile(r"(.*?): ?(.*)")
 any_group_nickname = re.compile(r"\{group-rank-(.*?)\}")
 bracket_search = re.compile(r"\[(.*)\]")
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
@@ -30,7 +28,6 @@ loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
@@ -503,280 +500,7 @@ class Roblox(Bloxlink.Module):
             return template
 
 
-    async def parse_trello_binds(self, trello_board=None, trello_binds_list=None):
-        card_binds = {
-            "groups": {
-                "binds": {},
-                "entire group": {}
-            },
-            "assets": {},
-            "badges": {},
-            "gamePasses": {}
-        }
-
-        if trello_board or trello_binds_list:
-            trello_binds_list = trello_binds_list or await trello_board.get_list(lambda l: l.name.lower() == "bloxlink binds")
-
-            if trello_binds_list:
-                if hasattr(trello_binds_list, "parsed_bind_data") and trello_binds_list.parsed_bind_data:
-                    card_binds = trello_binds_list.parsed_bind_data
-                else:
-                    await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
-
-                    for card in await trello_binds_list.get_cards():
-                        is_bind = False
-                        is_main_group = False
-                        treat_as_bind = False
-                        bind_category = None
-                        new_bind = {"trello_str": {}, "nickname": None, "removeRoles": set(), "trello": True, "card": card}
-
-                        for card_bind_data in card.description.split("\n"):
-                            card_bind_data_search = trello_card_bind_regex.search(card_bind_data)
-
-                            if card_bind_data_search:
-                                card_attr, card_value = card_bind_data_search.groups()
-
-                                if card_attr and card_value:
-                                    card_attr = card_attr.lower()
-
-                                    if card_attr in ("group", "groupid", "group id"):
-                                        if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Group configuration: `{card_value}` is not an integer.")
-
-                                        new_bind["group"] = card_value
-                                        new_bind["trello_str"]["group"] = card_value
-                                        bind_category = "group"
-
-                                    elif card_attr in ("asset", "assetid", "asset id"):
-                                        if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Asset configuration: `{card_value}` is not an integer.")
-
-                                        bind_category = "asset"
-                                        new_bind["bind_id"] = card_value
-
-                                    elif card_attr in ("badge", "badgeid", "badge id"):
-                                        if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind Badge configuration: `{card_value}` is not an integer.")
-
-                                        bind_category = "badge"
-                                        new_bind["bind_id"] = card_value
-
-                                    elif card_attr in ("gamepass", "gamepassid", "gamepass id"):
-                                        if not card_value.isdigit():
-                                            raise Error(f"Mess up on Trello bind GamePass configuration: `{card_value}` is not an integer.")
-
-                                        bind_category = "gamepass"
-                                        new_bind["bind_id"] = card_value
-
-                                    elif card_attr == "nickname":
-                                        if card_value.lower() not in ("none", "false", "n/a"):
-                                            new_bind["nickname"] = card_value
-                                        else:
-                                            new_bind["nickname"] = None
-
-                                        new_bind["trello_str"]["nickname"] = card_value
-
-                                    elif card_attr == "ranks":
-                                        is_bind = True
-                                        new_bind["ranks"] = []
-
-                                        for rank in card_value.split(","):
-                                            rank = rank.replace(" ", "")
-
-                                            if not rank.isdigit() and rank != "guest" and "-" not in rank:
-                                                raise Error(f"Mess up on Trello bind rank configuration: `{rank}` is not an integer.")
-
-                                            new_bind["ranks"].append(rank)
-
-                                        new_bind["trello_str"]["ranks"] = card_value
-
-                                    elif card_attr == "roles":
-                                        new_bind["roles"] = set([r.strip() for r in card_value.split(",")])
-                                        new_bind["trello_str"]["roles"] = card_value
-
-                                    elif card_attr == "display name":
-                                        new_bind["displayName"] = card_value
-                                        new_bind["trello_str"]["vg_name"] = card_value
-
-                                    elif card_attr == "remove roles":
-                                        new_bind["removeRoles"] = set([r.strip() for r in card_value.split(",")])
-                                        new_bind["trello_str"]["remove_roles"] = card_value
-
-                        bind_nickname = new_bind.get("nickname")
-                        bound_roles = new_bind.get("roles", set())
-
-                        if bind_category == "group":
-                            if new_bind.get("group"):
-                                if not (new_bind.get("roles") or is_bind):
-                                    is_main_group = True
-                                else:
-                                    treat_as_bind = True
-                            else:
-                                continue
-
-                            if treat_as_bind:
-                                if new_bind.get("ranks"):
-                                    ranges = []
-
-                                    for rank in new_bind["ranks"]:
-                                        is_range = False
-                                        new_range = None
-
-                                        if rank == "everyone":
-                                            rank = "all"
-                                        elif "-" in rank and not rank.lstrip("-").isdigit():
-                                            range_data = rank.split("-")
-
-                                            if len(range_data) == 2:
-                                                if not range_data[0].isdigit() and range_data[0] != "0":
-                                                    raise Error(f"Mess up on Trello bind configuration for range: `{range_data[0]}` is not an integer.")
-                                                elif not range_data[1].isdigit() and range_data[1] != "0":
-                                                    raise Error(f"Mess up on Trello bind configuration for range: `{range_data[1]}` is not an integer.")
-
-                                                is_range = True
-                                                new_range = {
-                                                    "low": int(range_data[0].strip()),
-                                                    "high": int(range_data[1].strip()),
-                                                    "nickname": bind_nickname,
-                                                    "removeRoles": new_bind.get("removeRoles"),
-                                                    "roles": bound_roles,
-                                                    "trello": {
-                                                        "cards": [{
-                                                            "card": card,
-                                                            "trello_str": new_bind["trello_str"],
-                                                            "ranks": new_bind.get("ranks"),
-                                                            "roles": bound_roles
-                                                        }]
-                                                    }
-                                                }
-                                                #ranges.append(new_range)
-
-                                        card_binds["groups"]["binds"][new_bind["group"]] = card_binds["groups"]["binds"].get(new_bind["group"]) or {}
-                                        card_binds["groups"]["binds"][new_bind["group"]]["binds"] = card_binds["groups"]["binds"][new_bind["group"]].get("binds") or {}
-                                        card_binds["groups"]["binds"][new_bind["group"]]["ranges"] = card_binds["groups"]["binds"][new_bind["group"]].get("ranges") or []
-                                        card_binds["groups"]["binds"][new_bind["group"]]["ranges"] += ranges
-
-                                        new_rank = {"nickname": bind_nickname, "roles": bound_roles, "removeRoles": new_bind.get("removeRoles"), "trello": {"cards": [{"roles": set(bound_roles), "card": card, "trello_str": new_bind["trello_str"], "ranks": new_bind.get("ranks") }]}}
-
-                                        if not is_range:
-                                            old_rank = card_binds["groups"]["binds"][new_bind["group"]]["binds"].get(rank)
-
-                                            if old_rank:
-                                                new_rank["roles"].update(old_rank["roles"])
-                                                new_rank["removeRoles"].update(old_rank["removeRoles"])
-                                                new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
-
-                                            card_binds["groups"]["binds"][new_bind["group"]]["binds"][rank] = new_rank
-                                        else:
-                                            new_range.update({
-                                                "high": new_range["high"],
-                                                "low": new_range["low"]
-                                            })
-
-                                            for range_ in card_binds["groups"]["binds"][new_bind["group"]]["ranges"]:
-                                                if range_["high"] == new_range["high"] and range_["low"] == new_range["low"]:
-                                                    old_range = range_
-
-                                                    new_range["roles"].update(old_range["roles"])
-                                                    new_range["removeRoles"].update(old_range["removeRoles"])
-                                                    new_range["trello"]["cards"] += old_range["trello"]["cards"]
-
-                                                    break
-
-                                            card_binds["groups"]["binds"][new_bind["group"]]["ranges"].append(new_range)
-
-                                else:
-                                    new_rank = {
-                                        "nickname": bind_nickname,
-                                        "roles": bound_roles,
-                                        "removeRoles": new_bind.get("removeRoles"),
-                                        "trello": {
-                                            "cards": [{
-                                                "card": card,
-                                                "trello_str": new_bind["trello_str"],
-                                                "ranks": new_bind.get("ranks"),
-                                                "roles": bound_roles
-                                            }]
-                                        }
-                                    }
-
-                                    card_binds["groups"]["binds"][new_bind["group"]] = card_binds["groups"]["binds"].get(new_bind["group"]) or {}
-                                    card_binds["groups"]["binds"][new_bind["group"]]["binds"] = card_binds["groups"]["binds"][new_bind["group"]].get("binds") or {}
-
-                                    old_rank = card_binds["groups"]["binds"][new_bind["group"]]["binds"].get("all")
-
-                                    if old_rank:
-                                        new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
-                                        new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
-                                        new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
-
-                                    card_binds["groups"]["binds"][new_bind["group"]]["binds"]["all"] = new_rank
-
-                            elif is_main_group:
-                                try:
-                                    group = await self.get_group(new_bind["group"], full_group=True)
-                                except RobloxNotFound:
-                                    group_name = f"Invalid Group: {new_bind['group']}"
-                                else:
-                                    group_name = group.name
-
-                                new_rank = {
-                                    "nickname": bind_nickname,
-                                    "groupName": group_name,
-                                    "removeRoles": new_bind.get("removeRoles"),
-                                    "roles": bound_roles, # set(),
-                                    "trello": {
-                                        "cards": [{
-                                            "card": card,
-                                            "trello_str": new_bind["trello_str"],
-                                            "ranks": new_bind.get("ranks")
-                                        }]
-                                    }
-                                }
-
-                                old_rank = card_binds["groups"]["entire group"].get(new_bind["group"])
-
-                                if old_rank:
-                                    new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
-                                    new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
-                                    new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
-
-                                card_binds["groups"]["entire group"][new_bind["group"]] = new_rank
-
-                        elif bind_category in ("asset", "badge", "gamepass"):
-                            if bind_category == "gamepass":
-                                bind_category_plural = "gamePasses"
-                            else:
-                                bind_category_plural = f"{bind_category}s"
-
-                            new_rank = {
-                                "nickname": bind_nickname,
-                                "displayName": new_bind.get("displayName"),
-                                "removeRoles": new_bind.get("removeRoles"),
-                                "roles": bound_roles,
-                                "trello": {
-                                    "cards": [{
-                                        "card": card,
-                                        "trello_str": new_bind["trello_str"],
-                                    }]
-                                }
-                            }
-                            old_rank = card_binds[bind_category_plural].get(new_bind["bind_id"])
-
-                            if old_rank:
-                                new_rank["roles"] = new_rank["roles"].union(old_rank["roles"])
-                                new_rank["removeRoles"] = new_rank["removeRoles"].union(old_rank["removeRoles"])
-                                new_rank["trello"]["cards"] += old_rank["trello"]["cards"]
-
-                            card_binds[bind_category_plural][new_bind["bind_id"]] = new_rank
-
-
-                    trello_binds_list.parsed_bind_data = card_binds
-
-        return card_binds, trello_binds_list
-
-
-    async def get_binds(self, guild=None, guild_data=None, trello_board=None, trello_binds_list=None, given_trello_options=False):
+    async def get_binds(self, guild=None, guild_data=None):
         guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
         role_binds = guild_data.get("roleBinds") or {}
         group_ids  = guild_data.get("groupIDs") or {}
@@ -786,46 +510,11 @@ class Roblox(Bloxlink.Module):
         role_binds["badges"]     = role_binds.get("badges", {})
         role_binds["gamePasses"] = role_binds.get("gamePasses", {})
 
-        if trello_board:
-            card_binds, trello_binds_list = await self.parse_trello_binds(trello_board=trello_board, trello_binds_list=trello_binds_list)
-            mode = guild_data.get("trelloBindMode", DEFAULTS.get("trelloBindMode"))
 
-            if not given_trello_options:
-                trello_options, _ = await get_options(trello_board)
-                mode = trello_options.get("trelloBindMode", mode)
-
-            group_binds    = card_binds["groups"].get("binds")
-            asset_binds    = card_binds["assets"]
-            badge_binds    = card_binds["badges"]
-            gamepass_binds = card_binds["gamePasses"]
-            entire_group   = card_binds["groups"]["entire group"]
-
-            if mode == "replace":
-                role_binds = {
-                    "groups": group_binds,
-                    "assets": asset_binds,
-                    "badges": badge_binds,
-                    "gamePasses": gamepass_binds
-                }
-                group_ids = entire_group
-
-            else:
-                for category, bind_data in card_binds.items():
-                    role_binds[category] = role_binds.get(category, {})
-
-                    if category == "groups":
-                        role_binds["groups"].update(group_binds)
-                    else:
-
-                        role_binds[category].update(bind_data)
-
-                group_ids.update(entire_group)
+        return role_binds, group_ids
 
 
-        return role_binds, group_ids, trello_binds_list
-
-
-    async def guild_obligations(self, member, guild, join=None, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, trello_board=None, roblox_user=None):
+    async def guild_obligations(self, member, guild, join=None, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, roblox_user=None):
         if member.bot:
             raise CancelCommand
 
@@ -1039,10 +728,8 @@ class Roblox(Bloxlink.Module):
                         guild                   = guild,
                         guild_data              = guild_data,
                         roles                   = roles,
-                        trello_board            = trello_board,
                         nickname                = nickname,
                         roblox_user             = roblox_user,
-                        given_trello_options    = True,
                         cache                   = cache,
                         dm                      = dm,
                         response                = response)
@@ -1077,7 +764,7 @@ class Roblox(Bloxlink.Module):
                 except (UserNotVerified, discord.errors.HTTPException):
                     pass
 
-                required_groups = options.get("groupLock") # TODO: integrate with Trello
+                required_groups = options.get("groupLock")
 
                 if roblox_user:
                     if event:
@@ -1473,7 +1160,7 @@ class Roblox(Bloxlink.Module):
         print(required_binds)
         print(optional_binds)
 
-    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, user_data=None, binds=None, guild_data=None, trello_board=None, given_trello_options=False, response=None, dm=False, cache=True):
+    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, user_data=None, binds=None, guild_data=None, response=None, dm=False, cache=True):
         restriction = await get_restriction("users", user.id, guild=guild)
 
         if restriction:
@@ -1500,7 +1187,6 @@ class Roblox(Bloxlink.Module):
         warnings = []
         unverified = False
         top_role_nickname = None
-        trello_options = {}
 
         if not isinstance(user, discord.Member):
             user = await guild.fetch_member(user.id)
@@ -1519,12 +1205,6 @@ class Roblox(Bloxlink.Module):
         if has_magic_role(user, guild_data.get("magicRoles"), "Bloxlink Bypass"):
             raise BloxlinkBypass()
 
-        if not trello_board:
-            trello_board = await get_board(guild=guild, guild_data=guild_data)
-
-        if trello_board and not given_trello_options:
-            trello_options, _ = await get_options(trello_board)
-            guild_data.update(trello_options)
 
         async def give_bind_stuff(binds):
             bind_nickname = binds.get("nickname")
@@ -1641,7 +1321,7 @@ class Roblox(Bloxlink.Module):
                 if binds and len(binds) == 2 and binds[0] is not None and binds[1] is not None:
                     role_binds, group_ids = binds
                 else:
-                    role_binds, group_ids, _ = await self.get_binds(guild_data=guild_data, guild=guild, trello_board=trello_board, given_trello_options=True)
+                    role_binds, group_ids, _ = await self.get_binds(guild_data=guild_data, guild=guild)
 
                 if role_binds:
                     if isinstance(role_binds, list):
@@ -1680,20 +1360,7 @@ class Roblox(Bloxlink.Module):
                                             int_role_id = role_id.isdigit() and int(role_id)
                                             role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                            if not role:
-                                                if bind_data.get("trello"):
-                                                    try:
-                                                        role = await guild.create_role(name=role_id)
-                                                    except discord.errors.Forbidden:
-                                                        raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                            "Please ensure I have the `Manage Roles` permission.")
-                                                    except discord.errors.HTTPException:
-                                                        raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-                                                    else:
-                                                        add_roles.add(role)
-
-                                            else:
+                                            if role:
                                                 add_roles.add(role)
 
                                             if role and nickname and bind_nickname and bind_nickname != "skip":
@@ -1770,19 +1437,8 @@ class Roblox(Bloxlink.Module):
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                if not role:
-                                                    if bind_data.get("trello"):
-                                                        try:
-                                                            role = await guild.create_role(name=role_id)
-                                                        except discord.errors.Forbidden:
-                                                            raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                   "Please ensure I have the `Manage Roles` permission.")
-                                                        except discord.errors.HTTPException:
-                                                            raise Error("Unable to create role: this server has reached the max amount of roles!")
 
-                                                        else:
-                                                            add_roles.add(role)
-                                                else:
+                                                if role:
                                                     add_roles.add(role)
 
                                                 if role and nickname and bind_nickname and bind_nickname != "skip":
@@ -1815,20 +1471,7 @@ class Roblox(Bloxlink.Module):
                                                     int_role_id = role_id.isdigit() and int(role_id)
                                                     role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                    if not role:
-                                                        if bind_data.get("trello"):
-                                                            try:
-                                                                role = await guild.create_role(name=role_id)
-                                                            except discord.errors.Forbidden:
-                                                                raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                       "Please ensure I have the `Manage Roles` permission.")
-
-                                                            except discord.errors.HTTPException:
-                                                                raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-                                                            else:
-                                                                add_roles.add(role)
-                                                    else:
+                                                    if role:
                                                         add_roles.add(role)
 
                                                     if role and nickname and bind_nickname and bind_nickname != "skip":
@@ -1870,15 +1513,6 @@ class Roblox(Bloxlink.Module):
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                if not role:
-                                                    if bind_range.get("trello"):
-                                                        try:
-                                                            role = await guild.create_role(name=role_id)
-                                                        except discord.errors.Forbidden:
-                                                            raise PermissionError(f"Sorry, I wasn't able to create the role {role_id}."
-                                                                                    "Please ensure I have the `Manage Roles` permission.")
-                                                        except discord.errors.HTTPException:
-                                                            raise Error("Unable to create role: this server has reached the max amount of roles!")
                                                 if role:
                                                     if roles:
                                                         add_roles.add(role)
@@ -2278,7 +1912,7 @@ class Roblox(Bloxlink.Module):
 
             raise BadUsage("Unable to resolve a user")
 
-    async def verify_as(self, user, guild=None, *, user_data=None, primary=False, trello_options=None, update_user=True, trello_board=None, response=None, guild_data=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
+    async def verify_as(self, user, guild=None, *, user_data=None, primary=False, update_user=True, response=None, guild_data=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
         if not (username or roblox_id):
             raise BadUsage("Must supply either a username or roblox_id to verify_as.")
 
@@ -2290,12 +1924,6 @@ class Roblox(Bloxlink.Module):
             guild_data = guild_data or (guild and await self.r.table("guilds").get(str(guild.id)).run()) or {}
 
             allow_reverify = guild_data.get("allowReVerify", DEFAULTS.get("allowReVerify"))
-
-            trello_options = trello_options or {}
-
-            if not trello_options and trello_board:
-                trello_options, _ = await get_options(trello_board)
-                guild_data.update(trello_options)
 
             invalid_roblox_names = 0
 

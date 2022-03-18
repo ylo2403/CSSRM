@@ -1,7 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module
-from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
 import discord
 import re
 
@@ -9,7 +8,6 @@ NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
-trello, get_options = Bloxlink.get_module("trello", attrs=["trello", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
@@ -44,25 +42,6 @@ class SetupCommand(Bloxlink.Module):
             return None, "No group was found with this ID. Please try again."
 
         return group
-
-    @staticmethod
-    async def validate_trello_board(message, content, prompt, guild):
-        content_lower = content.lower()
-
-        if content_lower in ("skip", "next"):
-            return "skip"
-        elif content_lower == "disable":
-            return "disable"
-
-        try:
-            board = await trello.get_board(content, card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
-        except (TrelloNotFound, TrelloBadRequest):
-            return None, "No Trello board was found with this ID. Please try again."
-        except TrelloUnauthorized:
-            return None, "I don't have permission to view this Trello board; please make sure " \
-                         "this Trello board is set to **PUBLIC**, or add `@bloxlink` to your Trello board."
-
-        return board
 
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
@@ -162,29 +141,6 @@ class SetupCommand(Bloxlink.Module):
             group_ids[group.group_id] = {"nickname": None, "groupName": group.name}
 
             settings_buffer.append(f"**merge_replace** {ARROW} {merge_replace}")
-
-        if CommandArgs.trello_board:
-            parsed_args_3 = (await CommandArgs.prompt([
-                {
-                    "prompt": "We've detected that you have a **Trello board** linked to this server!\n"
-                              "Trello functionality on Bloxlink is **deprecated** and **will be removed** "
-                              "in a future update in favor of our upcoming **Server Dashboard**.\n\n"
-                              "You may unlink Trello from your server by saying `disable`.\nIf you're "
-                              "not ready to unlink Trello yet, say `skip`.",
-                    "name": "trello_choice",
-                    "type": "choice",
-                    "components": [discord.ui.Select(max_values=1, options=[
-                            discord.SelectOption(label="Disable", description="Your Trello board will be unlinked."),
-                            discord.SelectOption(label="Skip")
-                        ])],
-                    "choices": ["disable", "skip"],
-                    "embed_title": "Trello Deprecation"
-
-                }
-            ], dm=False, no_dm_post=True))["trello_choice"]
-
-            if parsed_args_3[0] == "disable":
-                guild_data.pop("trelloID")
 
 
         parsed_args_4 = await CommandArgs.prompt([

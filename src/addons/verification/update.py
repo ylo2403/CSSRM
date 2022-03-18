@@ -133,8 +133,6 @@ class UpdateCommand(Bloxlink.Module):
                 if self.redis:
                     await self.redis.set(redis_cooldown_key, 2, ex=86400)
 
-            trello_board = CommandArgs.trello_board
-
             #async with response.loading():
             if len_users > 1:
                 for user in users:
@@ -144,7 +142,6 @@ class UpdateCommand(Bloxlink.Module):
                                 user,
                                 guild             = guild,
                                 guild_data        = guild_data,
-                                trello_board      = trello_board,
                                 roles             = True,
                                 nickname          = True,
                                 dm                = False,
@@ -179,7 +176,6 @@ class UpdateCommand(Bloxlink.Module):
                         user,
                         guild             = guild,
                         guild_data        = guild_data,
-                        trello_board      = trello_board,
                         roles             = True,
                         nickname          = True,
                         cache             = False,

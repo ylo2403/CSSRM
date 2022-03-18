@@ -7,10 +7,6 @@ from benedict import benedict
 class Cache(Bloxlink.Module):
     def __init__(self):
         self._cache = benedict(keypath_separator=":")
-        self.get_options = self.get_board = None
-
-    async def __setup__(self):
-        self.get_options, self.get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 
     async def get(self, k, primitives=False, redis_hash=False, redis_hash_exists=False):
         if primitives and self.cache and k:

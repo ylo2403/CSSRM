@@ -5,7 +5,6 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
 
 
-get_options, get_board = Bloxlink.get_module("trello", attrs=["get_options", "get_board"])
 verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds, get_binds = Bloxlink.get_module("roblox", attrs=["verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds", "get_binds"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
@@ -94,12 +93,6 @@ class SwitchUserCommand(Bloxlink.Module):
 
                     guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {"id": str(guild.id)}
 
-                    trello_board = await get_board(guild_data=guild_data, guild=guild)
-
-                    if trello_board:
-                        options_trello, _ = await get_options(trello_board)
-                        guild_data.update(options_trello)
-
                     allow_reverify = guild_data.get("allowReVerify", DEFAULTS.get("allowReVerify"))
                     roblox_accounts = author_data.get("robloxAccounts", {})
 
@@ -124,7 +117,6 @@ class SwitchUserCommand(Bloxlink.Module):
                             response     = response,
                             primary      = parsed_args["primary"] == "yes",
                             roblox_id    = roblox_id,
-                            trello_board = trello_board,
                             update_user  = False)
 
                     except Message as e:
@@ -135,7 +127,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     except Error as e:
                         await response.error(e)
                     else:
-                        role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
+                        role_binds, group_ids, _ = await get_binds(guild_data=guild_data)
 
                         if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) and not has_magic_role(member, guild_data.get("magicRoles", {}), "Bloxlink Bypass"):
                             for role in list(member.roles):

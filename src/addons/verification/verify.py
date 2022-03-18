@@ -2,11 +2,9 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 import discord
 from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error, no-name-in-module
 from resources.constants import (NICKNAME_TEMPLATES, GREEN_COLOR, BROWN_COLOR, ARROW, VERIFY_URL, # pylint: disable=import-error, no-name-in-module
-                                ACCOUNT_SETTINGS_URL, TRELLO)
-from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
+                                ACCOUNT_SETTINGS_URL)
 
-verify_as, get_user, get_nickname, get_roblox_id, parse_accounts, unverify_member, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["verify_as", "get_user", "get_nickname", "get_roblox_id", "parse_accounts", "unverify_member", "format_update_embed", "guild_obligations"])
-get_options = Bloxlink.get_module("trello", attrs="get_options")
+get_user, get_nickname, get_roblox_id, parse_accounts, unverify_member, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "unverify_member", "format_update_embed", "guild_obligations"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
@@ -34,7 +32,6 @@ class VerifyCommand(Bloxlink.Module):
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        trello_board = CommandArgs.trello_board
         guild_data = CommandArgs.guild_data
         guild = CommandArgs.guild
         author = CommandArgs.author
@@ -53,12 +50,6 @@ class VerifyCommand(Bloxlink.Module):
         if CommandArgs.real_command_name in ("getrole", "getroles"):
             CommandArgs.string_args = []
 
-        trello_options = {}
-
-        if trello_board:
-            trello_options, _ = await get_options(trello_board)
-            guild_data.update(trello_options)
-
         try:
             old_nickname = author.display_name
 
@@ -69,7 +60,6 @@ class VerifyCommand(Bloxlink.Module):
                 guild_data           = guild_data,
                 roles                = True,
                 nickname             = True,
-                trello_board         = CommandArgs.trello_board,
                 cache                = False,
                 response             = response,
                 dm                   = False,
@@ -145,16 +135,7 @@ class VerifyCommand(Bloxlink.Module):
             "choices": ("welcomeMessage",)
         }]))["choice"]
 
-
-        trello_board = CommandArgs.trello_board
         card = None
-
-        if trello_board:
-            options_trello_data, trello_binds_list = await get_options(trello_board, return_cards=True)
-            options_trello_find = options_trello_data.get(choice)
-
-            if options_trello_find:
-                card = options_trello_find[1]
 
         if choice == "welcomeMessage":
             welcome_message = (await CommandArgs.prompt([{
@@ -164,26 +145,6 @@ class VerifyCommand(Bloxlink.Module):
                 "formatting": False,
                 "max": 1500
             }], last=True))["welcome_message"]
-
-            if trello_board and trello_binds_list:
-                try:
-                    if card:
-                        if card.name == choice:
-                            await card.edit(name="welcomeMessage", desc=welcome_message)
-                    else:
-                        trello_settings_list = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings") \
-                                            or await trello_board.create_list(name="Bloxlink Settings")
-
-                        await trello_settings_list.create_card(name="welcomeMessage", desc=welcome_message)
-
-                    await trello_binds_list.sync(card_limit=TRELLO["CARD_LIMIT"])
-
-                except TrelloUnauthorized:
-                    await response.error("In order for me to edit your Trello settings, please add `@bloxlink` to your "
-                                         "Trello board.")
-
-                except (TrelloNotFound, TrelloBadRequest):
-                    pass
 
             await set_guild_value(guild, welcomeMessage=welcome_message)
 

@@ -4,7 +4,6 @@ from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import
 import discord
 
 format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["format_update_embed", "guild_obligations"])
-get_options = Bloxlink.get_module("trello", attrs="get_options")
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 get_accounts = Bloxlink.get_module("robloxnew.users", attrs=["get_accounts"], name_override="users")
 
@@ -35,7 +34,6 @@ class GetRoleCommand(Bloxlink.Module):
                 join                 = True,
                 roles                = True,
                 nickname             = True,
-                trello_board         = CommandArgs.trello_board,
                 cache                = False,
                 response             = response,
                 dm                   = False,

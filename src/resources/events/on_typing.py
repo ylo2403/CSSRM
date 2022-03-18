@@ -6,7 +6,6 @@ from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-i
 
 cache_get, cache_set, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "set", "get_guild_value"])
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
-get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 

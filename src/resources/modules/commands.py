@@ -11,8 +11,7 @@ from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
 from config import BOTS # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
 
-get_prefix, fetch = Bloxlink.get_module("utils", attrs=["get_prefix", "fetch"])
-get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
+fetch = Bloxlink.get_module("utils", attrs=["fetch"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
@@ -249,7 +248,7 @@ class Commands(Bloxlink.Module):
 
 
 
-    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, trello_board=None, after_text="", slash_command=False):
+    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, after_text="", slash_command=False):
         my_permissions = guild and guild.me.guild_permissions
 
         try:
@@ -276,10 +275,6 @@ class Commands(Bloxlink.Module):
             await response.error("The Roblox API is currently offline; please wait until Roblox is back online before re-running this command.")
         except CancelledPrompt as e:
             arguments.cancelled = True
-
-            if trello_board:
-                trello_options, _ = await get_options(trello_board)
-                guild_data.update(trello_options)
 
             if e.message:
                 text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
@@ -366,12 +361,6 @@ class Commands(Bloxlink.Module):
                         delete_messages += prompt_messages
                 else:
                     delete_messages = [] # we'll populate this with the command information
-
-                # since trello-set options will be strings
-                try:
-                    delete_commands_after = int(delete_commands_after)
-                except ValueError:
-                    delete_commands_after = 0
 
                 if delete_commands_after:
                     if message:
@@ -583,7 +572,6 @@ class Commands(Bloxlink.Module):
 
         if command:
             subcommand_attrs = {}
-            trello_board = None
             guild_data = {}
 
             if subcommand and command.subcommands.get(subcommand):
@@ -594,9 +582,6 @@ class Commands(Bloxlink.Module):
 
             if guild:
                 guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
-                trello_board = guild and await get_board(guild)
-
-            real_prefix, _ = await get_prefix(guild, trello_board)
 
             CommandArgs = Args(
                 command_name = command_name,
@@ -605,7 +590,6 @@ class Commands(Bloxlink.Module):
                 guild_data = guild_data,
                 flags = {},
                 prefix = "/",
-                real_prefix = real_prefix,
                 has_permission = False,
                 command = command,
                 guild = guild,
@@ -628,7 +612,7 @@ class Commands(Bloxlink.Module):
                 await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)
                 raise CancelCommand
 
-            CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
+            CommandArgs.add(locale=locale, response=response)
 
             await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
 

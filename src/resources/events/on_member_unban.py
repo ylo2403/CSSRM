@@ -7,7 +7,6 @@ from discord import Object
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_user = Bloxlink.get_module("roblox", attrs=["get_user"])
-get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 
 @Bloxlink.module
