@@ -2,6 +2,8 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.constants import DEFAULTS, BROWN_COLOR # pylint: disable=import-error, no-name-in-module
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
+
 
 @Bloxlink.command
 class DynamicRolesCommand(Bloxlink.Module):
@@ -14,17 +16,12 @@ class DynamicRolesCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-
         author = CommandArgs.author
-
         guild = CommandArgs.guild
-        guild_data = CommandArgs.guild_data
 
-        toggle = not guild_data.get("dynamicRoles", DEFAULTS.get("dynamicRoles"))
+        toggle = not (await get_guild_value(guild, "dynamicRoles") or DEFAULTS.get("dynamicRoles"))
 
-        guild_data["dynamicRoles"] = toggle
-
-        await self.r.table("guilds").insert(guild_data, conflict="update").run()
+        await set_guild_value(guild, dynamicRoles=toggle)
 
         if toggle:
             await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **enabled** `dynamicRoles`.", BROWN_COLOR)
