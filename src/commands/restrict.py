@@ -138,7 +138,6 @@ class RestrictCommand(Bloxlink.Module):
         response     = CommandArgs.response
         author       = CommandArgs.author
         guild        = CommandArgs.guild
-        prefix       = CommandArgs.prefix
 
         reason       = parsed_args["reason"]
 
@@ -153,7 +152,7 @@ class RestrictCommand(Bloxlink.Module):
             if not profile.features.get("premium"):
                 raise Error(f"You have the max restrictions `({LIMITS['RESTRICTIONS']['FREE']})` allowed for free servers! You may "
                             f"unlock **additional restrictions** `({LIMITS['RESTRICTIONS']['PREMIUM']})` by subscribing to premium. Find out "
-                            f"more info with `{prefix}donate`.\nFor now, you may remove restrictions with `{prefix}restrict remove` "
+                            "more info with `/donate`.\nFor now, you may remove restrictions with `/restrict remove` "
                             "to add additional restrictions.")
             else:
                 if len_restrictions >= LIMITS["RESTRICTIONS"]["PREMIUM"]:

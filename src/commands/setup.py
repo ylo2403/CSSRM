@@ -47,7 +47,6 @@ class SetupCommand(Bloxlink.Module):
         guild = CommandArgs.guild
         author = CommandArgs.author
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         group_ids = await get_guild_value(guild, "groupIDs") or {}
 
@@ -159,7 +158,7 @@ class SetupCommand(Bloxlink.Module):
                         try:
                             if not (role in guild.me.roles or role.is_default()):
                                 try:
-                                    await role.delete(reason=f"{author} chose to replace roles through {prefix}setup")
+                                    await role.delete(reason=f"{author} chose to replace roles through /setup")
                                 except discord.errors.Forbidden:
                                     pass
                                 except discord.errors.HTTPException:

@@ -50,14 +50,13 @@ class MagicRolesCommand(Bloxlink.Module):
         guild      = CommandArgs.guild
         response   = CommandArgs.response
         author     = CommandArgs.author
-        prefix     = CommandArgs.prefix
 
         premium_status, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
         if not premium_status.features.get("premium"):
             magic_roles_desc = "\n".join([f'**{x}** {ARROW} {y}' for x,y in MAGIC_ROLES.items()])
             raise Error("Customizing Magic Roles is reserved for __Bloxlink Premium subscribers!__ You may find out "
-                        f"more information with the `{prefix}donate` command.\n\n"
+                        "more information with the `/donate` command.\n\n"
                         "However, you may manually create a Bloxlink Magic Role "
                         f"and assign it one of these names, then give it to people!\n{magic_roles_desc}")
 

@@ -1,10 +1,11 @@
+import rlcompleter
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error, RobloxNotFound  # pylint: disable=import-error, no-name-in-module
 from resources.constants import NICKNAME_TEMPLATES  # pylint: disable=import-error, no-name-in-module
 
 
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
-
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 @Bloxlink.command
@@ -72,9 +73,7 @@ class GuestRoleCommand(Bloxlink.Module):
         except RobloxNotFound:
             raise Error(f"A group with ID `{group_id}` does not exist. Please try again.")
 
-        guild_data = CommandArgs.guild_data
-
-        role_binds = guild_data.get("roleBinds") or {}
+        role_binds = await get_guild_value(guild, "roleBinds") or {}
 
         if isinstance(role_binds, list):
             role_binds = role_binds[0]
@@ -107,10 +106,6 @@ class GuestRoleCommand(Bloxlink.Module):
 
         role_binds["groups"][group_id]["binds"][x] = rank
 
-        await self.r.table("guilds").insert({
-            "id": str(guild.id),
-            "roleBinds": role_binds
-        }, conflict="update").run()
-
+        await set_guild_value(guild, roleBinds=role_binds)
 
         await response.success(f"Successfully bound this **Guest Role** to role **{role.name}!**")

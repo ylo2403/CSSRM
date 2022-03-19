@@ -28,7 +28,6 @@ class CommandsCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         command_name = CommandArgs.parsed_args.get("command_name")
-        prefix = CommandArgs.prefix
         response = CommandArgs.response
         guild = CommandArgs.guild
         author = CommandArgs.author
@@ -38,14 +37,14 @@ class CommandsCommand(Bloxlink.Module):
 
             for name, command in commands.items():
                 if name == command_name or command_name in command.aliases:
-                    embed = discord.Embed(title=f"{prefix}{name}", description=command.full_description or "N/A")
+                    embed = discord.Embed(title=f"/{name}", description=command.full_description or "N/A")
                     embed.set_author(name="Bloxlink", icon_url=Bloxlink.user.avatar.url)
                     embed.add_field(name="Category", value=command.category)
 
                     if command.usage:
-                        embed.add_field(name="Usage", value=f"`{prefix}{name} {command.usage}`")
+                        embed.add_field(name="Usage", value=f"`/{name} {command.usage}`")
                     else:
-                        embed.add_field(name="Usage", value=f"`{prefix}{name}`")
+                        embed.add_field(name="Usage", value=f"`/{name}`")
 
                     if command.aliases:
                         if len(command.aliases) > 1:
@@ -98,7 +97,7 @@ class CommandsCommand(Bloxlink.Module):
                         examples = []
 
                         for example in command.examples:
-                            examples.append(f"{prefix}{command_name} {example}")
+                            examples.append(f"/{command_name} {example}")
 
                         embed.add_field(name="Examples", value="\n".join(examples))
 
@@ -106,7 +105,7 @@ class CommandsCommand(Bloxlink.Module):
 
                     break
             else:
-                raise Error(f"This command does not exist! Please use `{prefix}help` to view a full list of commands.")
+                raise Error(f"This command does not exist! Please use `/help` to view a full list of commands.")
         else:
             commands_categories = {}
             enabled_addons = guild and await get_enabled_addons(guild) or {}
@@ -116,7 +115,7 @@ class CommandsCommand(Bloxlink.Module):
                     continue
 
                 commands_categories[command.category] = commands_categories.get(command.category) or []
-                commands_categories[command.category].append(f"**[{prefix}{command_name}](https://blox.link/commands/{command_name})**\n<:Reply:872019019677450240>{command.description}")
+                commands_categories[command.category].append(f"**[/{command_name}](https://blox.link/commands/{command_name})**\n<:Reply:872019019677450240>{command.description}")
 
             paginator = InteractionPaginator(commands_categories, response, max_items=8, use_fields=False, default_category="Miscellaneous",
                                             description="Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.",

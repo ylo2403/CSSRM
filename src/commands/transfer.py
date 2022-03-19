@@ -35,7 +35,6 @@ class TransferCommand(Bloxlink.Module):
         guild = CommandArgs.guild
         transfer_to = CommandArgs.parsed_args.get("user")
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         if transfer_to.bot:
             raise Message("You cannot transfer your premium to bots!", type="confused")
@@ -61,11 +60,11 @@ class TransferCommand(Bloxlink.Module):
             raise Message(f"You recently transferred your premium! You may transfer again in **{days_left}** day{days_left > 1 and 's' or ''}.", type="silly")
 
         if author_premium_data.get("transferTo"):
-            raise Message(f"You are currently transferring your premium to another user! Please disable it with `{prefix}transfer "
-                           "disable` first.", type="info")
+            raise Message("You are currently transferring your premium to another user! Please disable it with `/transfer "
+                          "disable` first.", type="info")
         elif author_premium_data.get("transferFrom"):
             raise Message("You may not transfer premium that someone else transferred to you. You must first revoke the transfer "
-                         f"with `{prefix}transfer disable`.", type="confused")
+                          "with `/transfer disable`.", type="confused")
 
         prem_data, _ = await get_features(author, user_data=author_data, cache=False, rec=False, partner_check=False)
 
@@ -76,14 +75,14 @@ class TransferCommand(Bloxlink.Module):
         recipient_data_premium = recipient_data.get("premium", {})
 
         if recipient_data_premium.get("transferFrom"):
-            raise Error(f"Another user is already forwarding their premium to this user. The recipient must run `{prefix}transfer disable` "
+            raise Error("Another user is already forwarding their premium to this user. The recipient must run `/transfer disable` "
                         "to revoke the external transfer.")
 
         await CommandArgs.prompt([{
             "prompt": f"Are you sure you want to transfer your premium to **{transfer_to}**?\n"
                       "You will not be able transfer again for **5** days! We also do __not__ "
                       "remove cool-downs for __any reason at all.__\n\nYou will be "
-                      f"able to cancel the transfer at anytime with `{prefix}transfer disable`.",
+                      "able to cancel the transfer at anytime with `/transfer disable`.",
             "footer": "Please say **yes** to complete the transfer.",
             "type": "choice",
             "choices": ("yes",),

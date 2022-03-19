@@ -6,7 +6,7 @@ import discord
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 @Bloxlink.command
@@ -46,12 +46,11 @@ class LogChannelCommand(Bloxlink.Module):
         """add/delete a log channel"""
 
         response = CommandArgs.response
-        guild_data = CommandArgs.guild_data
 
         author = CommandArgs.author
         guild = CommandArgs.guild
 
-        log_channels = guild_data.get("logChannels") or {}
+        log_channels = await get_guild_value(guild, "logChannels") or {}
 
         parsed_args = await CommandArgs.prompt([
             {
@@ -118,14 +117,9 @@ class LogChannelCommand(Bloxlink.Module):
             action = "saved"
 
         if not log_channels:
-            guild_data.pop("logChannels", None)
+            await set_guild_value(guild, logChannels=None)
         else:
-            guild_data["logChannels"] = log_channels
-
-
-        await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-
-        await set_guild_value(guild, "logChannels", log_channels)
+            await set_guild_value(guild, logChannels=log_channels)
 
         await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `log channels`.", BROWN_COLOR)
 
@@ -137,9 +131,8 @@ class LogChannelCommand(Bloxlink.Module):
         """view your log channels"""
 
         guild = CommandArgs.guild
-        guild_data = CommandArgs.guild_data
 
-        log_channels = guild_data.get("logChannels") or {}
+        log_channels = await get_guild_value(guild, "logChannels") or {}
 
         response = CommandArgs.response
 

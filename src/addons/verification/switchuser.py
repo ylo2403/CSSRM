@@ -9,6 +9,7 @@ verify_as, parse_accounts, update_member, get_nickname, verify_member, count_bin
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 get_user = Bloxlink.get_module("robloxnew.users", attrs=["get_user"], name_override="users")
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 
 class SwitchUserCommand(Bloxlink.Module):
     """change your linked Roblox account in a server"""
@@ -41,7 +42,6 @@ class SwitchUserCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         author = CommandArgs.author
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         if not SELF_HOST:
             author_data = await self.r.db("bloxlink").table("users").get(str(author.id)).run() or {"id": str(author.id)}
@@ -56,7 +56,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     parsed_args = await CommandArgs.prompt([
                         {
                             "prompt": "This command will allow you to switch into an account you verified as in the past.\n"
-                                    f"If you would like to link __a new account__, then please use `{prefix}verify add`.\n\n"
+                                    f"If you would like to link __a new account__, then please use `/verify add`.\n\n"
                                     "**__WARNING:__** This will remove __all of your roles__ in the server and give you "
                                     "new roles depending on the server configuration.",
                             "footer": "Say **next** to continue.",
@@ -91,9 +91,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     username = parsed_args["account"]
                     roblox_id = (parsed_accounts.get(username)).id
 
-                    guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {"id": str(guild.id)}
-
-                    allow_reverify = guild_data.get("allowReVerify", DEFAULTS.get("allowReVerify"))
+                    allow_reverify = await get_guild_value(guild, ["allowReVerify", DEFAULTS.get("allowReVerify")])
                     roblox_accounts = author_data.get("robloxAccounts", {})
 
                     if guild and not allow_reverify:

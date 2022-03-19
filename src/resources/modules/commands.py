@@ -25,7 +25,7 @@ GUILD_COMMANDS_URL = "https://discord.com/api/v8/applications/{BOT_ID}/guilds/{G
 
 @Bloxlink.module
 class Commands(Bloxlink.Module):
-    """mannages both interaction commands and prefixed-commands"""
+    """mannages interaction commands"""
     def __init__(self):
         self.commands   = {}
 
@@ -95,7 +95,7 @@ class Commands(Bloxlink.Module):
 
                         raise CancelCommand
 
-            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix", "add-features", "stats"):
+            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "add-features", "stats"):
                 if not donator_profile:
                     donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
@@ -194,7 +194,7 @@ class Commands(Bloxlink.Module):
                     embed.description = "This command has a short cooldown since it's relatively expensive for the bot. " \
                                         f"You'll need to wait **{cooldown_time}** more second(s).\n\nDid you know? " \
                                         "**[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** subscribers NEVER " \
-                                        f"see any cooldowns. Find out more information with `{prefix}donate`."
+                                        "see any cooldowns. Find out more information with `/donate`."
 
                     m = await response.send(embed=embed, hidden=True)
 

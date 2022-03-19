@@ -18,12 +18,10 @@ class ViewBindsCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
 
-        prefix = CommandArgs.prefix
-
         role_binds, group_ids, _ = await get_binds(guild)
 
         if count_binds(guild) == 0:
-            raise Message(f"You have no bounded roles! Please use `{CommandArgs.prefix}bind` "
+            raise Message("You have no bounded roles! Please use `/bind` "
                            "to make a new role bind.", type="silly")
 
         embed = Embed(title="Bloxlink Role Binds")
@@ -213,6 +211,6 @@ class ViewBindsCommand(Bloxlink.Module):
 
 
         embed.set_author(name="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-        embed.set_footer(text=f"Use {prefix}bind to make a new bind, or {prefix}unbind to delete a bind")
+        embed.set_footer(text="Use /bind to make a new bind, or /unbind to delete a bind")
 
         await CommandArgs.response.send(embed=embed)

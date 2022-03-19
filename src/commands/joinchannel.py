@@ -5,7 +5,7 @@ import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 @Bloxlink.command
@@ -40,12 +40,11 @@ class JoinChannelCommand(Bloxlink.Module):
     async def verified(self, CommandArgs):
         """set the join message of people who are VERIFIED on Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
-        join_channel = guild_data.get("joinChannel") or {}
-        verified_message = join_channel.get("verified")
-
         author = CommandArgs.author
         guild = CommandArgs.guild
+
+        join_channel = await get_guild_value(guild, "joinChannel") or {}
+        verified_message = join_channel.get("verified")
 
         response = CommandArgs.response
 
@@ -112,19 +111,13 @@ class JoinChannelCommand(Bloxlink.Module):
                         includes["robloxUsername"] = True
 
             join_channel["verified"] = {"channel": str(channel.id), "message": text, "includes": includes}
-            guild_data["joinChannel"] = join_channel
 
-            await set_guild_value(guild, "joinChannel", join_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, joinChannel=join_channel)
 
         elif parsed_args_1 == "Disable":
             join_channel.pop("verified", None)
-            guild_data["joinChannel"] = join_channel
 
-            await set_guild_value(guild, "joinChannel", join_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, joinChannel=join_channel)
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
@@ -136,12 +129,11 @@ class JoinChannelCommand(Bloxlink.Module):
     async def unverified(self, CommandArgs):
         """set the join message of people who are UNVERIFIED on Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
-        join_channel = guild_data.get("joinChannel") or {}
-        unverified_message = join_channel.get("unverified")
-
         author = CommandArgs.author
         guild = CommandArgs.guild
+
+        join_channel = await get_guild_value(guild, "joinChannel") or {}
+        unverified_message = join_channel.get("unverified")
 
         response = CommandArgs.response
 
@@ -212,19 +204,13 @@ class JoinChannelCommand(Bloxlink.Module):
                 includes["ping"] = True
 
             join_channel["unverified"] = {"channel": str(channel.id), "message": text, "includes": includes, "embed": embed_format}
-            guild_data["joinChannel"] = join_channel
 
-            await set_guild_value(guild, "joinChannel", join_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, joinChannel=join_channel)
 
         else:
             join_channel.pop("unverified", None)
-            guild_data["joinChannel"] = join_channel
 
-            await set_guild_value(guild, "joinChannel", join_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, joinChannel=join_channel)
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
