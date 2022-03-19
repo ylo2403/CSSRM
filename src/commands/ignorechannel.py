@@ -5,7 +5,7 @@ from resources.exceptions import CancelCommand # pylint: disable=import-error, n
 import discord
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 
@@ -50,10 +50,9 @@ class IgnoreChannelCommand(Bloxlink.Module):
         guild  = CommandArgs.guild
         author = CommandArgs.author
 
-        response   = CommandArgs.response
-        guild_data = CommandArgs.guild_data
+        response = CommandArgs.response
 
-        ignored_channels = guild_data.get("ignoredChannels", {})
+        ignored_channels = await get_guild_value(guild, "ignoredChannels") or {}
         current_entry    = ignored_channels.get(channel_id, {})
         bypass_roles     = current_entry.get("bypassRoles", [])
         current_status   = bool(current_entry)
@@ -108,16 +107,16 @@ class IgnoreChannelCommand(Bloxlink.Module):
 
         guild = CommandArgs.guild
 
-        response   = CommandArgs.response
-        guild_data = CommandArgs.guild_data
+        response = CommandArgs.response
+
+        ignored_channels = await get_guild_value(guild, "ignoredChannels") or {}
 
         desc = []
 
         embed = discord.Embed(title="Ignored Channels")
         embed.set_footer(text="Admins can still use commands in these channels or categories!")
 
-        if guild_data.get("ignoredChannels"):
-            ignored_channels = guild_data["ignoredChannels"]
+        if ignored_channels:
             allowed_channels = [c for c in guild.text_channels if str(c.id) not in ignored_channels]
 
             for ignored_channel_id, ignored_channel_data in ignored_channels.items():

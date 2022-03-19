@@ -47,12 +47,9 @@ class UpdateCommand(Bloxlink.Module):
         user_slash = CommandArgs.parsed_args.get("user")
         role_slash = CommandArgs.parsed_args.get("role")
         users_ = CommandArgs.parsed_args.get("users") or ([user_slash, role_slash] if user_slash or role_slash else None)
-        prefix = CommandArgs.prefix
 
         author = CommandArgs.author
         guild = CommandArgs.guild
-
-        guild_data = CommandArgs.guild_data
 
         users = []
 
@@ -123,7 +120,7 @@ class UpdateCommand(Bloxlink.Module):
             if len_users > 10:
                 if not premium:
                     raise Error("You need premium in order to update more than 10 members at a time! "
-                                f"Use `{prefix}donate` for instructions on donating.")
+                                f"Use `/donate` for instructions on donating.")
 
                 if len_users >= 100:
                     cooldown = math.ceil(((len_users / 1000) * 120) * 60)
@@ -141,7 +138,6 @@ class UpdateCommand(Bloxlink.Module):
                             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                                 user,
                                 guild             = guild,
-                                guild_data        = guild_data,
                                 roles             = True,
                                 nickname          = True,
                                 dm                = False,
@@ -175,7 +171,6 @@ class UpdateCommand(Bloxlink.Module):
                     added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         user,
                         guild             = guild,
-                        guild_data        = guild_data,
                         roles             = True,
                         nickname          = True,
                         cache             = False,
@@ -186,7 +181,6 @@ class UpdateCommand(Bloxlink.Module):
                     _, card, embed = await format_update_embed(
                         roblox_user, user,
                         added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
-                        guild_data=guild_data,
                         author = author,
                         guild = guild,
                     )

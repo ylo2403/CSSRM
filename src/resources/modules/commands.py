@@ -73,7 +73,7 @@ class Commands(Bloxlink.Module):
                 print(interaction_commands, flush=True)
                 print(response1.status, text1, flush=True)
 
-    async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
+    async def command_checks(self, command, response, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
         channel_id      = str(channel.id) if channel else None
         donator_profile = None
         dm = not bool(guild)
@@ -90,8 +90,8 @@ class Commands(Bloxlink.Module):
                     donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
                     if not donator_profile.features.get("premium"):
-                        await response.error(f"This add-on requires premium! You may use `{prefix}donate` for instructions on donating.\n"
-                                            f"You may also disable this add-on with `{prefix}addon change`.", hidden=True)
+                        await response.error(f"This add-on requires premium! You may use `/donate` for instructions on donating.\n"
+                                            f"You may also disable this add-on with `/addon change`.", hidden=True)
 
                         raise CancelCommand
 
@@ -100,7 +100,7 @@ class Commands(Bloxlink.Module):
                     donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
 
                 if not donator_profile.features.get("pro"):
-                    await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
+                    await response.error(f"Server not authorized to use Pro. Please use the `/donate` command to see information on "
                                         "how to get Bloxlink Pro.", hidden=True)
 
                     raise CancelCommand
@@ -109,8 +109,8 @@ class Commands(Bloxlink.Module):
                 if command.premium_bypass_channel_perms and not donator_profile:
                     donator_profile, _ = await get_features(author, guild=guild)
 
-                ignored_channels = guild_data.get("ignoredChannels", {})
-                disabled_commands = guild_data.get("disabledCommands", {})
+                ignored_channels = await get_guild_value(guild, "ignoredChannels") or {}
+                disabled_commands = await get_guild_value(guild, "disabledCommands") or {}
 
                 author_perms = author.guild_permissions
 
@@ -248,7 +248,7 @@ class Commands(Bloxlink.Module):
 
 
 
-    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, after_text="", slash_command=False):
+    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild=None, message=None, after_text="", slash_command=False):
         my_permissions = guild and guild.me.guild_permissions
 
         try:
@@ -275,13 +275,14 @@ class Commands(Bloxlink.Module):
             await response.error("The Roblox API is currently offline; please wait until Roblox is back online before re-running this command.")
         except CancelledPrompt as e:
             arguments.cancelled = True
+            prompt_delete = await get_guild_value(guild, ["promptDelete", DEFAULTS.get("promptDelete")])
 
             if e.message:
                 text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
             else:
                 text = f"**{locale('prompt.cancelledPrompt')}.**"
 
-            if ((e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete"))):
+            if ((e.type == "delete" and not e.dm) and prompt_delete):
                 if my_permissions and my_permissions.manage_messages:
                     if message:
                         try:
@@ -561,8 +562,6 @@ class Commands(Bloxlink.Module):
         elif typex == "commands" and not isinstance(command, Command):
             raise CancelCommand
 
-        guild_id = guild and str(guild.id)
-
         if guild:
             guild_restriction = await get_restriction("guilds", guild.id)
 
@@ -572,7 +571,6 @@ class Commands(Bloxlink.Module):
 
         if command:
             subcommand_attrs = {}
-            guild_data = {}
 
             if subcommand and command.subcommands.get(subcommand):
                 fn = command.subcommands[subcommand]
@@ -580,16 +578,10 @@ class Commands(Bloxlink.Module):
             else:
                 fn = command.fn
 
-            if guild:
-                guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
-
             CommandArgs = Args(
                 command_name = command_name,
-                real_command_name = command_name,
                 message = None,
-                guild_data = guild_data,
                 flags = {},
-                prefix = "/",
                 has_permission = False,
                 command = command,
                 guild = guild,
@@ -602,8 +594,8 @@ class Commands(Bloxlink.Module):
 
             CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
 
-            locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, user, channel, guild, None, interaction=interaction, forwarded=forwarded)
+            locale = Locale("en")
+            response = Response(CommandArgs, user, channel, guild, locale, interaction=interaction, forwarded=forwarded)
 
             if command_args:
                 response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)
@@ -614,7 +606,7 @@ class Commands(Bloxlink.Module):
 
             CommandArgs.add(locale=locale, response=response)
 
-            await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
+            await self.command_checks(command, response, user, channel, CommandArgs, locale, guild, subcommand_attrs, slash_command=True)
 
             if command.slash_defer and not forwarded:
                 try:
@@ -624,4 +616,4 @@ class Commands(Bloxlink.Module):
 
             arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
-            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=True)
+            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild, slash_command=True)

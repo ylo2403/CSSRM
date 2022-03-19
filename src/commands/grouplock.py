@@ -9,7 +9,7 @@ import discord
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-set_guild_value = Bloxlink.get_module("cache", attrs="set_guild_value")
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
@@ -57,13 +57,12 @@ class GroupLockCommand(Bloxlink.Module):
         self._range_search = re.compile(r"([0-9]+)\-([0-9]+)")
 
     async def __main__(self, CommandArgs):
-        choice = CommandArgs.parsed_args["choice"][0]
-        guild_data = CommandArgs.guild_data
-        groups = CommandArgs.guild_data.get("groupLock", {})
-        guild = CommandArgs.guild
-        author = CommandArgs.author
-        prefix = CommandArgs.prefix
+        choice   = CommandArgs.parsed_args["choice"][0]
+        guild    = CommandArgs.guild
+        author   = CommandArgs.author
         response = CommandArgs.response
+
+        groups = await get_guild_value(guild, "groupLock") or {}
 
         if choice == "add a new group":
             args = await CommandArgs.prompt([
@@ -134,7 +133,7 @@ class GroupLockCommand(Bloxlink.Module):
 
             if len(groups) >= 3 and not profile.features.get("premium"):
                 raise Message("If you would like to add more than **3** groups to your group-lock, then you need Bloxlink Premium.\n"
-                              f"Please use `{prefix}donate` for instructions on receiving Bloxlink Premium.\n"
+                              f"Please use `/donate` for instructions on receiving Bloxlink Premium.\n"
                               "Bloxlink Premium members may lock their server with up to **15** groups.", type="info")
 
             if dm_enabled:
@@ -168,10 +167,9 @@ class GroupLockCommand(Bloxlink.Module):
                 raise Message("This group isn't in your server-lock!")
 
             del groups[group.group_id]
-            guild_data["groupLock"] = groups
 
             if groups:
-                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+                await set_guild_value(guild, groupLock=groups)
             else:
                 await set_guild_value(guild, groupLock=None)
 

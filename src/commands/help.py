@@ -39,24 +39,18 @@ class HelpCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        prefix   = CommandArgs.prefix
         channel  = CommandArgs.channel
         guild    = CommandArgs.guild
 
         command_name = CommandArgs.parsed_args["command_name"]
 
         if command_name:
-            if CommandArgs.slash_command:
-                await response.command.redirect(CommandArgs, "commands", arguments={"command_name": command_name})
-            else:
-                message = CommandArgs.message
-                message.content = f"{CommandArgs.prefix}commands {command_name}"
-                await parse_message(message)
+            await response.command.redirect(CommandArgs, "commands", arguments={"command_name": command_name})
 
             raise CancelCommand
 
         if CommandArgs.slash_command or (guild and not channel.permissions_for(guild.me).attach_files):
             urls = "\n".join(self.urls)
-            await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.\n{urls}")
+            await response.send(f"Some general info is below! To view all commands, say `/commands`.\n{urls}")
         else:
-            await response.send(f"Some general info is below! To view all commands, say `{prefix}commands`.", files=[File(BytesIO(b), filename=f"image_{i}.png") for i, b in enumerate(self.images)])
+            await response.send("Some general info is below! To view all commands, say `/commands`.", files=[File(BytesIO(b), filename=f"image_{i}.png") for i, b in enumerate(self.images)])

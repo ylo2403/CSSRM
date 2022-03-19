@@ -8,7 +8,6 @@ from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-na
 from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT, DEFAULTS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import (BloxlinkBypass, Blacklisted, Blacklisted, PermissionError, # pylint: disable=import-error, no-name-in-module
                          RobloxAPIError, CancelCommand, RobloxDown) # pylint: disable=import-error, no-name-in-module
-from config import PREFIX # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from time import time
 from math import floor
 from psutil import Process
@@ -165,7 +164,7 @@ class IPC(Bloxlink.Module):
                     pass
 
                 else:
-                    verified_dm, guild_data = await get_guild_value(guild, ["joinDM", ""], return_guild_data=True)
+                    verified_dm = await get_guild_value(guild, ["joinDM", ""])
                     server_message = ""
 
                     _, card, embed = await format_update_embed(
@@ -173,12 +172,11 @@ class IPC(Bloxlink.Module):
                         member,
                         guild=guild,
                         added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname,
-                        guild_data=guild_data,
                         from_interaction=False
                     )
 
                     if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
-                        server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
+                        server_message = await get_nickname(member, verified_dm, roblox_user=roblox_user, dm=True, is_nickname=False)
                         server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500]
 
                     try:
@@ -325,7 +323,7 @@ class IPC(Bloxlink.Module):
 
         elif type == "PLAYING_STATUS":
             presence_type = extras.get("presence_type", "normal")
-            playing_status = extras.get("status", PLAYING_STATUS).format(prefix=PREFIX)
+            playing_status = extras.get("status", PLAYING_STATUS)
 
             if presence_type == "normal":
                 await Bloxlink.change_presence(status=Status.online, activity=Game(playing_status))

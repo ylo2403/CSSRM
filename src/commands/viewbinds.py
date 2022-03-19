@@ -18,12 +18,11 @@ class ViewBindsCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
 
-        guild_data = CommandArgs.guild_data
         prefix = CommandArgs.prefix
 
-        role_binds, group_ids, _ = await get_binds(guild_data=guild_data)
+        role_binds, group_ids, _ = await get_binds(guild)
 
-        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) == 0:
+        if count_binds(guild) == 0:
             raise Message(f"You have no bounded roles! Please use `{CommandArgs.prefix}bind` "
                            "to make a new role bind.", type="silly")
 

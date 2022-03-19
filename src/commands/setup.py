@@ -9,7 +9,7 @@ VERIFIED_DEFAULT = "Verified"
 
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
@@ -49,17 +49,11 @@ class SetupCommand(Bloxlink.Module):
         response = CommandArgs.response
         prefix = CommandArgs.prefix
 
-        guild_data = CommandArgs.guild_data
-        group_ids = guild_data.get("groupIDs", {})
+        group_ids = await get_guild_value(guild, "groupIDs") or {}
 
         settings_buffer = []
         insertion = {}
-
         parsed_args_1 = {}
-        parsed_args_2 = {}
-        parsed_args_3 = {}
-        parsed_args_4 = {}
-
         nickname = None
 
         response.delete(await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=False, no_dm_post=True))

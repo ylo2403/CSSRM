@@ -45,7 +45,6 @@ class LogChannelCommand(Bloxlink.Module):
     async def change(self, CommandArgs):
         """add/delete a log channel"""
 
-        prefix = CommandArgs.prefix
         response = CommandArgs.response
         guild_data = CommandArgs.guild_data
 
@@ -62,9 +61,6 @@ class LogChannelCommand(Bloxlink.Module):
                                                             "to your channel\n"
                           "`configurations` "   + ARROW + " any Bloxlink setting alteration will be "
                                                             "logged to your channel\n"
-                         "`inactivity notices` _(premium)_ " + ARROW + " user-set inactivity notices "
-                                                                         "from `" + prefix + "profie` will "
-                                                                         "be logged to your channel\n"
                         "`binds` "              + ARROW +   " bind insertions/deletions will be logged to your channel\n"
                         "`moderation` "         + ARROW +   " automatic moderation actions by certain features will be "
                                                               "logged to your channel",
@@ -75,11 +71,10 @@ class LogChannelCommand(Bloxlink.Module):
                         discord.SelectOption(label="All events", description="Subscribe to all event types."),
                         discord.SelectOption(label="Verification Events", description="Fired when someome verifies."),
                         discord.SelectOption(label="Configuration Events", description="Fired when a setting is changed."),
-                        discord.SelectOption(label="Inactivity Notice Events", description="Fired when someone from your server goes inactive."),
                         discord.SelectOption(label="Bind Events", description="Fired when someone binds a role."),
                         discord.SelectOption(label="Moderation Events", description="Fired when Bloxlink moderates someone.")
                     ])],
-                "choices": ["all events", "verification events", "configuration events", "inactivity notice events", "bind events", "moderation events"]
+                "choices": ["all events", "verification events", "configuration events", "bind events", "moderation events"]
             },
             {
                 "prompt": "Please either **mention a channel**, or say a **channel name.**\n"
@@ -113,7 +108,7 @@ class LogChannelCommand(Bloxlink.Module):
 
             if not donator_profile.features.get("premium"):
                 raise Message("Only premium subscribers can subscribe to `inactivity notices`!\n"
-                              f"Please use `{prefix}donate` for instructions on subscribing to premium.", type="info")
+                              f"Please use `/donate` for instructions on subscribing to premium.", type="info")
 
         if log_channel in ("clear", "delete"):
             log_channels.pop(log_type, None)

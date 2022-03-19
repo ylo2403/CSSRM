@@ -28,7 +28,6 @@ class Arguments:
         self.command_args = CommandArgs
         self.response     = CommandArgs.response
         self.locale       = CommandArgs.locale
-        self.prefix       = CommandArgs.prefix
 
         self.messages  = []
         self.dm_post   = None
@@ -243,7 +242,7 @@ class Arguments:
                 if not current_input:
                     try:
                         if current_prompt.get("formatting", True):
-                            prompt_text = prompt_text.format(**resolved_args, prefix=self.prefix)
+                            prompt_text = prompt_text.format(**resolved_args)
 
                         bot_prompt = await self.say(prompt_text, embed_title=current_prompt.get("embed_title"), embed_color=current_prompt.get("embed_color"), footer=current_prompt.get("footer"), type=error and "error", embed=True, dm=dm, components=current_prompt.get("components", []))
 

@@ -2,7 +2,6 @@ from os import listdir
 from re import compile
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from config import PREFIX # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..secrets import PROXY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.errors import NotFound, Forbidden

@@ -6,12 +6,12 @@ PREMIUM_PERKS = "\n".join([
     f"- More role bindings allowed (from {LIMITS['BINDS']['FREE']} to {LIMITS['BINDS']['PREMIUM']}).",
     f"- `persistRoles:` update users as they type once every 2 hours",
     f"- Access to the `Pro` version of Bloxlink - a bot in less servers, so downtime is very minimal.",
-     "- Set an age limit that checks the person's Roblox account age. (`{prefix}settings change agelimit`).",
-     "- Customize the name of Magic Roles (`{prefix}magicroles`).",
+     "- Set an age limit that checks the person's Roblox account age. (`/settings change agelimit`).",
+     "- Customize the name of Magic Roles (`/magicroles`).",
      "- No cooldown on some commands.",
-     "- More restrictions (`{prefix}restrict`) " + f"allowed (from {LIMITS['RESTRICTIONS']['FREE']} to {LIMITS['RESTRICTIONS']['PREMIUM']}).",
-     "- More groups allowed to be added to your Group-Lock (`{prefix}grouplock`).",
-     "- And more! Check `{prefix}settings change` to view the premium settings."
+     "- More restrictions (`/restrict`) " + f"allowed (from {LIMITS['RESTRICTIONS']['FREE']} to {LIMITS['RESTRICTIONS']['PREMIUM']}).",
+     "- More groups allowed to be added to your Group-Lock (`/grouplock`).",
+     "- And more! Check `/settings change` to view the premium settings."
 ])
 
 
@@ -26,11 +26,10 @@ class DonateCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         embed = discord.Embed(title="Bloxlink Premium")
         embed.description = "We appreciate all donations!\nBy donating a certain amount, you will receive **[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** " \
-                            f"on __every server you own__ and receive these perks:\n{PREMIUM_PERKS.format(prefix=prefix)}" \
+                            f"on __every server you own__ and receive these perks:\n{PREMIUM_PERKS}" \
 
         embed.add_field(name="Frequently Asked Questions", value="1.) Can I transfer premium to someone else?\n"
                                                                 f"> Yes, use the `/transfer to` command. "

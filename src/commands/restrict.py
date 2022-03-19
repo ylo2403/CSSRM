@@ -134,7 +134,6 @@ class RestrictCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """restrict certain people or groups from verifying in your server"""
 
-        guild_data   = CommandArgs.guild_data
         parsed_args  = CommandArgs.parsed_args
         response     = CommandArgs.response
         author       = CommandArgs.author
@@ -145,7 +144,7 @@ class RestrictCommand(Bloxlink.Module):
 
         got_entry = False
 
-        restrictions = guild_data.get("restrictions", {})
+        restrictions = await get_guild_value(guild, "restrictions") or {}
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
 
         if len_restrictions >= LIMITS["RESTRICTIONS"]["FREE"]:
@@ -208,8 +207,7 @@ class RestrictCommand(Bloxlink.Module):
         response = CommandArgs.response
         guild    = CommandArgs.guild
 
-        guild_data = CommandArgs.guild_data
-        restrictions = guild_data.get("restrictions", {})
+        restrictions = await get_guild_value(guild, "restrictions") or {}
 
         if not restrictions:
             return await response.silly("You have no restrictions!")
@@ -236,8 +234,7 @@ class RestrictCommand(Bloxlink.Module):
         guild    = CommandArgs.guild
         response = CommandArgs.response
 
-        guild_data = CommandArgs.guild_data
-        restrictions = guild_data.get("restrictions") or {}
+        restrictions = await get_guild_value(guild, "restrictions") or {}
 
         remove_data = CommandArgs.parsed_args["restriction_data"]
         remove_data_match = self._remove_data_regex.search(remove_data)

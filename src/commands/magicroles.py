@@ -5,7 +5,7 @@ import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 
 
@@ -47,7 +47,6 @@ class MagicRolesCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """add a new Magic Role to Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
         guild      = CommandArgs.guild
         response   = CommandArgs.response
         author     = CommandArgs.author
@@ -84,13 +83,10 @@ class MagicRolesCommand(Bloxlink.Module):
         role = parsed_args["role"]
         features = parsed_args["features"]
 
-        magic_roles = guild_data.get("magicRoles", {})
-
+        magic_roles = await get_guild_value(guild, "magicRoles") or {}
         magic_roles[str(role.id)] = features
-        guild_data["magicRoles"] = magic_roles
 
-        await self.r.table("guilds").insert(guild_data, conflict="update").run()
-        await set_guild_value(guild, "magicRoles", magic_roles)
+        await set_guild_value(guild, magicRoles=magic_roles)
         await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **added** a new `magicRole`!", BROWN_COLOR)
 
         await response.success("Successfully **saved** your new Magic Role! Go assign it to some people! :sparkles:")
@@ -99,10 +95,10 @@ class MagicRolesCommand(Bloxlink.Module):
     async def view(self, CommandArgs):
         """view your Magic Roles in your server"""
 
-        guild_data = CommandArgs.guild_data
-        magic_roles = guild_data.get("magicRoles", {})
         guild = CommandArgs.guild
         response = CommandArgs.response
+
+        magic_roles = await get_guild_value(guild, "magicRoles") or {}
         embed = discord.Embed(title="Bloxlink Magic Roles", description="Magic Roles allow you to customize the "
                               "permissions of individual users by giving them a role.")
 
@@ -144,8 +140,7 @@ class MagicRolesCommand(Bloxlink.Module):
         guild    = CommandArgs.guild
         author   = CommandArgs.author
 
-        guild_data  = CommandArgs.guild_data
-        magic_roles = guild_data.get("magicRoles", {})
+        magic_roles = await get_guild_value(guild, "magicRoles") or {}
 
         if not (magic_roles or discord.utils.find(lambda r: r.name in MAGIC_ROLES, guild.roles)):
             await response.silly("You have no Magic Roles!")
@@ -182,12 +177,9 @@ class MagicRolesCommand(Bloxlink.Module):
                 magic_roles.pop(str(role.id))
 
                 if magic_roles:
-                    guild_data["magicRoles"] = magic_roles
+                    await set_guild_value(guild, magicRoles=magic_roles)
                 else:
-                    guild_data.pop("magicRoles")
-
-                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-                await set_guild_value(guild, "magicRoles", magic_roles)
+                    await set_guild_value(guild, magicRoles=None)
 
             await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **removed** a `magicRole`!", BROWN_COLOR)
 

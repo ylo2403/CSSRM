@@ -32,22 +32,14 @@ class VerifyCommand(Bloxlink.Module):
 
     @Bloxlink.flags
     async def __main__(self, CommandArgs):
-        guild_data = CommandArgs.guild_data
         guild = CommandArgs.guild
         author = CommandArgs.author
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
         if not guild:
             return await self.add(CommandArgs)
 
-        if CommandArgs.flags.get("add") or CommandArgs.flags.get("verify") or CommandArgs.flags.get("force"):
-            await CommandArgs.response.error(f"`{CommandArgs.prefix}verify --force` is deprecated and will be removed in a future version of Bloxlink. "
-                                             f"Please use `{prefix}verify add` instead.")
-
-            return await self.add(CommandArgs)
-
-        if CommandArgs.real_command_name in ("getrole", "getroles"):
+        if CommandArgs.command_name in ("getrole", "getroles"):
             CommandArgs.string_args = []
 
         try:
@@ -57,7 +49,6 @@ class VerifyCommand(Bloxlink.Module):
                 CommandArgs.author,
                 join                 = True,
                 guild                = guild,
-                guild_data           = guild_data,
                 roles                = True,
                 nickname             = True,
                 cache                = False,
@@ -87,7 +78,6 @@ class VerifyCommand(Bloxlink.Module):
                 author,
                 guild=guild,
                 added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
-                guild_data=guild_data
             )
 
             message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, mention_author=True)
@@ -118,7 +108,6 @@ class VerifyCommand(Bloxlink.Module):
 
         # TODO: able to set: "forced groups"
 
-        prefix = CommandArgs.prefix
         response = CommandArgs.response
 
         author = CommandArgs.author
@@ -139,7 +128,7 @@ class VerifyCommand(Bloxlink.Module):
 
         if choice == "welcomeMessage":
             welcome_message = (await CommandArgs.prompt([{
-                "prompt": f"What would you like your welcome message to be? This will be shown in `{prefix}verify` messages.\nYou may "
+                "prompt": f"What would you like your welcome message to be? This will be shown in `/getrole` messages.\nYou may "
                           f"use these templates: ```{NICKNAME_TEMPLATES}```",
                 "name": "welcome_message",
                 "formatting": False,

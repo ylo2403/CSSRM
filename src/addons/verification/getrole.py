@@ -65,8 +65,7 @@ class GetRoleCommand(Bloxlink.Module):
                 roblox_user,
                 author,
                 guild=guild,
-                added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
-                guild_data=guild_data
+                added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None
             )
 
             message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, mention_author=True)

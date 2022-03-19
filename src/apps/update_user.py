@@ -22,7 +22,6 @@ class UpdateUserExtension(Bloxlink.Module):
         user  = ExtensionArgs.resolved
         guild = ExtensionArgs.guild
 
-        guild_data = ExtensionArgs.guild_data
         response   = ExtensionArgs.response
 
         if user.bot:
@@ -38,7 +37,6 @@ class UpdateUserExtension(Bloxlink.Module):
             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                 user,
                 guild             = guild,
-                guild_data        = guild_data,
                 roles             = True,
                 nickname          = True,
                 cache             = False,

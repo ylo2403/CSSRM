@@ -4,7 +4,7 @@ from resources.constants import DEFAULTS # pylint: disable=import-error, no-name
 from discord.utils import find
 from discord.errors import Forbidden, NotFound, HTTPException
 
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 class VerifyChannelCommand(Bloxlink.Module):
@@ -19,8 +19,6 @@ class VerifyChannelCommand(Bloxlink.Module):
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
-        guild_data = CommandArgs.guild_data
-        prefix = CommandArgs.prefix
 
         guild = CommandArgs.guild
 
@@ -48,7 +46,7 @@ class VerifyChannelCommand(Bloxlink.Module):
                 await verify_info.send("This server uses Bloxlink to manage Roblox verification. In "
                                     "order to unlock all the features of this server, you'll need "
                                     "to verify your Roblox account with your Discord account!\n\nTo "
-                                    f"do this, run `{prefix}getrole` in {verify_channel.mention} and follow the instructions.")
+                                    f"do this, run `/getrole` in {verify_channel.mention} and follow the instructions.")
 
                 await sample_channel.send("This is a sample channel that only Verified users " \
                                         "can read. This channel is not important, you may freely delete it.\n" \
@@ -63,7 +61,7 @@ class VerifyChannelCommand(Bloxlink.Module):
             try:
                 await verify_info.set_permissions(guild.me, send_messages=True, read_messages=True)
 
-                verified_role_name = guild_data.get("verifiedRoleName", DEFAULTS.get("verifiedRoleName"))
+                verified_role_name = await get_guild_value(guild, ["verifiedRoleName", DEFAULTS.get("verifiedRoleName")])
 
                 for role in guild.roles:
                     if role.name != guild.me.name:
@@ -71,7 +69,7 @@ class VerifyChannelCommand(Bloxlink.Module):
                         await verify_channel.set_permissions(role, send_messages=True, read_messages=True)
 
                     if role.name == verified_role_name:
-                        for target, overwrite in sample_channel.overwrites.items():
+                        for target in sample_channel.overwrites.keys():
                             await sample_channel.set_permissions(target, overwrite=None)
 
                         await sample_channel.set_permissions(guild.default_role, send_messages=False, read_messages=False)

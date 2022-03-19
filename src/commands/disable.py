@@ -5,7 +5,7 @@ from resources.constants import BROWN_COLOR # pylint: disable=import-error, no-n
 from discord import TextChannel
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 commands = Bloxlink.get_module("commands", attrs=["commands"])
 
 
@@ -41,8 +41,7 @@ class DisableCommand(Bloxlink.Module):
         author = CommandArgs.author
         guild = CommandArgs.guild
 
-        guild_data = CommandArgs.guild_data
-        disabled_commands = guild_data.get("disabledCommands", {})
+        disabled_commands = await get_guild_value(guild, "disabledCommands") or {}
 
         disable_type = CommandArgs.parsed_args["disable_type"]
         command_name = CommandArgs.parsed_args["command_name"]

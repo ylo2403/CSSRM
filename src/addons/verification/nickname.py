@@ -20,11 +20,11 @@ class NicknameCommand(Bloxlink.Module):
                           f"`Bind Nickname` {ARROW} when you link groups, you're given the "
                           "option to change nicknames of group members. Bloxlink will choose the "
                           "person's **highest role** which has an available Bind Nickname. Bind "
-                          "Nicknames can be applied from `{prefix}bind`. If no bind nicknames "
+                          "Nicknames can be applied from `/bind`. If no bind nicknames "
                           "apply to the user, then the **Global Nickname** is used instead.\n"
                           f"`Global Nickname` {ARROW} the default nickname used if someone has **NO** "
                           "available Bind Nicknames. This can be applied from this command and "
-                          "`{prefix}settings change` (look for \"Nickname Template\").",
+                          "`/settings change` (look for \"Nickname Template\").",
                 "name": "_",
                 "type": "choice",
                 "choices": ("next",),
@@ -32,7 +32,7 @@ class NicknameCommand(Bloxlink.Module):
             },
             {
                 "prompt": "What would you like your Global Nickname to be? Remember, this nickname "
-                          "will be used if someone has no available Bind Nickname from the `{prefix}bind` "
+                          "will be used if someone has no available Bind Nickname from the `/bind` "
                           "command. You may combine templates. Templates: ```" + ESCAPED_NICKNAME_TEMPLATES + "```",
                 "footer": "Say **skip** to leave this as the default nickname.",
                 "name": "global_nickname"

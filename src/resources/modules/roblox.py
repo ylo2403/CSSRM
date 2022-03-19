@@ -7,7 +7,7 @@ import discord
 from datetime import datetime
 from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
-from config import REACTIONS, PREFIX # pylint: disable=import-error, no-name-in-module
+from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 from ..constants import (BLOXLINK_STAFF, RELEASE, DEFAULTS, ARROW,SERVER_INVITE, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
                          RED_COLOR, ACCOUNT_SETTINGS_URL, SELF_HOST, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
 import json
@@ -125,16 +125,16 @@ class Roblox(Bloxlink.Module):
         return parsed_accounts
 
     @staticmethod
-    def count_binds(guild_data, role_binds=None, group_ids=None):
-        guild_data = guild_data or {}
+    async def count_binds(guild):
+        all_binds = await get_guild_value(guild, ["roleBinds", 0], ["groupIDs", 0])
 
-        role_binds = role_binds or guild_data.get("roleBinds", {})
-        group_ids = group_ids or guild_data.get("groupIDs", {})
+        role_binds = all_binds["roleBinds"]
+        group_ids  = all_binds["groupIDs"]
 
         bind_count = 0
 
         for bind_category, binds in role_binds.items():
-            for bind_id, bind_data in binds.items():
+            for bind_data in binds.values():
                 if bind_data:
                     if bind_category == "groups":
                         bind_count += len(bind_data.get("binds", {})) + len(bind_data.get("ranges", {}))
@@ -356,7 +356,7 @@ class Roblox(Bloxlink.Module):
 
         return welcome_message, card, embed
 
-    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, guild_data=None, user_data=None, roblox_user=None, dm=False, prefix=None):
+    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, guild_data=None, user_data=None, roblox_user=None, dm=False):
         template = template or ""
 
         if template == "{disable-nicknaming}":
@@ -453,7 +453,7 @@ class Roblox(Bloxlink.Module):
         ).replace(
             "server-name", guild.name
         ).replace(
-            "prefix", prefix or PREFIX
+            "prefix", "/"
         )
 
         for outer_nick in nickname_template_regex.findall(template):
@@ -541,10 +541,6 @@ class Roblox(Bloxlink.Module):
 
                 if not donator_profile.features.get("pro"):
                     raise CancelCommand
-
-                PREFIX = "!"
-            else:
-                PREFIX = "!!"
 
             try:
                 roblox_user, accounts, _ = await self.get_user(user=member, everything=True, cache=cache)
@@ -776,8 +772,8 @@ class Roblox(Bloxlink.Module):
                                 try:
                                     await member.send(f"_Bloxlink Age-Limit_\nYou were kicked from **{guild.name}** for not being at least "
                                                     f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
-                                                    f"then please join {SERVER_INVITE} and link a different account with `{PREFIX}verify add`. "
-                                                    f"Finally, use the `{PREFIX}switchuser` command and provide this ID to the command: `{guild.id}`")
+                                                    f"then please join {SERVER_INVITE} and link a different account with `/verify add`. "
+                                                    f"Finally, use the `/switchuser` command and provide this ID to the command: `{guild.id}`")
                                 except discord.errors.Forbidden:
                                     pass
 
@@ -2051,7 +2047,7 @@ class Roblox(Bloxlink.Module):
                             "discordID": str(user.id),
                             "primary": primary,
                             "guild": guild and str(guild.id),
-                            "prefix": "!" #FIXME
+                            "prefix": "/"
                         }, conflict="replace").run()
 
                         _ = await response.prompt([{
