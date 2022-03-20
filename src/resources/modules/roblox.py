@@ -333,11 +333,11 @@ class Roblox(Bloxlink.Module):
 
         return clan_tag
 
-    async def format_update_embed(self, roblox_user, user, *, guild, added, removed, errors, warnings, nickname, guild_data, author=None, from_interaction=True):
+    async def format_update_embed(self, roblox_user, user, *, guild, added, removed, errors, warnings, nickname, author=None, from_interaction=True):
         author = author or user
 
-        welcome_message = guild_data.get("welcomeMessage", DEFAULTS.get("welcomeMessage"))
-        welcome_message = await self.get_nickname(user, welcome_message, guild_data=guild_data, roblox_user=roblox_user, is_nickname=False)
+        welcome_message = await get_guild_value(guild, ["welcomeMessage", DEFAULTS.get("welcomeMessage")])
+        welcome_message = await self.get_nickname(user, welcome_message, roblox_user=roblox_user, is_nickname=False)
 
         embed = None
         card  = None
@@ -356,7 +356,7 @@ class Roblox(Bloxlink.Module):
 
         return welcome_message, card, embed
 
-    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, guild_data=None, user_data=None, roblox_user=None, dm=False):
+    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, user_data=None, roblox_user=None, dm=False):
         template = template or ""
 
         if template == "{disable-nicknaming}":
@@ -367,8 +367,6 @@ class Roblox(Bloxlink.Module):
 
         if isinstance(roblox_user, tuple):
             roblox_user = roblox_user[0]
-
-        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
 
         if roblox_user:
             if not roblox_user.complete:
@@ -383,7 +381,7 @@ class Roblox(Bloxlink.Module):
 
             group_role = group and group.user_rank_name or "Guest"
 
-            if guild_data.get("shorterNicknames", DEFAULTS.get("shorterNicknames")):
+            if await get_guild_value(guild, ["shorterNicknames", DEFAULTS.get("shorterNicknames")]):
                 if group_role != "Guest":
                     brackets_match = bracket_search.search(group_role)
 
@@ -399,7 +397,7 @@ class Roblox(Bloxlink.Module):
                 group = roblox_user.groups.get(group_id)
                 group_role_from_group = group and group.user_rank_name or "Guest"
 
-                if guild_data.get("shorterNicknames", DEFAULTS.get("shorterNicknames")):
+                if await get_guild_value(guild, ["shorterNicknames", DEFAULTS.get("shorterNicknames")]):
                     if group_role_from_group != "Guest":
                         brackets_match = bracket_search.search(group_role_from_group)
 
@@ -437,7 +435,7 @@ class Roblox(Bloxlink.Module):
 
         else:
             if not template:
-                template = guild_data.get("unverifiedNickname") or DEFAULTS.get("unverifiedNickname") or ""
+                template = await get_guild_value(guild, ["unverifiedNickname", DEFAULTS.get("unverifiedNickname")]) or ""
 
                 if template == "{disable-nicknaming}":
                     return
@@ -500,10 +498,9 @@ class Roblox(Bloxlink.Module):
             return template
 
 
-    async def get_binds(self, guild=None, guild_data=None):
-        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
-        role_binds = guild_data.get("roleBinds") or {}
-        group_ids  = guild_data.get("groupIDs") or {}
+    async def get_binds(self, guild):
+        role_binds = await get_guild_value(guild, "roleBinds") or {}
+        group_ids  = await get_guild_value(guild, "groupIDs") or {}
 
         role_binds["groups"]     = role_binds.get("groups", {})
         role_binds["assets"]     = role_binds.get("assets", {})
@@ -514,7 +511,7 @@ class Roblox(Bloxlink.Module):
         return role_binds, group_ids
 
 
-    async def guild_obligations(self, member, guild, join=None, guild_data=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, roblox_user=None):
+    async def guild_obligations(self, member, guild, join=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, roblox_user=None):
         if member.bot:
             raise CancelCommand
 
@@ -567,7 +564,7 @@ class Roblox(Bloxlink.Module):
 
                             if channel:
                                 join_channel_message = channel_data["verified"]["message"]
-                                join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
+                                join_message_parsed = (await self.get_nickname(member, join_channel_message, roblox_user=roblox_user, dm=dm, is_nickname=False))[:1500]
                                 includes = channel_data["verified"]["includes"]
 
                                 embed   = discord.Embed(description=join_message_parsed)
@@ -622,7 +619,7 @@ class Roblox(Bloxlink.Module):
 
                             if channel:
                                 join_channel_message = channel_data["unverified"]["message"]
-                                join_message_parsed = (await self.get_nickname(member, join_channel_message, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
+                                join_message_parsed = (await self.get_nickname(member, join_channel_message, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
                                 includes = channel_data["unverified"]["includes"]
                                 format_embed = channel_data["unverified"]["embed"]
 
@@ -648,7 +645,7 @@ class Roblox(Bloxlink.Module):
                                     pass
 
             if join is not False:
-                options, guild_data = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", return_guild_data=True)
+                options = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel")
 
                 verified_dm = options.get("verifiedDM")
                 join_channel = options.get("joinChannel")
@@ -722,7 +719,6 @@ class Roblox(Bloxlink.Module):
                     added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
                         member,
                         guild                   = guild,
-                        guild_data              = guild_data,
                         roles                   = roles,
                         nickname                = nickname,
                         roblox_user             = roblox_user,
@@ -856,14 +852,13 @@ class Roblox(Bloxlink.Module):
                         if verified_dm != DEFAULTS.get("welcomeMessage"):
                             verified_dm = f"This message was set by the Server Admins:\n{verified_dm}"
 
-                        verified_dm = (await self.get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
+                        verified_dm = (await self.get_nickname(member, verified_dm, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
 
                         _, card, embed = await self.format_update_embed(
                             roblox_user,
                             member,
                             guild=guild,
                             added=added, removed=removed, errors=errored, warnings=warnings, nickname=chosen_nickname,
-                            guild_data=guild_data,
                             from_interaction=False
                         )
 
@@ -932,7 +927,7 @@ class Roblox(Bloxlink.Module):
                         return added, removed, chosen_nickname, errored, warnings, roblox_user
 
                     if dm and unverified_dm:
-                        unverified_dm = await self.get_nickname(member, unverified_dm, guild_data=guild_data, skip_roblox_check=True, dm=dm, is_nickname=False)
+                        unverified_dm = await self.get_nickname(member, unverified_dm, skip_roblox_check=True, dm=dm, is_nickname=False)
 
                         try:
                             await member.send(unverified_dm)
@@ -955,208 +950,208 @@ class Roblox(Bloxlink.Module):
             self.pending_verifications.pop(member.id, None)
 
 
-    async def get_binds_for_user(self, user, guild, *, guild_data=None, roblox_user=None, user_data=None, cache=False):
-        """return the required and optional binds for the user"""
+    # async def get_binds_for_user(self, user, guild, *, guild_data=None, roblox_user=None, user_data=None, cache=False):
+    #     """return the required and optional binds for the user"""
 
-        required_binds, optional_binds = {
-            "add": {
-                "verifiedRole": None,
-                "binds": []
-            },
-            "remove": {
-                "verifiedRole": None,
-                "binds": []
-            }
-        }, {
-            "add": {
-                "verifiedRole": None,
-                "binds": []
-            },
-            "remove": {
-                "verifiedRole": None,
-                "binds": []
-            }
-        }
+    #     required_binds, optional_binds = {
+    #         "add": {
+    #             "verifiedRole": None,
+    #             "binds": []
+    #         },
+    #         "remove": {
+    #             "verifiedRole": None,
+    #             "binds": []
+    #         }
+    #     }, {
+    #         "add": {
+    #             "verifiedRole": None,
+    #             "binds": []
+    #         },
+    #         "remove": {
+    #             "verifiedRole": None,
+    #             "binds": []
+    #         }
+    #     }
 
-        unverified = False
+    #     unverified = False
 
-        if not isinstance(user, discord.Member):
-            user = await guild.fetch_member(user.id)
+    #     if not isinstance(user, discord.Member):
+    #         user = await guild.fetch_member(user.id)
 
-            if not user:
-                raise CancelCommand
+    #         if not user:
+    #             raise CancelCommand
 
-        if not guild:
-            guild = getattr(user, "guild", None)
+    #     if not guild:
+    #         guild = getattr(user, "guild", None)
 
-            if not guild:
-                raise Error("Unable to resolve a guild from user.")
+    #         if not guild:
+    #             raise Error("Unable to resolve a guild from user.")
 
-        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
+    #     guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
 
-        if has_magic_role(user, guild_data.get("magicRoles"), "Bloxlink Bypass"):
-            raise BloxlinkBypass()
+    #     if await has_magic_role(user, guild, "Bloxlink Bypass"):
+    #         raise BloxlinkBypass()
 
-        verify_role   = guild_data.get("verifiedRoleEnabled", DEFAULTS.get("verifiedRoleEnabled"))
-        unverify_role = guild_data.get("unverifiedRoleEnabled", DEFAULTS.get("unverifiedRoleEnabled"))
+    #     verify_role   = guild_data.get("verifiedRoleEnabled", DEFAULTS.get("verifiedRoleEnabled"))
+    #     unverify_role = guild_data.get("unverifiedRoleEnabled", DEFAULTS.get("unverifiedRoleEnabled"))
 
-        unverified_role_name = guild_data.get("unverifiedRoleName", DEFAULTS.get("unverifiedRoleName"))
-        verified_role_name   = guild_data.get("verifiedRoleName", DEFAULTS.get("verifiedRoleName"))
+    #     unverified_role_name = guild_data.get("unverifiedRoleName", DEFAULTS.get("unverifiedRoleName"))
+    #     verified_role_name   = guild_data.get("verifiedRoleName", DEFAULTS.get("verifiedRoleName"))
 
-        if unverify_role:
-            unverified_role = discord.utils.find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
+    #     if unverify_role:
+    #         unverified_role = discord.utils.find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
 
-        if verify_role:
-            verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
+    #     if verify_role:
+    #         verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
 
-        try:
-            if not roblox_user:
-                roblox_user = (await self.get_user(user=user, guild=guild, user_data=user_data, everything=True, cache=cache))[0]
+    #     try:
+    #         if not roblox_user:
+    #             roblox_user = (await self.get_user(user=user, guild=guild, user_data=user_data, everything=True, cache=cache))[0]
 
-                if not roblox_user:
-                    raise UserNotVerified
+    #             if not roblox_user:
+    #                 raise UserNotVerified
 
-        except UserNotVerified:
-            if unverify_role:
-                if not unverified_role:
-                    try:
-                        unverified_role = await guild.create_role(name=unverified_role_name)
-                    except discord.errors.Forbidden:
-                        raise PermissionError("I was unable to create the Unverified Role. Please "
-                                                "ensure I have the `Manage Roles` permission.")
-                    except discord.errors.HTTPException:
-                        raise Error("Unable to create role: this server has reached the max amount of roles!")
+    #     except UserNotVerified:
+    #         if unverify_role:
+    #             if not unverified_role:
+    #                 try:
+    #                     unverified_role = await guild.create_role(name=unverified_role_name)
+    #                 except discord.errors.Forbidden:
+    #                     raise PermissionError("I was unable to create the Unverified Role. Please "
+    #                                             "ensure I have the `Manage Roles` permission.")
+    #                 except discord.errors.HTTPException:
+    #                     raise Error("Unable to create role: this server has reached the max amount of roles!")
 
-                required_binds["add"]["unverifiedRole"] = unverified_role
+    #             required_binds["add"]["unverifiedRole"] = unverified_role
 
-            if verify_role and verified_role and verified_role in user.roles:
-                required_binds["remove"]["verifiedRole"] = verified_role
+    #         if verify_role and verified_role and verified_role in user.roles:
+    #             required_binds["remove"]["verifiedRole"] = verified_role
 
-            nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, guild_data=guild_data, dm=dm, user_data=user_data, response=response)
+    #         nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, guild_data=guild_data, dm=dm, user_data=user_data, response=response)
 
-            unverified = True
+    #         unverified = True
 
-        else:
-            restriction = await get_restriction("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
+    #     else:
+    #         restriction = await get_restriction("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
 
-            if restriction:
-                raise Blacklisted(restriction)
+    #         if restriction:
+    #             raise Blacklisted(restriction)
 
-            if unverify_role:
-                if unverified_role and unverified_role in user.roles:
-                    required_binds["remove"]["unverifiedRole"] = unverified_role
+    #         if unverify_role:
+    #             if unverified_role and unverified_role in user.roles:
+    #                 required_binds["remove"]["unverifiedRole"] = unverified_role
 
-            if verify_role:
-                verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
+    #         if verify_role:
+    #             verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
 
-                if not verified_role:
-                    try:
-                        verified_role = await guild.create_role(
-                            name   = verified_role_name,
-                            reason = "Creating missing Verified role"
-                        )
-                    except discord.errors.Forbidden:
-                        raise PermissionError("Sorry, I wasn't able to create the Verified role. "
-                                              "Please ensure I have the `Manage Roles` permission.")
-                    except discord.errors.HTTPException:
-                        raise Error("Unable to create role: this server has reached the max amount of roles!")
+    #             if not verified_role:
+    #                 try:
+    #                     verified_role = await guild.create_role(
+    #                         name   = verified_role_name,
+    #                         reason = "Creating missing Verified role"
+    #                     )
+    #                 except discord.errors.Forbidden:
+    #                     raise PermissionError("Sorry, I wasn't able to create the Verified role. "
+    #                                           "Please ensure I have the `Manage Roles` permission.")
+    #                 except discord.errors.HTTPException:
+    #                     raise Error("Unable to create role: this server has reached the max amount of roles!")
 
-                required_binds["add"]["verifiedRole"] = verified_role
+    #             required_binds["add"]["verifiedRole"] = verified_role
 
-        if not unverified:
-            role_binds, group_ids, _ = await self.get_binds(guild_data=guild_data, guild=guild)
+    #     if not unverified:
+    #         role_binds, group_ids, _ = await self.get_binds(guild)
 
-            for category, binds in role_binds.items():
-                if category == "groups":
-                    for group_id, group_bind_data in binds.items():
-                        user_group = roblox_user.groups.get(group_id)
+    #         for category, binds in role_binds.items():
+    #             if category == "groups":
+    #                 for group_id, group_bind_data in binds.items():
+    #                     user_group = roblox_user.groups.get(group_id)
 
-                        for bind_id, bind_data in group_bind_data.get("binds", {}).items():
-                            bind_remove_roles = bind_data.get("removeRoles") or []
-                            bound_roles = bind_data.get("roles")
+    #                     for bind_id, bind_data in group_bind_data.get("binds", {}).items():
+    #                         bind_remove_roles = bind_data.get("removeRoles") or []
+    #                         bound_roles = bind_data.get("roles")
 
-                            try:
-                                rank = int(bind_id)
-                            except ValueError:
-                                rank = None
+    #                         try:
+    #                             rank = int(bind_id)
+    #                         except ValueError:
+    #                             rank = None
 
-                            if user_group:
-                                if bind_id == "0":
-                                    if bound_roles:
-                                        # if the user has these roles, remove them
-                                        pass
+    #                         if user_group:
+    #                             if bind_id == "0":
+    #                                 if bound_roles:
+    #                                     # if the user has these roles, remove them
+    #                                     pass
 
-                                if (bind_id == "all" or user_group.user_rank_id == bind_id) or (rank and (rank < 0 and user_group.user_rank_id >= abs(rank))):
-                                    required_binds["add"]["binds"].append(bind_data)
+    #                             if (bind_id == "all" or user_group.user_rank_id == bind_id) or (rank and (rank < 0 and user_group.user_rank_id >= abs(rank))):
+    #                                 required_binds["add"]["binds"].append(bind_data)
 
-                                    for role_id in bind_remove_roles:
-                                        # if the user has these roles, remove them
-                                        pass
-                                else:
-                                    for role_id in bound_roles:
-                                        # if user has these roles, remove them
-                                        pass
-                            else:
-                                if bind_id == "0":
-                                    if bound_roles:
-                                        required_binds["add"]["binds"].append(bind_data)
+    #                                 for role_id in bind_remove_roles:
+    #                                     # if the user has these roles, remove them
+    #                                     pass
+    #                             else:
+    #                                 for role_id in bound_roles:
+    #                                     # if user has these roles, remove them
+    #                                     pass
+    #                         else:
+    #                             if bind_id == "0":
+    #                                 if bound_roles:
+    #                                     required_binds["add"]["binds"].append(bind_data)
 
-                                    for role_id in bind_remove_roles:
-                                        # if the user has these roles, remove them
-                                        pass
-                                else:
-                                    if bound_roles:
-                                        # if the user has these roles, remove them
-                                        pass
+    #                                 for role_id in bind_remove_roles:
+    #                                     # if the user has these roles, remove them
+    #                                     pass
+    #                             else:
+    #                                 if bound_roles:
+    #                                     # if the user has these roles, remove them
+    #                                     pass
 
-                        for bind_range in group_bind_data.get("ranges", []):
-                            bound_roles = bind_range.get("roles", set())
-                            bind_remove_roles = bind_range.get("removeRoles") or []
+    #                     for bind_range in group_bind_data.get("ranges", []):
+    #                         bound_roles = bind_range.get("roles", set())
+    #                         bind_remove_roles = bind_range.get("removeRoles") or []
 
-                            if user_group:
-                                user_rank = user_group.user_rank_id
+    #                         if user_group:
+    #                             user_rank = user_group.user_rank_id
 
-                                if bind_range["low"] <= user_rank <= bind_range["high"]:
-                                    required_binds["add"]["binds"].append(bind_data)
+    #                             if bind_range["low"] <= user_rank <= bind_range["high"]:
+    #                                 required_binds["add"]["binds"].append(bind_data)
 
-                                    for role_id in bind_remove_roles:
-                                        # if the user has these roles, remove them
-                                        pass
-                                else:
-                                    required_binds["remove"]["binds"].append(bind_range)
+    #                                 for role_id in bind_remove_roles:
+    #                                     # if the user has these roles, remove them
+    #                                     pass
+    #                             else:
+    #                                 required_binds["remove"]["binds"].append(bind_range)
 
-                            else:
-                                # if the user has these roles, remove them
-                                pass
-
-
-
-
-        return required_binds, optional_binds
-
-    async def apply_binds(user, required_binds, optional_binds):
-        """given binds, apply them to the user"""
-
-        pass
+    #                         else:
+    #                             # if the user has these roles, remove them
+    #                             pass
 
 
 
-    async def update_member_new(self, user, guild=None, *, nickname=True, roles=True):
-        """get the binds and apply them to the user"""
 
-        guild = guild or getattr(user, "guild", None)
+    #     return required_binds, optional_binds
 
-        if not guild:
-            raise CancelCommand
+    # async def apply_binds(user, required_binds, optional_binds):
+    #     """given binds, apply them to the user"""
 
-        required_binds, optional_binds = await self.get_binds_for_user(user, guild)
+    #     pass
 
-        await self.apply_binds(user, required_binds, optional_binds)
 
-        print(required_binds)
-        print(optional_binds)
 
-    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, user_data=None, binds=None, guild_data=None, response=None, dm=False, cache=True):
+    # async def update_member_new(self, user, guild=None, *, nickname=True, roles=True):
+    #     """get the binds and apply them to the user"""
+
+    #     guild = guild or getattr(user, "guild", None)
+
+    #     if not guild:
+    #         raise CancelCommand
+
+    #     required_binds, optional_binds = await self.get_binds_for_user(user, guild)
+
+    #     await self.apply_binds(user, required_binds, optional_binds)
+
+    #     print(required_binds)
+    #     print(optional_binds)
+
+    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, user_data=None, binds=None, response=None, dm=False, cache=True):
         restriction = await get_restriction("users", user.id, guild=guild)
 
         if restriction:
@@ -1196,9 +1191,7 @@ class Roblox(Bloxlink.Module):
             if not guild:
                 raise Error("Unable to resolve a guild from user.")
 
-        guild_data = guild_data or await self.r.table("guilds").get(str(guild.id)).run() or {}
-
-        if has_magic_role(user, guild_data.get("magicRoles"), "Bloxlink Bypass"):
+        if await has_magic_role(user, guild, "Bloxlink Bypass"):
             raise BloxlinkBypass()
 
 
@@ -1279,7 +1272,7 @@ class Roblox(Bloxlink.Module):
                     remove_roles.add(verified_role)
 
             if nickname:
-                nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, guild_data=guild_data, dm=dm, user_data=user_data, response=response)
+                nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, dm=dm, user_data=user_data, response=response)
 
             unverified = True
 
@@ -1317,7 +1310,7 @@ class Roblox(Bloxlink.Module):
                 if binds and len(binds) == 2 and binds[0] is not None and binds[1] is not None:
                     role_binds, group_ids = binds
                 else:
-                    role_binds, group_ids, _ = await self.get_binds(guild_data=guild_data, guild=guild)
+                    role_binds, group_ids, _ = await self.get_binds(guild)
 
                 if role_binds:
                     if isinstance(role_binds, list):
@@ -1908,7 +1901,7 @@ class Roblox(Bloxlink.Module):
 
             raise BadUsage("Unable to resolve a user")
 
-    async def verify_as(self, user, guild=None, *, user_data=None, primary=False, update_user=True, response=None, guild_data=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
+    async def verify_as(self, user, guild=None, *, user_data=None, primary=False, update_user=True, response=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
         if not (username or roblox_id):
             raise BadUsage("Must supply either a username or roblox_id to verify_as.")
 
@@ -1917,7 +1910,6 @@ class Roblox(Bloxlink.Module):
 
             user_id = str(user.id)
             user_data = user_data or await self.r.db("bloxlink").table("users").get(user_id).run() or {}
-            guild_data = guild_data or (guild and await self.r.table("guilds").get(str(guild.id)).run()) or {}
 
             allow_reverify = guild_data.get("allowReVerify", DEFAULTS.get("allowReVerify"))
 

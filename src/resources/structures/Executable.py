@@ -93,7 +93,7 @@ class Executable:
 
                     magic_roles = await get_guild_value(guild, ["magicRoles", {}])
 
-                    if has_magic_role(author, magic_roles, "Bloxlink Admin"):
+                    if await has_magic_role(author, guild, "Bloxlink Admin", magic_roles_data=magic_roles):
                         return True
                     else:
                         if role_name == "Bloxlink Manager":
@@ -109,7 +109,7 @@ class Executable:
                                 raise PermissionError("You need the `Kick` or `Ban` permission to run this command.")
 
                         elif role_name == "Bloxlink Updater":
-                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or has_magic_role(author, magic_roles, "Bloxlink Updater"):
+                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or await has_magic_role(author, guild, "Bloxlink Updater", magic_roles_data=magic_roles):
                                 pass
                             else:
                                 raise PermissionError("You either need: a role called `Bloxlink Updater`, the `Manage Roles` "

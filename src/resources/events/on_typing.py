@@ -27,14 +27,13 @@ class ChannelTypingEvent(Bloxlink.Module):
                     if await cache_get(f"channel_typing:{guild.id}:{user.id}", primitives=True):
                         return
 
-                    options = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")], ["magicRoles", {}])
+                    options = await get_guild_value(guild, ["persistRoles", DEFAULTS.get("persistRoles")])
                     persist_roles = options["persistRoles"]
-                    magic_roles   = options["magicRoles"]
 
                     if persist_roles:
                         await cache_set(f"channel_typing:{guild.id}:{user.id}", True, expire=7200)
 
-                        if not has_magic_role(user, magic_roles, "Bloxlink Bypass"):
+                        if not await has_magic_role(user, guild, "Bloxlink Bypass"):
                             try:
                                 await guild_obligations(user, guild, join=True, dm=False, event=False)
                             except CancelCommand:

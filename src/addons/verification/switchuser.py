@@ -5,7 +5,7 @@ from discord.errors import Forbidden, NotFound, HTTPException
 from discord.utils import find
 
 
-verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds, get_binds = Bloxlink.get_module("roblox", attrs=["verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds", "get_binds"])
+verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds = Bloxlink.get_module("roblox", attrs=["verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 get_user = Bloxlink.get_module("robloxnew.users", attrs=["get_user"], name_override="users")
@@ -125,7 +125,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     except Error as e:
                         await response.error(e)
                     else:
-                        if count_binds(guild) and not has_magic_role(member, guild_data.get("magicRoles", {}), "Bloxlink Bypass"):
+                        if count_binds(guild) and not await has_magic_role(member, guild, "Bloxlink Bypass"):
                             for role in list(member.roles):
                                 if role != guild.default_role and role.name != "Muted":
                                     try:

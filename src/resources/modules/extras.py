@@ -1,6 +1,8 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import MAGIC_ROLES # pylint: disable=import-error, no-name-in-module
-import discord
+
+
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 
 
 @Bloxlink.module
@@ -8,9 +10,9 @@ class Extras(Bloxlink.Module):
     def __init__(self):
         pass
 
-    def has_magic_role(self, author, magic_roles_data, magic_role_name=None):
+    async def has_magic_role(self, author, guild, magic_role_name=None, magic_roles_data=None):
         has_any_magic_role = False
-        magic_roles_data = magic_roles_data or {}
+        magic_roles = magic_roles_data or await get_guild_value(guild, "magicRoles") or {}
 
         for role in author.roles:
             if role.name == magic_role_name:
@@ -20,7 +22,7 @@ class Extras(Bloxlink.Module):
                 if role.name in MAGIC_ROLES:
                     has_any_magic_role = True
 
-        users_magic_roles = filter(lambda rd: author.get_role(int(rd[0])), magic_roles_data.items())
+        users_magic_roles = filter(lambda rd: author.get_role(int(rd[0])), magic_roles.items())
 
         if not magic_role_name:
             return bool(users_magic_roles) or has_any_magic_role
