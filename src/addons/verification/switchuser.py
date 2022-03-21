@@ -2,7 +2,6 @@ from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-err
 from resources.exceptions import Error, Message, UserNotVerified, BloxlinkBypass, Blacklisted  # pylint: disable=import-error, no-name-in-module
 from resources.constants import DEFAULTS, GREEN_COLOR, VERIFY_URL, SELF_HOST  # pylint: disable=import-error, no-name-in-module
 from discord.errors import Forbidden, NotFound, HTTPException
-from discord.utils import find
 
 
 verify_as, parse_accounts, update_member, get_nickname, verify_member, count_binds = Bloxlink.get_module("roblox", attrs=["verify_as", "parse_accounts", "update_member", "get_nickname", "verify_member", "count_binds"])
@@ -105,7 +104,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     try:
                         member = await guild.fetch_member(author.id)
                     except (Forbidden, NotFound):
-                        await verify_member(author, roblox_id, guild=guild, user_data=author_data, allow_reverify=allow_reverify, primary_account=parsed_args["primary"] == "yes")
+                        await verify_member(author, roblox_id, guild=guild, allow_reverify=allow_reverify, primary_account=parsed_args["primary"] == "yes")
                         raise Message("You're not a member of the provided server, so I was only able to update your account internally.", type="success")
 
                     try:
@@ -135,7 +134,6 @@ class SwitchUserCommand(Bloxlink.Module):
                         try:
                             added, removed, nickname, errors, warnings, roblox_user = await update_member(
                                 member,
-                                guild_data   = guild_data,
                                 guild        = guild,
                                 roles        = True,
                                 nickname     = True,
@@ -153,20 +151,19 @@ class SwitchUserCommand(Bloxlink.Module):
                             else:
                                 raise Error(f"{author.mention} has an active restriction from Bloxlink.")
                         else:
-                            welcome_message = guild_data.get("welcomeMessage") or DEFAULTS.get("welcomeMessage")
-
-                            welcome_message = await get_nickname(author, welcome_message, guild_data=guild_data, roblox_user=roblox_user, is_nickname=False)
+                            welcome_message = await get_guild_value(guild, ["welcomeMessage", DEFAULTS.get("welcomeMessage")])
+                            welcome_message = await get_nickname(author, welcome_message, roblox_user=roblox_user, is_nickname=False)
 
                             await post_event(guild, "verification", f"{author.mention} ({author.id}) has **switched their user** to `{username}`.", GREEN_COLOR)
 
                             await CommandArgs.response.send(welcome_message)
 
                 else:
-                    raise Message(f"You only have one account linked! Please use `{prefix}verify add` to add another.", type="info")
+                    raise Message(f"You only have one account linked! Please use `/verify add` to add another.", type="info")
 
 
             except UserNotVerified:
-                raise Error(f"You're not linked to Bloxlink. Please use `{prefix}verify add`.")
+                raise Error(f"You're not linked to Bloxlink. Please use `/verify add`.")
 
         else:
             raise Message(f"{author.mention}, to verify with Bloxlink, please visit our website at " \

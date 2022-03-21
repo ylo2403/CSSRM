@@ -4,7 +4,7 @@ from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound
 from resources.constants import (NICKNAME_TEMPLATES, GREEN_COLOR, BROWN_COLOR, ARROW, VERIFY_URL, # pylint: disable=import-error, no-name-in-module
                                 ACCOUNT_SETTINGS_URL)
 
-get_user, get_nickname, get_roblox_id, parse_accounts, unverify_member, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "unverify_member", "format_update_embed", "guild_obligations"])
+get_user, get_nickname, get_roblox_id, parse_accounts, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "format_update_embed", "guild_obligations"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 

@@ -28,7 +28,7 @@ loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-cache_set, cache_get, cache_pop, get_guild_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value"])
+cache_set, cache_get, cache_pop, get_guild_value, get_db_value, get_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value", "get_db_value", "get_user_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
@@ -146,19 +146,21 @@ class Roblox(Bloxlink.Module):
         return bind_count
 
 
-    async def extract_accounts(self, user_data, resolve_to_users=True, reverse_search=False):
+    async def extract_accounts(self, user, resolve_to_users=True, reverse_search=False):
         roblox_ids = {}
 
-        primary_account = user_data.get("robloxID")
+        options = await get_user_value(user, "robloxID", ["robloxAccounts", {}])
+
+        primary_account = options.get("robloxID")
         if primary_account:
             roblox_ids[primary_account] = True
 
-        for roblox_id in user_data.get("robloxAccounts", {}).get("accounts", []):
+        for roblox_id in options.get("robloxAccounts", {}).get("accounts", []):
             roblox_ids[roblox_id] = True
 
         if reverse_search:
             for roblox_id in roblox_ids.keys():
-                discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs") or []
+                discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
                 discord_accounts = []
 
                 if resolve_to_users:
@@ -179,8 +181,7 @@ class Roblox(Bloxlink.Module):
             return list(roblox_ids.keys())
 
 
-    async def verify_member(self, user, roblox, guild=None, user_data=None, primary_account=False, allow_reverify=True):
-        # TODO: make this insert a new DiscordProfile or append the account to it
+    async def verify_member(self, user, roblox, guild=None, primary_account=False, allow_reverify=True):
         user_id = str(user.id)
         guild = guild or getattr(user, "guild", None)
         guild_id = guild and str(guild.id)
@@ -190,8 +191,7 @@ class Roblox(Bloxlink.Module):
         else:
             roblox_id = str(roblox)
 
-        user_data = user_data or await self.r.db("bloxlink").table("users").get(user_id).run() or {}
-        roblox_accounts = user_data.get("robloxAccounts", {})
+        roblox_accounts = await get_user_value(user, "robloxAccounts") or {}
         roblox_list = roblox_accounts.get("accounts", [])
 
         if guild:
@@ -306,9 +306,8 @@ class Roblox(Bloxlink.Module):
         return success
 
 
-    async def get_clan_tag(self, user, guild, response, dm=False, user_data=None):
-        user_data = user_data or await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
-        clan_tags = user_data.get("clanTags", {})
+    async def get_clan_tag(self, user, guild, response, dm=False):
+        clan_tags = await get_user_value(user, "clanTags") or {}
 
         def get_from_db():
             return clan_tags.get(str(guild.id))
@@ -316,20 +315,23 @@ class Roblox(Bloxlink.Module):
         if not response:
             return get_from_db()
 
-        clan_tag = (await response.prompt([{
-            "prompt": "Please provide text for your Clan Tag. This will be inserted into "
-                      "your nickname.\n**Please keep your clan tag under 10 characters**, "
-                      "or it may not properly show.\nIf you want to skip this, then say `skip`.",
-            "name": "clan_tag",
-            "max": 32
-        }], dm=dm))["clan_tag"]
+        # TODO: make a modal
+        # clan_tag = (await response.prompt([{
+        #     "prompt": "Please provide text for your Clan Tag. This will be inserted into "
+        #               "your nickname.\n**Please keep your clan tag under 10 characters**, "
+        #               "or it may not properly show.\nIf you want to skip this, then say `skip`.",
+        #     "name": "clan_tag",
+        #     "max": 32
+        # }], dm=dm))["clan_tag"]
 
-        if clan_tag.lower() == "skip":
-            return get_from_db()
+        # if clan_tag.lower() == "skip":
+        #     return get_from_db()
 
-        clan_tags[str(guild.id)] = clan_tag
-        user_data["clanTags"] = clan_tags
-        await self.r.db("bloxlink").table("users").insert(user_data, conflict="update").run()
+        # clan_tags[str(guild.id)] = clan_tag
+        # user_data["clanTags"] = clan_tags
+        # await self.r.db("bloxlink").table("users").insert(user_data, conflict="update").run()
+
+        clan_tag = get_from_db() # FIXME
 
         return clan_tag
 
@@ -356,7 +358,7 @@ class Roblox(Bloxlink.Module):
 
         return welcome_message, card, embed
 
-    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, user_data=None, roblox_user=None, dm=False):
+    async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, roblox_user=None, dm=False):
         template = template or ""
 
         if template == "{disable-nicknaming}":
@@ -372,8 +374,8 @@ class Roblox(Bloxlink.Module):
             if not roblox_user.complete:
                 await roblox_user.sync(everything=True)
 
-            if not group and guild_data:
-                groups = list(guild_data.get("groupIDs", {}).keys())
+            if not group:
+                groups = list(await get_guild_value(guild, ["groupIDs", {}]).keys())
                 group_id = groups and groups[0]
 
                 if group_id:
@@ -482,7 +484,7 @@ class Roblox(Bloxlink.Module):
                 template = template.replace("{{{0}}}".format(outer_nick), nick_value)
 
         # clan tags are done at the end bc we may need to shorten them, and brackets are removed at the end
-        clan_tag = "clan-tag" in template and (await self.get_clan_tag(user=user, guild=guild, response=response, user_data=user_data, dm=dm) or "N/A")
+        clan_tag = "clan-tag" in template and (await self.get_clan_tag(user=user, guild=guild, response=response, dm=dm) or "N/A")
 
         if is_nickname:
             if clan_tag:
@@ -950,7 +952,7 @@ class Roblox(Bloxlink.Module):
             self.pending_verifications.pop(member.id, None)
 
 
-    # async def get_binds_for_user(self, user, guild, *, guild_data=None, roblox_user=None, user_data=None, cache=False):
+    # async def get_binds_for_user(self, user, guild, *, guild_data=None, roblox_user=None, cache=False):
     #     """return the required and optional binds for the user"""
 
     #     required_binds, optional_binds = {
@@ -1006,7 +1008,7 @@ class Roblox(Bloxlink.Module):
 
     #     try:
     #         if not roblox_user:
-    #             roblox_user = (await self.get_user(user=user, guild=guild, user_data=user_data, everything=True, cache=cache))[0]
+    #             roblox_user = (await self.get_user(user=user, guild=guild, everything=True, cache=cache))[0]
 
     #             if not roblox_user:
     #                 raise UserNotVerified
@@ -1027,7 +1029,7 @@ class Roblox(Bloxlink.Module):
     #         if verify_role and verified_role and verified_role in user.roles:
     #             required_binds["remove"]["verifiedRole"] = verified_role
 
-    #         nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, guild_data=guild_data, dm=dm, user_data=user_data, response=response)
+    #         nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, guild_data=guild_data, dm=dm, response=response)
 
     #         unverified = True
 
@@ -1151,7 +1153,7 @@ class Roblox(Bloxlink.Module):
     #     print(required_binds)
     #     print(optional_binds)
 
-    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, user_data=None, binds=None, response=None, dm=False, cache=True):
+    async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, binds=None, response=None, dm=False, cache=True):
         restriction = await get_restriction("users", user.id, guild=guild)
 
         if restriction:
@@ -1209,9 +1211,9 @@ class Roblox(Bloxlink.Module):
 
                     if nickname and bind_nickname and bind_nickname != "skip":
                         if user.top_role == role:
-                            top_role_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                            top_role_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
-                        resolved_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                        resolved_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                             possible_nicknames.append([role, resolved_nickname])
@@ -1233,13 +1235,23 @@ class Roblox(Bloxlink.Module):
                 if role and not allow_old_roles:
                     remove_roles.add(role)
 
-        verify_role = guild_data.get("verifiedRoleEnabled", DEFAULTS.get("verifiedRoleEnabled"))
-        unverify_role = guild_data.get("unverifiedRoleEnabled", DEFAULTS.get("unverifiedRoleEnabled"))
+        options = await get_guild_value(guild,
+                                        ["verifiedRoleEnabled",   DEFAULTS.get("verifiedRoleEnabled")],
+                                        ["unverifiedRoleEnabled", DEFAULTS.get("unverifiedRoleEnabled")],
+                                        ["unverifiedRoleName",    DEFAULTS.get("unverifiedRoleName")],
+                                        ["verifiedRoleName",      DEFAULTS.get("verifiedRoleName")],
+                                        ["allowOldRoles",         DEFAULTS.get("allowOldRoles")],
+                                        ["nicknameTemplate",      DEFAULTS.get("nicknameTemplate")])
 
-        unverified_role_name = guild_data.get("unverifiedRoleName", DEFAULTS.get("unverifiedRoleName"))
-        verified_role_name = guild_data.get("verifiedRoleName", DEFAULTS.get("verifiedRoleName"))
+        verify_role   = options.get("verifiedRoleEnabled")
+        unverify_role = options.get("unverifiedRoleEnabled")
 
-        allow_old_roles = guild_data.get("allowOldRoles", DEFAULTS.get("allowOldRoles"))
+        unverified_role_name = options.get("unverifiedRoleName")
+        verified_role_name   = options.get("verifiedRoleName")
+
+        allow_old_roles = options.get("allowOldRoles")
+
+        nickname_template = options.get("nicknameTemplate")
 
         if unverify_role:
             unverified_role = discord.utils.find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
@@ -1249,7 +1261,7 @@ class Roblox(Bloxlink.Module):
 
         try:
             if not roblox_user:
-                roblox_user = (await self.get_user(user=user, guild=guild, user_data=user_data, everything=True, cache=cache))[0]
+                roblox_user = (await self.get_user(user=user, guild=guild, everything=True, cache=cache))[0]
 
                 if not roblox_user:
                     raise UserNotVerified
@@ -1272,7 +1284,7 @@ class Roblox(Bloxlink.Module):
                     remove_roles.add(verified_role)
 
             if nickname:
-                nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, dm=dm, user_data=user_data, response=response)
+                nickname = await self.get_nickname(user=user, skip_roblox_check=True, guild=guild, dm=dm, response=response)
 
             unverified = True
 
@@ -1354,9 +1366,9 @@ class Roblox(Bloxlink.Module):
 
                                             if role and nickname and bind_nickname and bind_nickname != "skip":
                                                 if user.top_role == role:
-                                                    top_role_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                    top_role_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
-                                                resolved_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                resolved_nickname = await self.get_nickname(user=user, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                                 if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                     possible_nicknames.append([role, resolved_nickname])
@@ -1432,9 +1444,9 @@ class Roblox(Bloxlink.Module):
 
                                                 if role and nickname and bind_nickname and bind_nickname != "skip":
                                                     if user.top_role == role:
-                                                        top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                        top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
-                                                    resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                    resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                                     if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                         possible_nicknames.append([role, resolved_nickname])
@@ -1465,9 +1477,9 @@ class Roblox(Bloxlink.Module):
 
                                                     if role and nickname and bind_nickname and bind_nickname != "skip":
                                                         if user.top_role == role:
-                                                            top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                            top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
-                                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
@@ -1507,10 +1519,10 @@ class Roblox(Bloxlink.Module):
                                                         add_roles.add(role)
 
                                                         if nickname and user.top_role == role and bind_nickname:
-                                                            top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                            top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                                     if nickname and bind_nickname and bind_nickname != "skip":
-                                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
@@ -1549,7 +1561,8 @@ class Roblox(Bloxlink.Module):
                                 group_role = discord.utils.find(lambda r: r.name == group.user_rank_name and not r.managed, guild.roles)
 
                                 if not group_role:
-                                    if guild_data.get("dynamicRoles", DEFAULTS.get("dynamicRoles")):
+                                    dynamic_roles = await get_guild_value(guild, ["dynamicRoles", DEFAULTS.get("dynamicRoles")])
+                                    if dynamic_roles:
                                         try:
                                             group_role = await guild.create_role(name=group.user_rank_name)
                                         except discord.errors.Forbidden:
@@ -1578,10 +1591,10 @@ class Roblox(Bloxlink.Module):
 
                                 if nickname and group_nickname and group_role:
                                     if user.top_role == group_role and group_nickname:
-                                        top_role_nickname = await self.get_nickname(user=user, group=group, template=group_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                        top_role_nickname = await self.get_nickname(user=user, group=group, template=group_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                     if group_nickname and group_nickname != "skip":
-                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=group_nickname, roblox_user=roblox_user, user_data=user_data, dm=dm, response=response)
+                                        resolved_nickname = await self.get_nickname(user=user, group=group, template=group_nickname, roblox_user=roblox_user, dm=dm, response=response)
 
                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                             possible_nicknames.append([group_role, resolved_nickname])
@@ -1627,10 +1640,10 @@ class Roblox(Bloxlink.Module):
                         if highest_role:
                             nickname = highest_role[0][1]
                 else:
-                    nickname = top_role_nickname or await self.get_nickname(template=guild_data.get("nicknameTemplate", DEFAULTS.get("nicknameTemplate")), user=user, user_data=user_data, roblox_user=roblox_user, dm=dm, response=response)
+                    nickname = top_role_nickname or await self.get_nickname(template=nickname_template, user=user, roblox_user=roblox_user, dm=dm, response=response)
 
                 if isinstance(nickname, bool):
-                    nickname = self.get_nickname(template=guild_data.get("nicknameTemplate", DEFAULTS.get("nicknameTemplate")), roblox_user=roblox_user, user=user, user_data=user_data, dm=dm, response=response)
+                    nickname = self.get_nickname(template=nickname_template, roblox_user=roblox_user, user=user, dm=dm, response=response)
 
             if nickname and nickname != user.display_name:
                 try:
@@ -1647,7 +1660,7 @@ class Roblox(Bloxlink.Module):
             raise UserNotVerified
 
         if not roblox_user:
-            roblox_user = (await self.get_user(user=user, guild=guild, everything=True, user_data=user_data))[0]
+            roblox_user = (await self.get_user(user=user, guild=guild, everything=True))[0]
 
         return [r.name for r in add_roles], [r.name for r in remove_roles], nickname, errors, warnings, roblox_user
 
@@ -1787,8 +1800,6 @@ class Roblox(Bloxlink.Module):
         return roblox_account, primary_account
 
     async def get_accounts(self, user, parse_accounts=False):
-        user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {}
-
         roblox_ids = user_data.get("robloxAccounts", {}).get("accounts", [])
 
         accounts = {}
@@ -1806,7 +1817,7 @@ class Roblox(Bloxlink.Module):
 
         return accounts
 
-    async def get_user(self, *args, user=None, author=None, guild=None, username=None, roblox_id=None, user_data=None, everything=False, basic_details=True, group_ids=None, return_embed=False, cache=True):
+    async def get_user(self, *args, user=None, author=None, guild=None, username=None, roblox_id=None, everything=False, basic_details=True, group_ids=None, return_embed=False, cache=True):
         guild = guild or getattr(user, "guild", False)
         guild_id = guild and str(guild.id)
 
@@ -1816,7 +1827,6 @@ class Roblox(Bloxlink.Module):
 
         if user:
             user_id = str(user.id)
-            user_data = user_data or await self.r.db("bloxlink").table("users").get(user_id).run() or {}
 
             if cache:
                 discord_profile = await cache_get(f"discord_profiles:{user_id}")
@@ -1901,7 +1911,7 @@ class Roblox(Bloxlink.Module):
 
             raise BadUsage("Unable to resolve a user")
 
-    async def verify_as(self, user, guild=None, *, user_data=None, primary=False, update_user=True, response=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
+    async def verify_as(self, user, guild=None, *, primary=False, update_user=True, response=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
         if not (username or roblox_id):
             raise BadUsage("Must supply either a username or roblox_id to verify_as.")
 
@@ -1909,9 +1919,8 @@ class Roblox(Bloxlink.Module):
             guild = guild or user.guild
 
             user_id = str(user.id)
-            user_data = user_data or await self.r.db("bloxlink").table("users").get(user_id).run() or {}
 
-            allow_reverify = guild_data.get("allowReVerify", DEFAULTS.get("allowReVerify"))
+            allow_reverify = await get_guild_value(guild, ["allowReVerify", DEFAULTS.get("allowReVerify")])
 
             invalid_roblox_names = 0
 
@@ -1950,7 +1959,7 @@ class Roblox(Bloxlink.Module):
 
             if roblox_id in roblox_accounts.get("accounts", []) or user_data.get("robloxID") == roblox_id:
                 # TODO: clear cache
-                await self.verify_member(user, roblox_id, guild=guild, user_data=user_data, allow_reverify=allow_reverify, primary_account=primary)
+                await self.verify_member(user, roblox_id, guild=guild, allow_reverify=allow_reverify, primary_account=primary)
 
                 if update_user:
                     try:
@@ -1959,7 +1968,6 @@ class Roblox(Bloxlink.Module):
                             guild       = guild,
                             roles       = True,
                             nickname    = True,
-                            user_data = user_data,
                             cache       = cache,
                             response    = response)
 
@@ -2002,7 +2010,7 @@ class Roblox(Bloxlink.Module):
 
                         if await self.validate_code(roblox_id, code):
                             # user is now validated; add their roles
-                            await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, guild=guild, user_data=user_data, primary_account=primary)
+                            await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, guild=guild, primary_account=primary)
 
                             return username
 
@@ -2025,7 +2033,7 @@ class Roblox(Bloxlink.Module):
                             attempt = await self.validate_code(roblox_id, code)
 
                             if attempt:
-                                await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, user_data=user_data, guild=guild, primary_account=primary)
+                                await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, guild=guild, primary_account=primary)
 
                                 return username
 
@@ -2073,7 +2081,6 @@ class Roblox(Bloxlink.Module):
                                 failures += 1
 
                             else:
-                                # await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, user_data=user_data, guild=guild, primary_account=primary)
                                 return username
 
 

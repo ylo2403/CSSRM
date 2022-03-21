@@ -43,7 +43,6 @@ class Premium(Bloxlink.Module):
     async def is_staff(self, user):
         return await cache_get(f"bloxlink_staff:{user.id}", primitives=True)
 
-
     async def add_features(self, user, features, *, days=-1, premium_anywhere=False, guild=None,):
         user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
         user_data_premium = user_data.get("premium") or {}
@@ -123,36 +122,36 @@ class Premium(Bloxlink.Module):
         return patron_data
 
 
-    async def transfer_premium(self, transfer_from, transfer_to, guild=None, apply_cooldown=True):
-        profile, _ = await self.get_features(transfer_to, cache=False, partner_check=False)
+    # async def transfer_premium(self, transfer_from, transfer_to, guild=None, apply_cooldown=True):
+    #     profile, _ = await self.get_features(transfer_to, cache=False, partner_check=False)
 
-        if profile.features.get("premium"):
-            raise Message("This user already has premium!", type="info")
+    #     if profile.features.get("premium"):
+    #         raise Message("This user already has premium!", type="info")
 
-        if transfer_from == transfer_to:
-            raise Message("You cannot transfer premium to yourself!")
+    #     if transfer_from == transfer_to:
+    #         raise Message("You cannot transfer premium to yourself!")
 
 
-        transfer_from_data = await self.r.db("bloxlink").table("users").get(str(transfer_from.id)).run() or {"id": str(transfer_from.id)}
-        transfer_to_data   = await self.r.db("bloxlink").table("users").get(str(transfer_to.id)).run() or {"id": str(transfer_to.id)}
+    #     transfer_from_data = await self.r.db("bloxlink").table("users").get(str(transfer_from.id)).run() or {"id": str(transfer_from.id)}
+    #     transfer_to_data   = await self.r.db("bloxlink").table("users").get(str(transfer_to.id)).run() or {"id": str(transfer_to.id)}
 
-        transfer_from_data["premium"] = transfer_from_data.get("premium", {})
-        transfer_to_data["premium"]   = transfer_to_data.get("premium", {})
+    #     transfer_from_data["premium"] = transfer_from_data.get("premium", {})
+    #     transfer_to_data["premium"]   = transfer_to_data.get("premium", {})
 
-        transfer_from_data["premium"]["transferTo"] = str(transfer_to.id)
-        transfer_to_data["premium"]["transferFrom"] = str(transfer_from.id)
+    #     transfer_from_data["premium"]["transferTo"] = str(transfer_to.id)
+    #     transfer_to_data["premium"]["transferFrom"] = str(transfer_from.id)
 
-        if apply_cooldown:
-            transfer_from_data["premium"]["transferCooldown"] = time() + (86400*TRANSFER_COOLDOWN)
+    #     if apply_cooldown:
+    #         transfer_from_data["premium"]["transferCooldown"] = time() + (86400*TRANSFER_COOLDOWN)
 
-        await self.r.db("bloxlink").table("users").insert(transfer_from_data, conflict="update").run()
-        await self.r.db("bloxlink").table("users").insert(transfer_to_data,   conflict="update").run()
+    #     await self.r.db("bloxlink").table("users").insert(transfer_from_data, conflict="update").run()
+    #     await self.r.db("bloxlink").table("users").insert(transfer_to_data,   conflict="update").run()
 
-        await cache_pop(f"premium_cache:{transfer_to.id}")
-        await cache_pop(f"premium_cache:{transfer_from.id}")
+    #     await cache_pop(f"premium_cache:{transfer_to.id}")
+    #     await cache_pop(f"premium_cache:{transfer_from.id}")
 
-        if guild:
-            await cache_pop(f"premium_cache:{guild.id}")
+    #     if guild:
+    #         await cache_pop(f"premium_cache:{guild.id}")
 
 
     async def get_features(self, user=None, guild=None, user_data=None, cache=True, cache_as_guild=True, rec=True, partner_check=True):
