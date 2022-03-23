@@ -1,12 +1,10 @@
-from resources.constants import RELEASE, IS_DOCKER # pylint: disable=import-error
+from os import environ as env
+from resources.constants import RELEASE, IS_DOCKER # pylint: disable=import-error, no-name-in-module, no-name-in-module
 
 
-PREFIX = "!"
-
-
-WEBHOOKS = { # discord webhook links
-	"LOGS": "",
-	"ERRORS": ""
+WEBHOOKS = {
+	"LOGS":  "", # discord webhook link
+	"ERRORS": "" # discord webhook link
 }
 
 
@@ -25,6 +23,18 @@ REACTIONS = { # discord emote mention strings
 }
 
 
+BLOXLINK_GUILD = RELEASE == "LOCAL" and 439265180988211211 or 372036754078826496
+
+BOTS = {
+	"PRO": 469652514501951518,
+	"MAIN": 426537812993638400,
+	"CANARY": 442912486702710784,
+	"LOCAL": 454053406471094282
+}
+
+MONGO_CONNECTION_STRING = "mongodb+srv://mongodb.com" # MongoDB connection string
+MONGO_DB = "bloxlink" # the main collection name
+
 RETHINKDB_HOST = "rethinkdb"
 RETHINKDB_PASSWORD = None
 RETHINKDB_PORT = 28015
@@ -35,21 +45,3 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = None
 
 TOKEN = None
-
-BLOXLINK_GUILD = None # your guild ID, used to load nitro boosters and other data
-
-BOTS = {
-	"PRO": 469652514501951518,
-	"MAIN": 426537812993638400,
-	"CANARY": 442912486702710784,
-	"LOCAL": 454053406471094282
-}
-
-RESTRICTIONS_TRELLO = "" # Your Trello board link to load restrictions.
-						 # Board must have 3 lists: "Roblox IDs", "Discord IDs", and "Servers"
-						 # Card format:
-						 	# card name: label:id
-							# card desc: restriction text
-							# The label has no effect on restrictions. It's for visual purposes only.
-
-PROXY_URL = ""

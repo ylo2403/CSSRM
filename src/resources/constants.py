@@ -78,7 +78,6 @@ MODULE_DIR = [
     "src/apps"
 ]
 
-
 NICKNAME_TEMPLATES = (
     "{roblox-name} \u2192 changes to their Roblox Username (unique)\n"
     "{display-name} \u2192 changes to their Roblox Display Name (not unique)\n"
@@ -129,20 +128,19 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "unverifiedRoleEnabled": (None, "boolean", None, False, "The Unverified role is given to people who aren't linked on Bloxlink. Enable/disable it here."),
     "Linked Groups":         (None,  None, None,     False, "Bind groups to your server so group members get specific roles."),
     "allowOldRoles":         (None, "boolean", None, False, "Bloxlink will NOT remove roles if this is enabled."),
-    "autoRoles":             (None, "boolean", None, False, "Bloxlink will give all matching/corresponding roles to people who join the server. Set eligible roles with `{prefix}bind`. Note that this being enabled will override 'autoVerification'."),
+    "autoRoles":             (None, "boolean", None, False, "Bloxlink will give all matching/corresponding roles to people who join the server. Set eligible roles with `/bind`. Note that this being enabled will override 'autoVerification'."),
     "autoVerification":      (None, "boolean", None, False, "Bloxlink will give the Verified role to people who join the server and are linked to Bloxlink.\nNote that 'autoRoles' being enabled overrides this setting."),
     "dynamicRoles":          (None, "boolean", None, False, "Bloxlink will make missing group roles from your Linked Groups as people need them."),
-    "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `{prefix}verify` responses. Note that you can use these templates: ```{templates}```"),
+    "welcomeMessage":        (None, "string", 1500,  False, "The welcome message is used on `/getrole` responses. Note that you can use these templates: ```{templates}```"),
     "joinDM":                (lambda g, gd: bool(gd.get("verifiedDM", True)) or bool(gd.get("unverifiedDM")), None, None, False, "Customize the join DM messages of people who join the server."),
     "joinChannel":           (lambda g, gd: bool(gd.get("joinChannel", True)), None, None, False, "Customize the join messages of people who join the server."),
     "leaveChannel":          (lambda g, gd: bool(gd.get("leaveChannel", True)), None, None, False, "Customize the leave messages of people who leave the server."),
     "persistRoles":          (None, "boolean", None, True,  "Update members' roles/nickname as they type."),
     "allowReVerify":         (None, "boolean", None, True,  "If this is enabled: members can change their Roblox account as many times as they want in your server; otherwise, only allow 1 account change."),
-    "nicknameTemplate":      (None,  "string", 100,  False, "Set the universal nickname template. Note that `{prefix}bind` nicknames will override this."),
+    "nicknameTemplate":      (None,  "string", 100,  False, "Set the universal nickname template. Note that `/bind` nicknames will override this."),
     "unverifiedRoleName":    (None,  "string", 100,  False, "Set the 'Unverified' role name -- the role that Unverified users get."),
     "shorterNicknames":      (None,  "boolean", None,False, "Brackets in group rank names will be captured instead of the full rank name, resulting in a shorter nickname."),
     "ageLimit":              (None,  "number", None, True,  "Set the minimum Roblox age in days a user must be to enter your server. People who are less than this value will be kicked."),
-    "inactiveRole":          (lambda g, gd: gd.get("inactiveRole") and find(lambda r: r.id == int(gd["inactiveRole"]), g.roles), "role", None, True, "Set the role given to people who declared themselves as \"inactive\" from `{prefix}profile`."),
     "banRelatedAccounts":    (None, "boolean", None, True,  "If this is enabled: when members are banned, their known alts are also banned from the server."),
     "unbanRelatedAccounts":  (None, "boolean", None, True,  "If this is enabled: when members are unbanned, their known alts are also unbanned from the server."),
     "disallowAlts":          (None, "boolean", None, True,  "If this is enabled: when someone joins the server and already has a linked account in the server, kick the old alt out."),
@@ -150,7 +148,6 @@ OPTIONS = {                # fn,  type, max length or choices, premium only, des
     "promptDelete":          (None, "boolean", None, False, "Toggle the deleting of prompt messages after it finishes."),
     "deleteCommands":        (None, "number", 180, False, "Set X higher than 0 to delete every command after X seconds."),
     "magicRoles":            (lambda g, gd: gd.get("magicRoles"), None, None, True, "Customize the names of the Bloxlink Magic Roles."),
-    "antiPhish":             (None, "boolean", None, False, "Whether Bloxlink removes known phishing links.")
 }
 
 PROMPT = {
@@ -159,7 +156,6 @@ PROMPT = {
 }
 
 DEFAULTS = {
-    "prefix": "{prefix}",
     "Linked Groups": "view using `@Bloxlink viewbinds`",
     "verifiedRoleName": "Verified",
     "verifiedRoleEnabled": True,
@@ -182,8 +178,6 @@ DEFAULTS = {
     "unbanRelatedAccounts": False,
     "disallowAlts": False,
     "disallowBanEvaders": False,
-    "trelloBindMode": "merge",
-    "antiPhish": True,
 }
 
 ARROW = "\u2192"
@@ -200,7 +194,7 @@ HELP_DESCRIPTION = "**Welcome to Bloxlink!**\n\n" \
                    "**Support Server:** https://blox.link/support\n" \
                    "**Website:** https://blox.link/\n" \
                    "**Invite:** https://blox.link/invite\n\n" \
-                   "Please use `{prefix}setup` to set-up your server.\n" \
+                   "Please use `/setup` to set-up your server.\n" \
                    "**Bloxlink tutorials:** https://blox.link/tutorials/\n" \
                    "Want sweet perks for your server? Check out our **[Patreon!](https://www.patreon.com/join/bloxlink?)**"
 
@@ -247,11 +241,13 @@ LIMITS = {
     }
 }
 
-PLAYING_STATUS = "{prefix}help | {prefix}invite"
+PLAYING_STATUS = "/help | /invite"
 
 AVATARS = {
     "PRIDE": "https://cdn.discordapp.com/attachments/480614508633522176/730969660010266644/rainbow_resized.png"
 }
+
+STREAMERS = (84117866944663552, 194962036784889858, 84388454456127488, 173885028818747395)
 
 if RELEASE == "LOCAL":
     CACHE_CLEAR = 2
@@ -263,12 +259,6 @@ TIP_CHANCES = {
     "GETROLE_DONATE": 10
 }
 
-TRELLO = {
-	"CARD_LIMIT": 200,
-	"LIST_LIMIT": 10,
-    "TRELLO_BOARD_CACHE_EXPIRATION": 10 * 60
-}
-
 IGNORED_SERVERS = [
     903359999688990770
 ]
@@ -276,3 +266,4 @@ IGNORED_SERVERS = [
 RBX_STAFF = 0x1
 RBX_STAR = 0x2
 BLOXLINK_STAFF = 0x4
+# 0x8
