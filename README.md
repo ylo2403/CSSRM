@@ -8,7 +8,7 @@ Roblox Verification made easy! Features everything you need to integrate your Di
   - Python 3.5+ (satisfied if using our Docker Compose file)
   - [Docker](https://www.docker.com/)
   - [Docker Compose](https://docs.docker.com/compose/)
-  - [RethinkDB](https://rethinkdb.com/) (satisfied if using our Docker Compose file)
+  - [MongoDB](https://www.mongodb.com/) (satisfied if using our Docker Compose file)
   - [Redis](https://redis.io) (satisfied if using our Docker Compose file)
   - [Requirements file](https://github.com/bloxlink/Bloxlink/blob/master/requirements.txt) (satisfied if using our Dockerfile)
 
@@ -23,6 +23,9 @@ Roblox Verification made easy! Features everything you need to integrate your Di
   ### Constants
   Some options which aren't required to be changed are in the [constants.py](https://github.com/bloxlink/Bloxlink/blob/master/src/resources/constants.py) file.
 
+  ### Image Server
+  The [Bloxlink Image Server](https://github.com/bloxlink/image-server) is required to run in order for some of Bloxlink's functionality to work. Run the instance, then put your server URL (could just be `localhost`) in the [config.py](https://github.com/bloxlink/Bloxlink/blob/master/src/config.py) file. Make sure the auth used for the Image Server is the same as in your config file. These values can also be environmental variables.
+
 ## Intents
 The **Members Privileged Intent** is required for the bot to function. This can be toggled on your [Developer Dashboard](https://discord.com/developers/applications) unless your bot reached over 100 servers.
 
@@ -30,6 +33,7 @@ The **Members Privileged Intent** is required for the bot to function. This can 
 ```sh
 $ git clone https://github.com/bloxlink/Bloxlink
 $ cd Bloxlink
+[run image server]
 [change the configuration]
 $ docker-compose up --build
 ```
