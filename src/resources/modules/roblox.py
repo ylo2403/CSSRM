@@ -1944,7 +1944,9 @@ class Roblox(Bloxlink.Module):
             if not username:
                 roblox_id, username = await self.get_roblox_username(roblox_id)
 
-            roblox_accounts = user_data.get("robloxAccounts", {})
+            options = await get_user_value(user, "robloxAccounts", "robloxID") {}
+            roblox_accounts = options.get("robloxAccounts") or {}
+            current_roblox_id = options.get("robloxID")
 
             if guild and not allow_reverify:
                 guild_accounts = roblox_accounts.get("guilds", {})
@@ -1954,7 +1956,7 @@ class Roblox(Bloxlink.Module):
                     raise Error("You already selected your account for this server. `allowReVerify` must be "
                                 "enabled for you to change it.")
 
-            if roblox_id in roblox_accounts.get("accounts", []) or user_data.get("robloxID") == roblox_id:
+            if roblox_id in roblox_accounts.get("accounts", []) or current_roblox_id == roblox_id:
                 # TODO: clear cache
                 await self.verify_member(user, roblox_id, guild=guild, allow_reverify=allow_reverify, primary_account=primary)
 

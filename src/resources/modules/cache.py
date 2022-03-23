@@ -71,7 +71,9 @@ class Cache(Bloxlink.Module):
             if data is not None:
                 item_values[item_name] = data
             else:
-                item_values[item_name] = item_default
+                if item_default is not None:
+                    item_values[item_name] = item_default
+
                 left_overs[item_name] = 1
 
         if left_overs:
@@ -83,7 +85,7 @@ class Cache(Bloxlink.Module):
                 item_values[k] = v
 
         if len(items) == 1:
-            return item_values[item_name]
+            return item_values.get(item_name)
         else:
             return item_values
 
