@@ -606,7 +606,7 @@ class Commands(Bloxlink.Module):
 
             CommandArgs.add(locale=locale, response=response)
 
-            await self.command_checks(command, response, user, channel, CommandArgs, locale, guild, subcommand_attrs, slash_command=True)
+            await self.command_checks(command=command, response=response, author=user, channel=channel, CommandArgs=CommandArgs, locale=locale, guild=guild, subcommand_attrs=subcommand_attrs, slash_command=True)
 
             if command.slash_defer and not forwarded:
                 try:
@@ -616,4 +616,4 @@ class Commands(Bloxlink.Module):
 
             arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
-            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild, slash_command=True)
+            await self.execute_command(command=command, fn=fn, response=response, CommandArgs=CommandArgs, author=user, channel=channel, arguments=arguments, locale=locale, guild=guild, slash_command=True)

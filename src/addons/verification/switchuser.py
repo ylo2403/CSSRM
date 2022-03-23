@@ -124,7 +124,7 @@ class SwitchUserCommand(Bloxlink.Module):
                     except Error as e:
                         await response.error(e)
                     else:
-                        if count_binds(guild) and not await has_magic_role(member, guild, "Bloxlink Bypass"):
+                        if await count_binds(guild) and not await has_magic_role(member, guild, "Bloxlink Bypass"):
                             for role in list(member.roles):
                                 if role != guild.default_role and role.name != "Muted":
                                     try:

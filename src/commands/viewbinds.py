@@ -18,9 +18,9 @@ class ViewBindsCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
 
-        role_binds, group_ids, _ = await get_binds(guild)
+        role_binds, group_ids = await get_binds(guild)
 
-        if count_binds(guild) == 0:
+        if await count_binds(guild) == 0:
             raise Message("You have no bounded roles! Please use `/bind` "
                            "to make a new role bind.", type="silly")
 
@@ -167,7 +167,7 @@ class ViewBindsCommand(Bloxlink.Module):
                             text.append(f"**Roles:** {', '.join(role_names)} {ARROW} **Nickname:** {bind_data['nickname']}")
 
                         else:
-                            text.append(f"**Roles:** (No Roles) {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+                            text.append(f"**Roles:** (No Roles) {ARROW} **Nickname:** {bind_data['nickname']}")
                     else:
                         for bind_id, bind_vg_data in bind_data.items():
                             display_name = bind_vg_data.get("displayName") or "(No Name)"

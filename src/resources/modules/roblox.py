@@ -28,7 +28,7 @@ loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
-cache_set, cache_get, cache_pop, get_guild_value, get_db_value, get_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value", "get_db_value", "get_user_value"])
+cache_set, cache_get, cache_pop, get_guild_value, get_db_value, get_user_value, set_db_value, set_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value", "get_db_value", "get_user_value", "set_db_value", "set_user_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
@@ -126,7 +126,7 @@ class Roblox(Bloxlink.Module):
 
     @staticmethod
     async def count_binds(guild):
-        all_binds = await get_guild_value(guild, ["roleBinds", 0], ["groupIDs", 0])
+        all_binds = await get_guild_value(guild, ["roleBinds", {}], ["groupIDs", {}])
 
         role_binds = all_binds["roleBinds"]
         group_ids  = all_binds["groupIDs"]
@@ -186,6 +186,8 @@ class Roblox(Bloxlink.Module):
         guild = guild or getattr(user, "guild", None)
         guild_id = guild and str(guild.id)
 
+        set_options = {}
+
         if isinstance(roblox, RobloxUser):
             roblox_id = str(roblox.id)
         else:
@@ -209,31 +211,26 @@ class Roblox(Bloxlink.Module):
             roblox_list.append(roblox_id)
             roblox_accounts["accounts"] = roblox_list
 
-
-        roblox_discord_data = await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {"id": roblox_id}
-        discord_ids = roblox_discord_data.get("discordIDs") or []
+        discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
 
         if user_id not in discord_ids:
             discord_ids.append(user_id)
-            roblox_discord_data["discordIDs"] = discord_ids
 
-            await self.r.db("bloxlink").table("robloxAccounts").insert(roblox_discord_data, conflict="update").run()
+            await set_db_value("roblox_accounts", roblox_id, discordIDs=discord_ids)
 
+        if primary_account:
+            set_options["robloxID"] = roblox_id
 
-        await self.r.db("bloxlink").table("users").insert(
-            {
-                "id": user_id,
-                "robloxID": primary_account and roblox_id or user_data.get("robloxID"),
-                "robloxAccounts": roblox_accounts
-            },
-            conflict="update"
-        ).run()
+        set_options["robloxAccounts"] = roblox_accounts
+
+        await set_user_value(user, **set_options)
 
         await cache_pop(f"discord_profiles:{user_id}")
 
     async def unverify_member(self, user, roblox):
         user_id = str(user.id)
         success = False
+        set_options = {}
 
         if isinstance(roblox, RobloxUser):
             roblox_id = str(roblox.id)
@@ -245,10 +242,12 @@ class Roblox(Bloxlink.Module):
         if restriction:
             raise Blacklisted(restriction)
 
-        user_data = await self.r.db("bloxlink").table("users").get(user_id).run()
-        roblox_accounts = user_data.get("robloxAccounts", {})
+        options = await get_user_value(user, ["robloxAccounts", {}], "robloxID")
+        roblox_accounts = options.get("robloxAccounts", {})
         roblox_list = roblox_accounts.get("accounts", [])
         guilds = roblox_accounts.get("guilds", {})
+
+        discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
 
         if roblox_id in roblox_list:
             roblox_list.remove(roblox_id)
@@ -279,27 +278,23 @@ class Roblox(Bloxlink.Module):
                 success = True
 
 
-        if user_data.get("robloxID") == roblox_id:
-            user_data["robloxID"] = None
+        if options.get("robloxID") == roblox_id:
+            set_options["robloxID"] = None
 
         roblox_accounts["guilds"] = guilds
-        user_data["robloxAccounts"] = roblox_accounts
-
-        roblox_discord_data = await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {"id": roblox_id}
-        discord_ids = roblox_discord_data.get("discordIDs") or []
+        set_options["robloxAccounts"] = roblox_accounts
 
         if user_id in discord_ids:
             discord_ids.remove(user_id)
 
             if not discord_ids:
-                await self.r.table("robloxAccounts").get(roblox_id).delete().run()
+                #await self.r.table("robloxAccounts").get(roblox_id).delete().run()
+                pass
             else:
-                roblox_discord_data["discordIDs"] = discord_ids
-
-                await self.r.table("robloxAccounts").insert(roblox_discord_data, conflict="replace").run()
+                await set_db_value("roblox_accounts", roblox_id, discordIDs=discord_ids)
 
 
-        await self.r.db("bloxlink").table("users").insert(user_data, conflict="replace").run()
+        await set_user_value(user, **set_options)
 
         await cache_pop(f"discord_profiles:{user_id}")
 
@@ -375,7 +370,7 @@ class Roblox(Bloxlink.Module):
                 await roblox_user.sync(everything=True)
 
             if not group:
-                groups = list(await get_guild_value(guild, ["groupIDs", {}]).keys())
+                groups = list((await get_guild_value(guild, ["groupIDs", {}])).keys())
                 group_id = groups and groups[0]
 
                 if group_id:
@@ -1322,7 +1317,7 @@ class Roblox(Bloxlink.Module):
                 if binds and len(binds) == 2 and binds[0] is not None and binds[1] is not None:
                     role_binds, group_ids = binds
                 else:
-                    role_binds, group_ids, _ = await self.get_binds(guild)
+                    role_binds, group_ids = await self.get_binds(guild)
 
                 if role_binds:
                     if isinstance(role_binds, list):
@@ -1800,7 +1795,8 @@ class Roblox(Bloxlink.Module):
         return roblox_account, primary_account
 
     async def get_accounts(self, user, parse_accounts=False):
-        roblox_ids = user_data.get("robloxAccounts", {}).get("accounts", [])
+        roblox_accounts = await get_user_value(user, "robloxAccounts") or {}
+        roblox_ids = roblox_accounts.get("accounts", [])
 
         accounts = {}
         tasks = []
@@ -1842,12 +1838,13 @@ class Roblox(Bloxlink.Module):
 
                         return roblox_account, discord_profile.accounts, embed
 
-            roblox_accounts = user_data.get("robloxAccounts", {})
+            options = await get_user_value(user, ["robloxAccounts", {}], "robloxID")
+            roblox_accounts = options.get("robloxAccounts") or {}
             accounts = roblox_accounts.get("accounts", [])
             guilds = roblox_accounts.get("guilds", {})
 
-            roblox_account = guild and guilds.get(guild_id) or user_data.get("robloxID")
-            primary_account = user_data.get("robloxID")
+            roblox_account = guild and guilds.get(guild_id) or options.get("robloxID")
+            primary_account = options.get("robloxID")
 
             if SELF_HOST and not (roblox_account or primary_account):
                 try:

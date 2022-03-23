@@ -4,7 +4,7 @@ from discord import AutoShardedClient, AllowedMentions, Intents, Game
 from config import WEBHOOKS # pylint: disable=E0611
 from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
 from ..secrets import (REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, RETHINKDB_HOST, RETHINKDB_DB, RETHINKDB_PASSWORD, RETHINKDB_PORT,
-                       MONGO_CONNECTION_STRING) # pylint: disable=import-error, no-name-in-module
+                       MONGO_CONNECTION_STRING, MONGO_DB) # pylint: disable=import-error, no-name-in-module
 from . import Permissions # pylint: disable=import-error, no-name-in-module
 from async_timeout import timeout
 import functools
@@ -381,7 +381,7 @@ redis, redis_cache = load_redis()
 
 class Module:
     client = Bloxlink
-    db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)["bloxlink"]
+    db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)[MONGO_DB]
     r = r
     session = aiohttp.ClientSession(loop=loop, timeout=aiohttp.ClientTimeout(total=20))
     loop = loop

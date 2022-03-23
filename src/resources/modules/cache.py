@@ -80,7 +80,7 @@ class Cache(Bloxlink.Module):
 
             for k, v in mongo_data.items():
                 await self.set(f"{typex}_data:{idx}:{k}", v, check_primitives=False)
-                item_values[k] = v if v is not None else "default"
+                item_values[k] = v
 
         if len(items) == 1:
             return item_values[item_name]

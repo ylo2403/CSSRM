@@ -12,4 +12,4 @@ class BindCommand(Bloxlink.Module):
 
 
     async def __main__(self, CommandArgs):
-        await CommandArgs.response("test")
+        await CommandArgs.response.send("change this from the dashboard")
