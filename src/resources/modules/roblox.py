@@ -1236,10 +1236,12 @@ class Roblox(Bloxlink.Module):
                                         ["unverifiedRoleName",    DEFAULTS.get("unverifiedRoleName")],
                                         ["verifiedRoleName",      DEFAULTS.get("verifiedRoleName")],
                                         ["allowOldRoles",         DEFAULTS.get("allowOldRoles")],
-                                        ["nicknameTemplate",      DEFAULTS.get("nicknameTemplate")])
+                                        ["nicknameTemplate",      DEFAULTS.get("nicknameTemplate")],
+                                        "verifiedRole",
+                                        "unverifiedRole",)
 
-        verify_role   = options.get("verifiedRoleEnabled")
-        unverify_role = options.get("unverifiedRoleEnabled")
+        verify_role_enabled   = options.get("verifiedRoleEnabled")
+        unverify_role_enabled = options.get("unverifiedRoleEnabled")
 
         unverified_role_name = options.get("unverifiedRoleName")
         verified_role_name   = options.get("verifiedRoleName")
@@ -1248,11 +1250,39 @@ class Roblox(Bloxlink.Module):
 
         nickname_template = options.get("nicknameTemplate")
 
-        if unverify_role:
-            unverified_role = discord.utils.find(lambda r: r.name == unverified_role_name and not r.managed, guild.roles)
+        verified_role_id   = int(options.get("verifiedRole")) if options.get("verifiedRole") else None
+        unverified_role_id = int(options.get("unverifiedRole")) if options.get("unverifiedRole") else None
 
-        if verify_role:
-            verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
+        verified_role = None
+        unverified_role = None
+
+        if unverify_role_enabled:
+            unverified_role = discord.utils.find(lambda r: (r.name == unverified_role_name or r.id == unverified_role_id) and not r.managed, guild.roles)
+
+            if not unverified_role:
+                try:
+                    unverified_role = await guild.create_role(name=unverified_role_name)
+                except discord.errors.Forbidden:
+                    raise PermissionError("I was unable to create the Unverified Role. Please "
+                                          "ensure I have the `Manage Roles` permission.")
+                except discord.errors.HTTPException:
+                    raise Error("Unable to create role: this server has reached the max amount of roles!")
+
+
+        if verify_role_enabled:
+            verified_role = discord.utils.find(lambda r: (r.name == verified_role_name or r.id == verified_role_id) and not r.managed, guild.roles)
+
+            if not verified_role:
+                try:
+                    verified_role = await guild.create_role(
+                        name   = verified_role_name,
+                        reason = "Creating missing Verified role"
+                    )
+                except discord.errors.Forbidden:
+                    raise PermissionError("Sorry, I wasn't able to create the Verified role. "
+                                          "Please ensure I have the `Manage Roles` permission.")
+                except discord.errors.HTTPException:
+                    raise Error("Unable to create role: this server has reached the max amount of roles!")
 
         try:
             if not roblox_user:
@@ -1263,19 +1293,10 @@ class Roblox(Bloxlink.Module):
 
         except UserNotVerified:
             if roles:
-                if unverify_role:
-                    if not unverified_role:
-                        try:
-                            unverified_role = await guild.create_role(name=unverified_role_name)
-                        except discord.errors.Forbidden:
-                            raise PermissionError("I was unable to create the Unverified Role. Please "
-                                                  "ensure I have the `Manage Roles` permission.")
-                        except discord.errors.HTTPException:
-                            raise Error("Unable to create role: this server has reached the max amount of roles!")
-
+                if unverify_role_enabled:
                     add_roles.add(unverified_role)
 
-                if verify_role and verified_role and verified_role in user.roles:
+                if verify_role_enabled and verified_role and verified_role in user.roles:
                     remove_roles.add(verified_role)
 
             if nickname:
@@ -1290,26 +1311,11 @@ class Roblox(Bloxlink.Module):
                 raise Blacklisted(restriction)
 
             if roles:
-                if unverify_role:
+                if unverified_role:
                     if unverified_role and unverified_role in user.roles:
                         remove_roles.add(unverified_role)
 
-                if verify_role:
-                    verified_role = discord.utils.find(lambda r: r.name == verified_role_name and not r.managed, guild.roles)
-
-                    if not verified_role:
-                        try:
-                            verified_role = await guild.create_role(
-                                name   = verified_role_name,
-                                reason = "Creating missing Verified role"
-                            )
-                        except discord.errors.Forbidden:
-                            raise PermissionError("Sorry, I wasn't able to create the Verified role. "
-                                                  "Please ensure I have the `Manage Roles` permission.")
-                        except discord.errors.HTTPException:
-                            raise Error("Unable to create role: this server has reached the max amount of roles!")
-
-
+                if verified_role:
                     add_roles.add(verified_role)
 
         if not unverified:
@@ -1944,7 +1950,7 @@ class Roblox(Bloxlink.Module):
             if not username:
                 roblox_id, username = await self.get_roblox_username(roblox_id)
 
-            options = await get_user_value(user, "robloxAccounts", "robloxID") {}
+            options = await get_user_value(user, "robloxAccounts", "robloxID") or {}
             roblox_accounts = options.get("robloxAccounts") or {}
             current_roblox_id = options.get("robloxID")
 
