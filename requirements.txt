@@ -1,5 +1,4 @@
 git+https://github.com/Rapptz/discord.py@5ff657dbec9bba2f2d3bb6a4e5d88a043e40384b
-rethinkdb==2.4.7
 aiodns==2.0.0
 cchardet==2.1.6
 psutil==5.7.2
