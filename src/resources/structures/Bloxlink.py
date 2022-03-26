@@ -39,10 +39,9 @@ class BloxlinkStructure(AutoShardedClient):
     loaded_modules = {}
 
     def __init__(self, *args, **kwargs): # pylint: disable=W0235
-        super().__init__(*args, **kwargs) # this seems useless, but it's very necessary.
+        super().__init__(*args, **kwargs)
         #loop.run_until_complete(self.get_session())
         loop.set_exception_handler(self._handle_async_error)
-        loop.run_until_complete(self.load_database())
 
 
     if not SELF_HOST:
@@ -224,87 +223,6 @@ class BloxlinkStructure(AutoShardedClient):
                 return class_obj
 
         raise RuntimeError(f"Unable to find module {name_obj} from {dir_name}")
-
-    @staticmethod
-    def auto_reconnect(instance):
-        if instance._instance is None or not instance._instance.is_open():
-            loop.create_task(instance.reconnect())
-
-    async def check_database(self, conn):
-        try:
-            for missing_database in set(TABLE_STRUCTURE.keys()).difference(await r.db_list().run()):
-                if RELEASE in ("LOCAL", "CANARY"):
-                    await r.db_create(missing_database).run()
-
-                    for table in TABLE_STRUCTURE[missing_database]:
-                        await r.db(missing_database).table_create(table).run()
-                else:
-                    print(f"CRITICAL: Missing database: {missing_database}", flush=True)
-
-            for db_name, table_names in TABLE_STRUCTURE.items():
-                try:
-                    await r.db(db_name).wait().run()
-                except ReqlOpFailedError as e:
-                    if RELEASE == "LOCAL":
-                        await r.db_create(db_name).run()
-                    else:
-                        print(f"CRITICAL: {e}", flush=True)
-
-                for table_name in table_names:
-                    try:
-                        await r.db(db_name).table(table_name).wait().run()
-                    except ReqlOpFailedError as e:
-                        if RELEASE == "LOCAL":
-                            await r.db(db_name).table_create(table_name).run()
-                        else:
-                            print(f"CRITICAL: {e}", flush=True)
-        except ReqlOpFailedError:
-            pass
-
-    async def load_database(self, save_conn=True):
-        if self.conn:
-            return self.conn
-
-        async def connect(host, password, db, port):
-            try:
-                conn = await r.connect(
-                    host=host,
-                    port=port,
-                    db=db,
-                    password=password,
-                    timeout=2
-                )
-                conn.repl()
-
-                if save_conn:
-                    self.conn = conn
-
-                print("Connected to RethinkDB", flush=True)
-
-            except ReqlDriverError as e:
-                print(f"Unable to connect to Database: {e}. Retrying with a different host.", flush=True)
-
-            else:
-                return conn
-
-        while True:
-            for host in [RETHINKDB_HOST, "rethinkdb", "localhost"]:
-                try:
-                    async with timeout(5):
-                        conn = await connect(host, RETHINKDB_PASSWORD, RETHINKDB_DB, RETHINKDB_PORT)
-
-                        if conn:
-                            # check for missing databases/tables
-                            await self.check_database(conn)
-                            r.Connection.check_open = self.auto_reconnect
-                            return
-
-                except asyncio.TimeoutError:
-                    pass
-
-    async def close_db(self):
-        if self.conn:
-            self.conn.close()
 
     @staticmethod
     def command(*args, **kwargs):

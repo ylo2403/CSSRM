@@ -13,7 +13,7 @@ from config import BOTS # pylint: disable=import-error, no-name-in-module, no-na
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
-get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+get_guild_value, set_db_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_db_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
@@ -472,18 +472,15 @@ class Commands(Bloxlink.Module):
 
         if CLUSTER_ID == 0:
             if RELEASE == "MAIN":
-                await self.r.db("bloxlink").table("commands").delete().run()
-                if not command.addon:
-                    await self.r.db("bloxlink").table("commands").insert({
-                        "id": command.name,
+                if not (command.addon or command.hidden):
+                    await set_db_value("commands", command.name, **{
                         "description": command.description,
-                        #"usage": command.usage,
+                        "usage": command.usage,
                         "category": command.category,
-                        "addon": command.addon and str(command.addon),
                         "hidden": command.hidden,
                         "subcommands": subcommands,
                         "slashCompatible": command.slash_enabled
-                    }, conflict="replace").run()
+                    })
 
 
     def app_command_to_json(self, application):

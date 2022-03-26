@@ -106,7 +106,7 @@ class Roblox(Bloxlink.Module):
             await roblox_user.sync()
 
             if reverse_search:
-                discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(account).run() or {}).get("discordIDs") or []
+                discord_ids = await get_db_value("roblox_accounts", account, "discordIDs") or []
                 discord_accounts = []
 
                 for discord_id in discord_ids:
@@ -668,7 +668,7 @@ class Roblox(Bloxlink.Module):
 
                         if accounts and (disallow_alts or disallow_ban_evaders):
                             for roblox_id in accounts:
-                                discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs") or []
+                                discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
 
                                 for discord_id in discord_ids:
                                     discord_id = int(discord_id)
@@ -1913,186 +1913,6 @@ class Roblox(Bloxlink.Module):
                 return roblox_user, [], embed
 
             raise BadUsage("Unable to resolve a user")
-
-    async def verify_as(self, user, guild=None, *, primary=False, update_user=True, response=None, username=None, roblox_id=None, dm=True, cache=True) -> bool:
-        if not (username or roblox_id):
-            raise BadUsage("Must supply either a username or roblox_id to verify_as.")
-
-        try:
-            guild = guild or user.guild
-
-            user_id = str(user.id)
-
-            allow_reverify = await get_guild_value(guild, ["allowReVerify", DEFAULTS.get("allowReVerify")])
-
-            invalid_roblox_names = 0
-
-            while not roblox_id:
-                try:
-                    roblox_id, username = await self.get_roblox_id(username)
-                except RobloxNotFound:
-                    if response:
-                        message = await response.error("There was no Roblox account found with your query.\n"
-                                                    "Please try again.", dm=dm, no_dm_post=True)
-
-                        username = (await response.prompt([{
-                            "prompt": "Please specify your Roblox username.",
-                            "name": "username"
-                        }], dm=dm, no_dm_post=True))["username"]
-
-                        response.delete(message)
-
-                    invalid_roblox_names += 1
-
-                if invalid_roblox_names == 5:
-                    raise Error("Too many invalid attempts. Please try again later.")
-
-            if not username:
-                roblox_id, username = await self.get_roblox_username(roblox_id)
-
-            options = await get_user_value(user, "robloxAccounts", "robloxID") or {}
-            roblox_accounts = options.get("robloxAccounts") or {}
-            current_roblox_id = options.get("robloxID")
-
-            if guild and not allow_reverify:
-                guild_accounts = roblox_accounts.get("guilds", {})
-                chosen_account = guild_accounts.get(str(guild.id))
-
-                if chosen_account and chosen_account != roblox_id:
-                    raise Error("You already selected your account for this server. `allowReVerify` must be "
-                                "enabled for you to change it.")
-
-            if roblox_id in roblox_accounts.get("accounts", []) or current_roblox_id == roblox_id:
-                # TODO: clear cache
-                await self.verify_member(user, roblox_id, guild=guild, allow_reverify=allow_reverify, primary_account=primary)
-
-                if update_user:
-                    try:
-                        await self.update_member(
-                            user,
-                            guild       = guild,
-                            roles       = True,
-                            nickname    = True,
-                            cache       = cache,
-                            response    = response)
-
-                    except (BloxlinkBypass, Blacklisted):
-                        pass
-
-                return username
-
-            else:
-                # prompts
-                failures = 0
-                failed = False
-
-                if response:
-                    args = await response.prompt([
-                        {
-                            "prompt": f"Welcome, **{username}!** Please select a method of verification:\n"
-                                    "`game` " + ARROW + " verify by joining a Roblox game\n"
-                                    "`code` " + ARROW + " verify by putting a code on your Roblox status or description",
-                            "type": "choice",
-                            "choices": ["game", "code"],
-                            "name": "verification_choice"
-                        }
-                    ], dm=dm, no_dm_post=True)
-
-                    if args["verification_choice"] == "code":
-                        code = self.generate_code()
-
-                        msg1 = await response.send("To confirm that you own this Roblox account, please put this code in your description or status:", dm=dm, no_dm_post=True)
-                        msg2 = await response.send(f"```{code}```", dm=dm, no_dm_post=True)
-
-                        response.delete(msg1, msg2)
-
-                        _ = await response.prompt([{
-                            "prompt": "Then, say `done` to continue.",
-                            "name": "verification_next",
-                            "type": "choice",
-                            "choices": ["done"]
-                        }], embed=False, dm=dm, no_dm_post=True)
-
-                        if await self.validate_code(roblox_id, code):
-                            # user is now validated; add their roles
-                            await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, guild=guild, primary_account=primary)
-
-                            return username
-
-                        while not await self.validate_code(roblox_id, code):
-                            if failures == 5:
-                                failed = True
-                                break
-
-                            failures += 1
-
-                            _ = await response.prompt([
-                                {
-                                    "prompt": "Unable to find the code on your profile. Please say `done` to search again or `cancel` to cancel.",
-                                    "type": "choice",
-                                    "choices": ["done"],
-                                    "name": "retry"
-                                }
-                            ], error=True, dm=dm, no_dm_post=True)
-
-                            attempt = await self.validate_code(roblox_id, code)
-
-                            if attempt:
-                                await self.verify_member(user, roblox_id, allow_reverify=allow_reverify, guild=guild, primary_account=primary)
-
-                                return username
-
-                        if failed:
-                            raise Error(f"{user.mention}, too many failed attempts. Please run this command again and retry.")
-
-                    elif args["verification_choice"] == "game":
-                        await self.r.db("bloxlink").table("gameVerification").insert({
-                            "id": roblox_id,
-                            "discordTag": str(user),
-                            "discordID": str(user.id),
-                            "primary": primary,
-                            "guild": guild and str(guild.id),
-                            "prefix": "/"
-                        }, conflict="replace").run()
-
-                        _ = await response.prompt([{
-                            "prompt": "Please go to this game https://www.roblox.com/games/1271943503/- to complete the verification process. Then, say `done` to "
-                                    "get your roles.",
-                            "name": "verification_next",
-                            "type": "choice",
-                            "choices": ["done"]
-                        }], dm=dm, no_dm_post=True)
-
-                        while True:
-                            if failures == 5:
-                                failed = True
-                                break
-
-                            try:
-                                accounts = (await self.get_user(user=user, cache=False))[1]
-
-                                if not roblox_id in accounts:
-                                    raise UserNotVerified
-
-                            except UserNotVerified:
-                                _ = await response.prompt([{
-                                    "prompt": "It appears that you didn't pass verification via the Roblox game. Please go to "
-                                            "https://www.roblox.com/games/1271943503/- and try again. Then, say `done`.",
-                                    "name": "verification_next",
-                                    "type": "choice",
-                                    "choices": ["done"]
-                                }], error=True, dm=dm, no_dm_post=True)
-
-                                failures += 1
-
-                            else:
-                                return username
-
-
-                        if failed:
-                            raise Error(f"{user.mention}, too many failed attempts. Please run this command again and retry.")
-        finally:
-            await cache_pop(f"discord_profiles:{user_id}")
 
 
     # @staticmethod

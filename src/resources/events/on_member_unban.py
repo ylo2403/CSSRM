@@ -4,7 +4,7 @@ from ..constants import DEFAULTS, RED_COLOR # pylint: disable=import-error, no-n
 from discord.errors import NotFound, Forbidden, HTTPException
 from discord import Object
 
-get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+get_guild_value, get_db_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "get_db_value"])
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 get_user = Bloxlink.get_module("roblox", attrs=["get_user"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -35,7 +35,7 @@ class MemberUnBanEvent(Bloxlink.Module):
                                 accounts.add(account.id)
 
                             for roblox_id in accounts:
-                                discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs") or []
+                                discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
 
                                 for discord_id in discord_ids:
                                     discord_id = int(discord_id)
