@@ -257,7 +257,6 @@ intents.guild_reactions = True # pylint: disable=assigning-non-slot
 intents.guild_messages = True # pylint: disable=assigning-non-slot
 intents.dm_messages = True # pylint: disable=assigning-non-slot
 intents.bans = True # pylint: disable=assigning-non-slot
-intents.message_content = True # pylint: disable=assigning-non-slot
 
 if RELEASE == "PRO":
     intents.guild_typing = True # pylint: disable=assigning-non-slot
@@ -292,7 +291,6 @@ redis, redis_cache = load_redis()
 class Module:
     client = Bloxlink
     db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)[MONGO_DB]
-    r = r
     session = aiohttp.ClientSession(loop=loop, timeout=aiohttp.ClientTimeout(total=20))
     loop = loop
     redis = redis
