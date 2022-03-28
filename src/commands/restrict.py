@@ -1,12 +1,12 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import RobloxNotFound, Error, RobloxAPIError, Message # pylint: disable=import-error, no-name-in-module
 from resources.constants import LIMITS # pylint: disable=import-error, no-name-in-module
-from discord import Embed, Object
+from discord import Embed
 import re
 
 
 get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
@@ -147,9 +147,9 @@ class RestrictCommand(Bloxlink.Module):
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
 
         if len_restrictions >= LIMITS["RESTRICTIONS"]["FREE"]:
-            profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+            profile = await has_premium(guild=guild)
 
-            if not profile.features.get("premium"):
+            if "premium" not in profile.features:
                 raise Error(f"You have the max restrictions `({LIMITS['RESTRICTIONS']['FREE']})` allowed for free servers! You may "
                             f"unlock **additional restrictions** `({LIMITS['RESTRICTIONS']['PREMIUM']})` by subscribing to premium. Find out "
                             "more info with `/donate`.\nFor now, you may remove restrictions with `/restrict remove` "

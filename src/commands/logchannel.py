@@ -5,7 +5,7 @@ import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
@@ -103,9 +103,9 @@ class LogChannelCommand(Bloxlink.Module):
         action = None
 
         if log_type == "inactivity events":
-            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+            donator_profile = await has_premium(guild=guild)
 
-            if not donator_profile.features.get("premium"):
+            if "premium" not in donator_profile.features:
                 raise Message("Only premium subscribers can subscribe to `inactivity notices`!\n"
                               f"Please use `/donate` for instructions on subscribing to premium.", type="info")
 

@@ -6,7 +6,7 @@ import discord
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 @Bloxlink.command
@@ -51,9 +51,9 @@ class MagicRolesCommand(Bloxlink.Module):
         response   = CommandArgs.response
         author     = CommandArgs.author
 
-        premium_status, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+        premium_status = await has_premium(guild=guild)
 
-        if not premium_status.features.get("premium"):
+        if "premium" not in premium_status.features:
             magic_roles_desc = "\n".join([f'**{x}** {ARROW} {y}' for x,y in MAGIC_ROLES.items()])
             raise Error("Customizing Magic Roles is reserved for __Bloxlink Premium subscribers!__ You may find out "
                         "more information with the `/donate` command.\n\n"

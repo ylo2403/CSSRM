@@ -201,11 +201,12 @@ class Arguments:
 
         try:
             while resolved_arg_count != len(prompts):
+                current_prompt = prompts[resolved_arg_count]
+                prompt_text = current_prompt["prompt"]
+                optional_arg = current_prompt.get("optional")
+
                 if err_count == PROMPT["PROMPT_ERROR_COUNT"]:
                     raise CancelledPrompt("Too many failed attempts.", type="delete")
-
-                if last and resolved_arg_count +1 == len(prompts):
-                    self.skipped_args = [" ".join(self.skipped_args)]
 
                 current_input = None
                 drop_skipped_arg = False
@@ -214,10 +215,7 @@ class Arguments:
                 select_values = []
                 custom_id = None
 
-                current_prompt = prompts[resolved_arg_count]
-                prompt_text = current_prompt["prompt"]
-
-                if is_base_slash_command and self.slash_command.get(current_prompt["name"]):
+                if is_base_slash_command and self.slash_command.get(current_prompt["name"]) is not None:
                     current_input = self.slash_command.get(current_prompt["name"])
                 else:
                     current_input = str(self.skipped_args[0]) if self.skipped_args else ""
@@ -225,10 +223,15 @@ class Arguments:
                     if current_input:
                         drop_skipped_arg = True
 
-                if current_prompt.get("optional") and current_input:
+                if optional_arg and current_input is None:
+                    resolved_args[current_prompt["name"]] = None
+                    resolved_arg_count += 1
+                    continue
+
+                if optional_arg and current_input != "":
                     optional_arg_has_arg = True
 
-                if not current_input and not optional_arg_has_arg and (current_prompt.get("optional") or (is_base_slash_command and current_prompt.get("slash_optional"))) or (current_prompt.get("show_if") and last_prompt and current_prompt["name"] != last_prompt["name"] and not current_prompt["show_if"](resolved_args)): # check if they supplied an arg, otherwise skip this prompt
+                if not current_input and not optional_arg_has_arg and (optional_arg or (is_base_slash_command and current_prompt.get("slash_optional"))) or (current_prompt.get("show_if") and last_prompt and current_prompt["name"] != last_prompt["name"] and not current_prompt["show_if"](resolved_args)): # check if they supplied an arg, otherwise skip this prompt
                     resolved_args[current_prompt["name"]] = None
                     resolved_arg_count += 1
 
@@ -237,7 +240,7 @@ class Arguments:
 
                     continue
 
-                current_input = str(current_input) if current_input else ""
+                current_input = str(current_input) if current_input is not None else ""
 
                 if not current_input:
                     try:
@@ -354,7 +357,7 @@ class Arguments:
                     resolver = get_resolver(resolver_type)
                     resolved, error_message = await resolver(current_prompt, content=str(current_input), guild=self.guild, message=message or self.message, select_options=select_values)
 
-                    if resolved:
+                    if resolved is not False:
                         if current_prompt.get("validation"):
                             res = [await current_prompt["validation"](content=str(current_input), message=not dm and message, prompt=self.prompt, guild=self.guild)]
 
@@ -377,7 +380,7 @@ class Arguments:
                     else:
                         break
 
-                if resolved:
+                if resolved is not False:
                     resolved_arg_count += 1
                     resolved_args[current_prompt["name"]] = resolved
                     optional_arg_has_arg = False

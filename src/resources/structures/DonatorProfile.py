@@ -1,31 +1,18 @@
 class DonatorProfile:
-    def __init__(self, author):
-        self.author = author
-        self.features = {}
-        self.notes = []
-        self.attributes = {
-            "patreon": False,
-            "selly": False,
-            "PREMIUM_ANYWHERE": False
-        }
+    def __init__(self, *, user=None, guild=None, typex=None, expiry=None, term=None, tier=None, user_facing_tier=None, features=None):
+        features = features or set()
 
-        # patreon stuff
-        self.amount_cents = 0
+        self.user = user
+        self.guild = guild
+        self.type = typex
+        self.expiry = expiry
+        self.term = term
+        self.tier = tier
+        self.user_facing_tier = user_facing_tier
+        self.features = features
 
-        # selly stuff
+        # old stuff
         self.days = None
 
-    def load_patreon(self, data):
-        self.attributes["patreon"] = True
-        self.amount_cents = data["pledged"]
-
-    def load_selly(self, days):
-        self.attributes["selly"] = True
-        self.days = days
-
     def add_features(self, *args):
-        for arg in args:
-            self.features[arg] = True
-
-    def add_note(self, text):
-        self.notes.append(text)
+        map(self.features.add, args)

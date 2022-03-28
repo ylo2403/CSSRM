@@ -40,7 +40,7 @@ class Resolver(Bloxlink.Module):
             content = message.content
 
         if content.isdigit():
-            min = arg.get("min", 1)
+            min = arg.get("min", 0)
             max = arg.get("max", 100)
 
             int_content = int(content)

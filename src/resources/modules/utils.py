@@ -13,7 +13,7 @@ import asyncio
 import aiohttp
 import json as json_
 
-is_patron = Bloxlink.get_module("patreon", attrs="is_patron")
+
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 
 @Bloxlink.module

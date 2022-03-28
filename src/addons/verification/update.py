@@ -2,12 +2,12 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
-from discord import Object, User
+from discord import User
 from discord.errors import NotFound
 import math
 
 guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
-get_features = Bloxlink.get_module("premium", attrs="get_features")
+has_premium = Bloxlink.get_module("premium", attrs="has_premium")
 
 
 class UpdateCommand(Bloxlink.Module):
@@ -108,12 +108,12 @@ class UpdateCommand(Bloxlink.Module):
 
                         raise Message(f"This server has an ongoing cooldown! You must wait **{cooldown_time}** more minutes.")
 
-            donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
-            premium = donator_profile.features.get("premium")
+            donator_profile = await has_premium(guild=guild)
+            premium = "premium" in donator_profile.features
 
             if not premium:
-                donator_profile, _ = await get_features(author)
-                premium = donator_profile.features.get("premium")
+                donator_profile = await has_premium(user=author)
+                premium = "premium" in donator_profile.features
 
             cooldown = 0
 

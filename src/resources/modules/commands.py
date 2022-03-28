@@ -16,7 +16,7 @@ get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
 get_guild_value, set_db_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_db_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 BOT_ID = BOTS[RELEASE]
@@ -87,34 +87,34 @@ class Commands(Bloxlink.Module):
                     raise CancelCommand
 
                 if getattr(command.addon, "premium", False):
-                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                    donator_profile = await has_premium(guild=guild)
 
-                    if not donator_profile.features.get("premium"):
+                    if "premium" not in donator_profile.features:
                         await response.error(f"This add-on requires premium! You may use `/donate` for instructions on donating.\n"
-                                            f"You may also disable this add-on with `/addon change`.", hidden=True)
+                                             f"You may also disable this add-on with `/addon change`.", hidden=True)
 
                         raise CancelCommand
 
             if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "add-features", "stats"):
                 if not donator_profile:
-                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                    donator_profile = await has_premium(guild=guild)
 
-                if not donator_profile.features.get("pro"):
+                if "pro" not in donator_profile.features:
                     await response.error(f"Server not authorized to use Pro. Please use the `/donate` command to see information on "
-                                        "how to get Bloxlink Pro.", hidden=True)
+                                          "how to get Bloxlink Pro.", hidden=True)
 
                     raise CancelCommand
 
             if not command.bypass_channel_perms:
                 if command.premium_bypass_channel_perms and not donator_profile:
-                    donator_profile, _ = await get_features(author, guild=guild)
+                    donator_profile = await has_premium(user=author)
 
                 ignored_channels = await get_guild_value(guild, "ignoredChannels") or {}
                 disabled_commands = await get_guild_value(guild, "disabledCommands") or {}
 
                 author_perms = author.guild_permissions
 
-                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or discord.utils.find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
+                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or discord.utils.find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and "premium" in donator_profile.features)):
                     premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
                     ignored_channel = ignored_channels.get(channel_id) or (channel.category and ignored_channels.get(str(channel.category.id)))
                     bypass_roles = ignored_channel.get("bypassRoles", []) if ignored_channel else []
@@ -152,24 +152,6 @@ class Commands(Bloxlink.Module):
 
                         raise CancelCommand
 
-        if not slash_command and getattr(command, "slash_only", False):
-            embed = discord.Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
-                    f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
-                    "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
-                    "**Don't see Slash Commands?** Re-authorize the bot here (__you don't need to kick it__): https://blox.link/invite")
-            embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
-            embed.colour = ORANGE_COLOR
-
-            reference = discord.MessageReference(message_id=message and message.id, channel_id=channel_id,
-                                            guild_id=guild and guild.id, fail_if_not_exists=False)
-
-            try:
-                await channel.send(embed=embed, reference=reference, delete_after=30)
-            except (discord.errors.NotFound, discord.errors.Forbidden):
-                pass
-
-            raise CancelCommand
-
         restriction = await get_restriction("users", author.id)
 
         if restriction:
@@ -181,10 +163,10 @@ class Commands(Bloxlink.Module):
         if command.cooldown and self.cache:
             redis_cooldown_key = f"cooldown_cache:{command.name}:{author.id}"
 
-            if not donator_profile or (donator_profile and not donator_profile.features.get("premium")):
-                donator_profile, _ = await get_features(author)
+            if not donator_profile or (donator_profile and "premium" not in donator_profile.features):
+                donator_profile = await has_premium(user=author)
 
-            if not donator_profile.features.get("premium"):
+            if "premium" not in donator_profile.features:
                 on_cooldown = await self.cache.get(redis_cooldown_key)
 
                 if on_cooldown:

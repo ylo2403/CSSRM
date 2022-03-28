@@ -8,7 +8,7 @@ import discord
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
@@ -129,9 +129,9 @@ class GroupLockCommand(Bloxlink.Module):
             if len(groups) >= 15:
                 raise Message("15 groups is the max you can add to your group-lock! Please delete some before adding any more.", type="silly")
 
-            profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+            profile = await has_premium(guild=guild)
 
-            if len(groups) >= 3 and not profile.features.get("premium"):
+            if len(groups) >= 3 and "premium" not in profile.features:
                 raise Message("If you would like to add more than **3** groups to your group-lock, then you need Bloxlink Premium.\n"
                               f"Please use `/donate` for instructions on receiving Bloxlink Premium.\n"
                               "Bloxlink Premium members may lock their server with up to **15** groups.", type="info")

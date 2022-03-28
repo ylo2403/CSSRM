@@ -323,7 +323,7 @@ class Users(Bloxlink.Module):
         return roblox_id, correct_username
 
     async def get_accounts(self, user, parse_accounts=False):
-        ids = await get_user_value(user, ["robloxAccounts", {}]).get("robloxAccounts", {}).get("accounts", [])
+        ids = (await get_user_value(user, ["robloxAccounts", {}])).get("accounts", [])
 
         accounts = {}
         tasks = []

@@ -3,7 +3,7 @@ from resources.constants import GOLD_COLOR # pylint: disable=import-error, no-na
 from discord import Embed
 
 
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+get_features, has_premium = Bloxlink.get_module("premium", attrs=["get_features", "has_premium"])
 
 
 @Bloxlink.command
@@ -24,45 +24,56 @@ class StatusCommand(Bloxlink.Module):
         self.slash_enabled = True
         self.slash_only = True
 
-    async def __main__(self, CommandArgs):
-        user = CommandArgs.parsed_args.get("user") or CommandArgs.author
-        response = CommandArgs.response
+
+    @Bloxlink.subcommand()
+    async def user(self, CommandArgs):
+        """view a user's premium status"""
+
+        profile = await has_premium(user=CommandArgs.author)
 
         embed = Embed()
-        embed.set_author(name=user, icon_url=user.avatar.url)
+        embed.set_author(name=str(CommandArgs.author), icon_url=CommandArgs.author.avatar.url)
 
-        profile, transfer_to = await get_features(user)
-
-        attributes, features = profile.attributes, profile.features
-        has_premium = features.get("premium")
-
-        if has_premium:
+        if "premium" in profile.features:
             embed.add_field(name="Premium Status", value="Active")
             embed.colour = GOLD_COLOR
-
-            if attributes.get("selly"):
-                embed.add_field(name="Expiry", value=profile.days == 0 and "Never (unlimited)" or f"**{profile.days}** days left")
-            elif attributes.get("patreon"):
-                amount_cents = profile.amount_cents
-                dollars = int(amount_cents / 100)
-                cents_left = amount_cents % 100
-
-                if cents_left < 10:
-                    cents_left = "0" + str(cents_left)
-
-                embed.add_field(name="Amount Pledged", value=f"${dollars}.{cents_left}")
-
         else:
-            embed.description = f"This user does not have premium. They may donate [here](https://patreon.com/bloxlink)."
+            embed.description = f"This user does not have premium. They may purchase it [here](https://blox.link)."
 
-        if profile.features:
-            embed.add_field(name="Features", value=", ".join(profile.features.keys()))
+        # if profile.features:
+        #     embed.add_field(name="Features", value=", ".join(profile.features.keys()))
 
-        if profile.notes:
-            embed.add_field(name="Notes", value="\n".join(profile.notes), inline=False)
+        if profile.user_facing_tier:
+            embed.add_field(name="Tier", value=profile.user_facing_tier)
 
-        if transfer_to:
-            embed.add_field(name="Transferring To ID", value=transfer_to)
+        if profile.type:
+            embed.add_field(name="Charge Source", value=profile.type)
+
+        await CommandArgs.response.send(embed=embed)
 
 
-        await response.send(embed=embed)
+    @Bloxlink.subcommand()
+    async def server(self, CommandArgs):
+        """get the server's premium status"""
+
+        profile = await has_premium(guild=CommandArgs.guild)
+
+        embed = Embed()
+        embed.set_author(name=CommandArgs.guild.name, icon_url=CommandArgs.guild.icon.url)
+
+        if "premium" in profile.features:
+            embed.add_field(name="Premium Status", value="Active")
+            embed.colour = GOLD_COLOR
+        else:
+            embed.description = f"This server does not have premium. They may purchase it [here](https://blox.link)."
+
+        # if profile.features:
+        #     embed.add_field(name="Features", value=", ".join(profile.features.keys()))
+
+        if profile.user_facing_tier:
+            embed.add_field(name="Tier", value=profile.user_facing_tier)
+
+        if profile.type:
+            embed.add_field(name="Charge Source", value=profile.type)
+
+        await CommandArgs.response.send(embed=embed)

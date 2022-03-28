@@ -2,10 +2,10 @@ from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-na
 from ..exceptions import UserNotVerified # pylint: disable=import-error, no-name-in-module
 from ..constants import DEFAULTS, RED_COLOR # pylint: disable=import-error, no-name-in-module
 from discord.errors import NotFound, Forbidden
-from discord import Object
+
 
 get_guild_value, get_db_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "get_db_value"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 get_user = Bloxlink.get_module("roblox", attrs=["get_user"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 
@@ -19,11 +19,11 @@ class MemberBanEvent(Bloxlink.Module):
         @Bloxlink.event
         async def on_member_ban(guild, user):
             if self.redis:
-                donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                donator_profile = await has_premium(guild=guild)
 
                 ban_related_accounts = await get_guild_value(guild, ["banRelatedAccounts", DEFAULTS.get("banRelatedAccounts")])
 
-                if donator_profile.features.get("premium"):
+                if "premium" in donator_profile.features:
                     if ban_related_accounts:
                         try:
                             account, accounts, _ = await get_user(user=user, guild=guild)

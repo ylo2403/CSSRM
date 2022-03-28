@@ -6,7 +6,7 @@ from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-i
 
 cache_get, cache_set, get_guild_value = Bloxlink.get_module("cache", attrs=["get", "set", "get_guild_value"])
 guild_obligations = Bloxlink.get_module("roblox", attrs=["guild_obligations"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
@@ -21,9 +21,9 @@ class ChannelTypingEvent(Bloxlink.Module):
         async def on_typing(channel, user, when):
             if isinstance(user, Member):
                 guild = user.guild
-                donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+                donator_profile = await has_premium(guild=guild)
 
-                if donator_profile.features.get("premium"):
+                if "premium" in donator_profile.features:
                     if await cache_get(f"channel_typing:{guild.id}:{user.id}", primitives=True):
                         return
 

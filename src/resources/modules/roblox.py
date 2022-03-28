@@ -27,7 +27,7 @@ roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 cache_set, cache_get, cache_pop, get_guild_value, get_db_value, get_user_value, set_db_value, set_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value", "get_db_value", "get_user_value", "set_db_value", "set_user_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
@@ -531,9 +531,9 @@ class Roblox(Bloxlink.Module):
             embed = None
 
             if RELEASE == "PRO":
-                donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                donator_profile = await has_premium(guild=guild)
 
-                if not donator_profile.features.get("pro"):
+                if "pro" not in donator_profile.features:
                     raise CancelCommand
 
             try:
@@ -658,9 +658,9 @@ class Roblox(Bloxlink.Module):
 
                 if disallow_alts or disallow_ban_evaders:
                     if not donator_profile:
-                        donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                        donator_profile = await has_premium(guild=guild)
 
-                    if donator_profile.features.get("premium"):
+                    if "premium" in donator_profile.features:
                         accounts = set(accounts)
 
                         if roblox_user: #FIXME: temp until primary accounts are saved to the accounts array
@@ -875,9 +875,9 @@ class Roblox(Bloxlink.Module):
                 else:
                     if age_limit:
                         if not donator_profile:
-                            donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                            donator_profile = await has_premium(guild=guild)
 
-                        if donator_profile.features.get("premium"):
+                        if "premium" in donator_profile.features:
                             if dm:
                                 try:
                                     if accounts:
@@ -1411,7 +1411,7 @@ class Roblox(Bloxlink.Module):
                                 for bind_id, bind_data in data.get("binds", {}).items():
                                     rank = None
                                     bind_nickname = bind_data.get("nickname")
-                                    bound_roles = bind_data.get("roles")
+                                    bound_roles = bind_data.get("roles") or {}
                                     bind_remove_roles = bind_data.get("removeRoles") or []
 
                                     try:
@@ -1784,22 +1784,6 @@ class Roblox(Bloxlink.Module):
 
         raise RobloxNotFound
 
-
-    @on_exception(expo, RateLimitException, max_tries=8)
-    @limits(calls=30, period=30)
-    async def call_bloxlink_api(self, user, guild=None):
-        roblox_account = primary_account = None
-
-        bloxlink_api = guild and f"https://api.blox.link/v1/user/{user.id}?guild={guild.id}" or f"https://api.blox.link/v1/user/{user.id}"
-        user_verified_data, _ = await fetch(bloxlink_api, raise_on_failure=False)
-
-        if not user_verified_data.get("error"):
-            roblox_account = user_verified_data.get("matchingAccount") or user_verified_data.get("primaryAccount")
-            primary_account = user_verified_data.get("primaryAccount")
-
-
-        return roblox_account, primary_account
-
     async def get_accounts(self, user, parse_accounts=False):
         roblox_accounts = await get_user_value(user, "robloxAccounts") or {}
         roblox_ids = roblox_accounts.get("accounts", [])
@@ -1851,12 +1835,6 @@ class Roblox(Bloxlink.Module):
 
             roblox_account = guild and guilds.get(guild_id) or options.get("robloxID")
             primary_account = options.get("robloxID")
-
-            if SELF_HOST and not (roblox_account or primary_account):
-                try:
-                    roblox_account, primary_account = await self.call_bloxlink_api(user, guild)
-                except RateLimitException:
-                    pass
 
             if roblox_account:
                 if not discord_profile:

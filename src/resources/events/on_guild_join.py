@@ -1,10 +1,10 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.constants import RELEASE, SERVER_INVITE # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.errors import NotFound, Forbidden
-from discord import Object
 
 
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 post_stats = Bloxlink.get_module("site_services", name_override="DBL", attrs="post_stats")
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
@@ -58,9 +58,9 @@ class GuildJoinEvent(Bloxlink.Module):
                     break
 
             if RELEASE == "PRO":
-                profile, _ = await get_features(Object(id=guild.owner_id), guild=guild, cache=False)
+                profile = await has_premium(guild=guild)
 
-                if not profile.features.get("pro"):
+                if "pro" not in profile.features:
                     if chosen_channel:
                         try:
                             await chosen_channel.send(NOT_PREMIUM)
