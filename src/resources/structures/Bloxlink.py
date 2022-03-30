@@ -13,7 +13,7 @@ import logging
 import aiohttp
 import aredis
 #import sentry_sdk
-import asyncio; loop = asyncio.get_event_loop()
+import asyncio
 import motor.motor_asyncio
 
 
@@ -32,17 +32,21 @@ class BloxlinkStructure(AutoShardedClient):
 
     def __init__(self, *args, **kwargs): # pylint: disable=W0235
         super().__init__(*args, **kwargs)
+        self.loop = asyncio.get_event_loop()
         #loop.run_until_complete(self.get_session())
-        loop.set_exception_handler(self._handle_async_error)
+        self.loop.set_exception_handler(self._handle_async_error)
 
 
     if not SELF_HOST:
         async def before_identify_hook(self, shard_id, *, initial=False):
             await asyncio.sleep(SHARD_SLEEP_TIME)
 
+    @staticmethod
+    def get_database():
+        db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)[MONGO_DB]
+        db.get_io_loop = asyncio.get_running_loop
 
-    async def get_session(self):
-        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) # headers={"Connection": "close"}
+        return db
 
     @staticmethod
     def log(*text, level=LOG_LEVEL):
@@ -68,8 +72,15 @@ class BloxlinkStructure(AutoShardedClient):
             return sentry_sdk.capture_exception()
     """
     def error(self, text, title=None):
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+
         logger.exception(text)
-        loop.create_task(self._error(str(text), title=title))
+
+        if not loop.is_closed:
+            loop.create_task(self._error(str(text), title=title))
 
     async def _error (self, text, title=None):
         if (not text) or text == "Unclosed connection":
@@ -117,10 +128,11 @@ class BloxlinkStructure(AutoShardedClient):
 
     @staticmethod
     def module(module):
+        loop = asyncio.get_event_loop()
         new_module = module()
 
         module_name = module.__name__.lower()
-        module_dir = module.__module__.lower() # ".".join((module.__module__, module.__qualname__))
+        module_dir = module.__module__.lower()
 
         if hasattr(new_module, "__setup__"):
             loop.create_task(new_module.__setup__())
@@ -290,9 +302,8 @@ redis, redis_cache = load_redis()
 
 class Module:
     client = Bloxlink
-    db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)[MONGO_DB]
-    session = aiohttp.ClientSession(loop=loop, timeout=aiohttp.ClientTimeout(total=20))
-    loop = loop
+    db = Bloxlink.get_database()
+    loop = Bloxlink.loop
     redis = redis
     cache = redis_cache
     conn = Bloxlink.conn

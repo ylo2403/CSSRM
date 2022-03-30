@@ -59,6 +59,12 @@ class Cache(Bloxlink.Module):
 
         idx = getattr(obj, "id", obj)
 
+        if not items:
+            mongo_data = await self.db[typex].find_one({"_id": str(idx)}) or {}
+
+            return mongo_data
+
+
         for item_name in items:
             item_default = None
 

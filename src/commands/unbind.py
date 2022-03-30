@@ -12,4 +12,4 @@ class UnBindCommand(Bloxlink.Module):
         self.slash_enabled = True
 
     async def __main__(self, CommandArgs):
-        await CommandArgs.response("test")
+        await CommandArgs.response("delete your binds from the dashboard")

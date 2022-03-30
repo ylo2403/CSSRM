@@ -230,7 +230,7 @@ class Commands(Bloxlink.Module):
 
 
 
-    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild=None, message=None, after_text="", slash_command=False):
+    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, interaction, guild=None, message=None, after_text="", slash_command=False):
         my_permissions = guild and guild.me.guild_permissions
 
         try:
@@ -354,11 +354,12 @@ class Commands(Bloxlink.Module):
                     await asyncio.sleep(delete_commands_after)
 
                 if delete_messages:
-                    if slash_command and response.first_slash_command and not arguments.cancelled:
+                    if slash_command and response.first_slash_command and not arguments.cancelled and not delete_commands_after:
                         await response.first_slash_command.edit(content="_**Command finished.**_", embed=None, view=None)
 
                     try:
-                        await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
+                        await channel.purge(limit=100, check=lambda m: m.id in delete_messages)
+                        await interaction.delete_original_message()
                     except (discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
 
@@ -536,6 +537,9 @@ class Commands(Bloxlink.Module):
     async def execute_interaction_command(self, typex, command_name, guild, channel, user, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
         command = self.commands.get(command_name)
 
+        if not command:
+            raise Error(f"Command not found: {command_name}")
+
         if typex == "extensions" and not isinstance(command, Application):
             raise CancelCommand
         elif typex == "commands" and not isinstance(command, Command):
@@ -595,4 +599,4 @@ class Commands(Bloxlink.Module):
 
             arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
-            await self.execute_command(command=command, fn=fn, response=response, CommandArgs=CommandArgs, author=user, channel=channel, arguments=arguments, locale=locale, guild=guild, slash_command=True)
+            await self.execute_command(command=command, fn=fn, response=response, CommandArgs=CommandArgs, author=user, channel=channel, arguments=arguments, locale=locale, guild=guild, slash_command=True, interaction=interaction)

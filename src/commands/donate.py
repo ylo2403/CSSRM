@@ -28,21 +28,13 @@ class DonateCommand(Bloxlink.Module):
         response = CommandArgs.response
 
         embed = discord.Embed(title="Bloxlink Premium")
-        embed.description = "We appreciate all donations!\nBy donating a certain amount, you will receive **[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** " \
-                            f"on __every server you own__ and receive these perks:\n{PREMIUM_PERKS}" \
+        embed.description = "Premium purchases help support Bloxlink!"
 
-        embed.add_field(name="Frequently Asked Questions", value="1.) Can I transfer premium to someone else?\n"
-                                                                f"> Yes, use the `/transfer to` command. "
-                                                                 "You'll be able to disable the transfer whenever you want "
-                                                                f"with `/transfer disable`.\n"
-                                                                 "2.) How do I receive my perks after donating?\n"
-                                                                 "> Link your Discord account to Patreon. After, wait 15-20 "
-                                                                 "minutes and your perks should be activated. Feel free to ask "
-                                                                 "in our support server if you need more help: <https://blox.link/support>.", inline=False)
-
-        embed.set_footer(text="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
+        embed.add_field(name="Server Premium", value="Unlocks premium commands, lessens restrictions, no ads for your server verification page, and more for your server.", inline=False)
+        embed.add_field(name="User Premium", value="Lessens restrictions, no cooldowns on commands, unlocks a special background for your /getinfo profile. This does NOT grant you Server Premium.", inline=False)
 
         view = discord.ui.View()
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click to Subscribe ($6)", url="https://www.patreon.com/join/bloxlink?"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click for Server Premium", url="https://www.patreon.com/join/bloxlink?"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click for User Premium", url="https://www.patreon.com/join/bloxlink?"))
 
         await response.send(embed=embed, view=view)

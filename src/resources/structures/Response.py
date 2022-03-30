@@ -7,7 +7,7 @@ from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
 
-loop = asyncio.get_event_loop()
+
 
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
@@ -47,6 +47,8 @@ class ResponseLoading:
         self.from_reaction_fail_msg = None
 
         self.backup_text = backup_text
+
+        self._loop = asyncio.get_event_loop()
 
     @staticmethod
     def _check_reaction(message):
@@ -96,14 +98,14 @@ class ResponseLoading:
 
     def __enter__(self):
         if not self.response.interaction:
-            loop.create_task(self._send_loading())
+            self._loop.create_task(self._send_loading())
         return self
 
     def __exit__(self, tb_type, tb_value, traceback):
         if (tb_type is None) or (tb_type == Message):
-            loop.create_task(self._remove_loading(error=False))
+            self._loop.create_task(self._remove_loading(error=False))
         else:
-            loop.create_task(self._remove_loading(error=True))
+            self._loop.create_task(self._remove_loading(error=True))
 
     async def __aenter__(self):
         if not self.response.interaction:

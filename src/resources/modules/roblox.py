@@ -5,11 +5,9 @@ from ..exceptions import (BadUsage, RobloxAPIError, Error, CancelCommand, UserNo
 from typing import Tuple
 import discord
 from datetime import datetime
-from ratelimit import limits, RateLimitException
-from backoff import on_exception, expo
 from config import REACTIONS # pylint: disable=import-error, no-name-in-module
-from ..constants import (BLOXLINK_STAFF, RELEASE, DEFAULTS, ARROW,SERVER_INVITE, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, SELF_HOST, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
+from ..constants import (BLOXLINK_STAFF, RELEASE, DEFAULTS,SERVER_INVITE, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
+                         RED_COLOR, ACCOUNT_SETTINGS_URL, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
 import json
 import re
 import asyncio
@@ -24,7 +22,6 @@ bracket_search = re.compile(r"\[(.*)\]")
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
 
-loop = asyncio.get_event_loop()
 
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
@@ -1507,7 +1504,7 @@ class Roblox(Bloxlink.Module):
                                     if group:
                                         user_rank = group.user_rank_id
 
-                                        if bind_range["low"] <= user_rank <= bind_range["high"]:
+                                        if int(bind_range["low"]) <= user_rank <= int(bind_range["high"]):
                                             if not bound_roles:
                                                 bound_roles = {group.user_rank_name}
 

@@ -21,6 +21,7 @@ class Utils(Bloxlink.Module):
     def __init__(self):
         self.option_regex = compile("(.+):(.+)")
         self.timeout = aiohttp.ClientTimeout(total=20)
+        self.session = None
 
     @staticmethod
     def get_files(directory):
@@ -68,6 +69,9 @@ class Utils(Bloxlink.Module):
         headers = headers or {}
         new_json = {}
         proxied = False
+
+        if not self.session:
+            self.session = aiohttp.ClientSession(timeout=self.timeout)
 
         if text or bytes:
             json = False
