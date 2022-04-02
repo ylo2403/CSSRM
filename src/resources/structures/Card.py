@@ -89,6 +89,8 @@ class Card(Bloxlink.Module):
         if self.roblox_user.id in self.author_accounts:
             self.add_change_background_button()
 
+        self.add_invite_button()
+
         await self.request_front_card()
 
     async def fetch_request_group_ranks(self):
@@ -369,6 +371,9 @@ class Card(Bloxlink.Module):
 
     def add_profile_hyperlink_button(self):
         self.view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Visit Profile", url=self.roblox_user.profile_link, emoji="<:profile:927447203029606410>"))
+
+    def add_invite_button(self):
+        self.view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Add Bloxlink to your Server", url="https://discord.com/oauth2/authorize?scope=bot%20applications.commands&client_id=426537812993638400&permissions=1007021144", emoji="<:invite:959934044659937320>"))
 
     def add_specific_infomation_select(self):
         self.view.add_item(item=MoreInformationSelect(self.roblox_user))
