@@ -3,9 +3,10 @@ from re import compile
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from ..secrets import PROXY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..secrets import PROXY_URL, TOKEN # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..exceptions import Error
 from discord.errors import NotFound, Forbidden
-from discord import Embed
+import discord
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
 from requests.utils import requote_uri
 from async_timeout import timeout as a_timeout
@@ -14,7 +15,7 @@ import aiohttp
 import json as json_
 
 
-get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+get_guild_value, set_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_guild_value"])
 
 @Bloxlink.module
 class Utils(Bloxlink.Module):
@@ -52,17 +53,45 @@ class Utils(Bloxlink.Module):
         log_channels = await get_guild_value(guild, "logChannels") or {}
         log_channel  = log_channels.get(event_name) or log_channels.get("all")
 
+        webhook = None
+
         if log_channel:
-            text_channel = guild.get_channel(int(log_channel))
+            if isinstance(log_channel, str): # old data
+                text_channel = guild.get_channel(int(log_channel))
 
-            if text_channel:
-                embed = Embed(title=f"{event_name.title()} Event", description=text)
-                embed.colour = color
+                if text_channel:
+                    permissions = text_channel.permissions_for(guild.me)
 
-                try:
-                    await text_channel.send(embed=embed)
-                except (Forbidden, NotFound):
-                    pass
+                    if not permissions.manage_webhooks:
+                        raise Error("Events are enabled but I couldn't create the webhook! Please make sure I have the `Manage Webhooks` permission.")
+
+                    webhook = discord.utils.find(lambda w: w.name == "Bloxlink Webhooks", await text_channel.webhooks())
+
+                    if not webhook:
+                        webhook = await text_channel.create_webhook(name="Bloxlink Webhooks", reason="Created webhook for event")
+
+                    log_channels[event_name] = {
+                        "channel": log_channel,
+                        "webhook": {
+                            "id": str(webhook.id),
+                            "token": webhook.token
+                        }
+                    }
+
+                    webhook = discord.Webhook.partial(id=int(webhook.id), token=webhook.token, bot_token=TOKEN, session=self.session) # so we can authenticate the webhook with a bot token
+
+                    await set_guild_value(guild, logChannels=log_channels)
+
+            else:
+                webhook = discord.Webhook.partial(id=log_channel["webhook"]["id"], token=log_channel["webhook"]["token"], bot_token=TOKEN, session=self.session)
+
+            embed = discord.Embed(title=f"{event_name.title()} Event", description=text)
+            embed.colour = color
+
+            try:
+                await webhook.send(embed=embed)
+            except (Forbidden, NotFound):
+                pass
 
     async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20, proxy=True):
         params  = params or {}
