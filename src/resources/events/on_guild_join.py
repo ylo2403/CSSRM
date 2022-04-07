@@ -74,6 +74,8 @@ class GuildJoinEvent(Bloxlink.Module):
 
                     return
 
+                await set_guild_value(guild, proBot=True)
+
             elif RELEASE == "MAIN":
                 await post_stats()
 
