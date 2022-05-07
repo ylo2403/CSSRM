@@ -2,7 +2,7 @@ from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
 from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference, ui, Embed
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
-from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
+from ..structures import Bloxlink, Paginate, Args # pylint: disable=no-name-in-module, import-error
 from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
@@ -139,6 +139,30 @@ class Response(Bloxlink.Module):
         self.first_slash_command = None
         self.forwarded = forwarded
 
+        self.send_modal = interaction.response.send_modal if interaction else None
+
+    @staticmethod
+    def from_interaction(interaction, resolved=None, command=None, locale=None, forwarded=False):
+        guild = interaction.guild
+        channel = interaction.channel
+        user = interaction.user
+
+        command_args = Args(
+            command_name = command.name if command else None,
+            message = None,
+            flags = {},
+            has_permission = False,
+            command = command,
+            guild = guild,
+            channel = channel,
+            author = user,
+            interaction = interaction,
+            slash_command = True,
+            resolved = resolved
+        )
+
+        return Response(command_args, user, channel, guild, locale, interaction=interaction, forwarded=forwarded)
+
     def loading(self, text="Please wait until the operation completes."):
         return ResponseLoading(self, text)
 
@@ -196,6 +220,9 @@ class Response(Bloxlink.Module):
             reply = False
             reference = None
             mention_author = False
+
+        if channel_override:
+            send_as_slash_command = False
 
         if reply and not self.interaction:
             if reference:

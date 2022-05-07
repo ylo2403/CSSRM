@@ -22,7 +22,7 @@ class Extras(Bloxlink.Module):
                 if role.name in MAGIC_ROLES:
                     has_any_magic_role = True
 
-        users_magic_roles = filter(lambda rd: author.get_role(int(rd[0])), magic_roles.items())
+        users_magic_roles = filter(lambda rd: author.get_role(int(rd[0]) if rd[0] != "undefined" else 0), magic_roles.items())
 
         if not magic_role_name:
             return bool(users_magic_roles) or has_any_magic_role

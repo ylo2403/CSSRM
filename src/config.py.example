@@ -1,12 +1,7 @@
-from os import environ as env
-from resources.constants import RELEASE, IS_DOCKER # pylint: disable=import-error, no-name-in-module, no-name-in-module
-
-
 WEBHOOKS = {
 	"LOGS":  "", # discord webhook link
 	"ERRORS": "" # discord webhook link
 }
-
 
 REACTIONS = { # discord emote mention strings
 	"LOADING": "<a:BloxlinkLoading:530113171734921227>",
@@ -22,9 +17,6 @@ REACTIONS = { # discord emote mention strings
 	"BLANK": "<:blank:881783214014885908>"
 }
 
-
-BLOXLINK_GUILD = RELEASE == "LOCAL" and 439265180988211211 or 372036754078826496
-
 BOTS = {
 	"PRO": 469652514501951518,
 	"MAIN": 426537812993638400,
@@ -33,10 +25,9 @@ BOTS = {
 }
 
 MONGO_CONNECTION_STRING = "mongodb+srv://mongodb.com" # MongoDB connection string
-MONGO_DB = "bloxlink" # the main collection name
 
-REDIS_HOST = "redis"
+REDIS_HOST = None
 REDIS_PORT = 6379
 REDIS_PASSWORD = None
 
-TOKEN = None
+TOKEN = None # discord bot token

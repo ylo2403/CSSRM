@@ -1,5 +1,5 @@
 class DonatorProfile:
-    def __init__(self, *, user=None, guild=None, typex=None, expiry=None, term=None, tier=None, user_facing_tier=None, features=None):
+    def __init__(self, *, user=None, guild=None, typex=None, expiry=None, term=None, tier=None, user_facing_tier=None, features=None, old_premium=False):
         features = features or set()
 
         self.user = user
@@ -10,6 +10,7 @@ class DonatorProfile:
         self.tier = tier
         self.user_facing_tier = user_facing_tier
         self.features = features
+        self.old_premium = old_premium
 
         # old stuff
         self.days = None

@@ -152,3 +152,5 @@ src/commands/potion.py
 src/commands/redeem.py
 src/commands/registergame.py
 docker-compose.yml
+src/commands/eval2.py
+src/config.py

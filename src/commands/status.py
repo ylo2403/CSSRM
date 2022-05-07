@@ -20,7 +20,6 @@ class StatusCommand(Bloxlink.Module):
         }]
         self.category = "Premium"
         self.free_to_use = True
-        self.dm_allowed = True
         self.slash_enabled = True
         self.slash_only = True
 
@@ -32,7 +31,7 @@ class StatusCommand(Bloxlink.Module):
         profile = await has_premium(user=CommandArgs.author)
 
         embed = Embed()
-        embed.set_author(name=str(CommandArgs.author), icon_url=CommandArgs.author.avatar.url)
+        embed.set_author(name=str(CommandArgs.author), icon_url=CommandArgs.author.avatar.url if CommandArgs.author.avatar else None)
 
         if "premium" in profile.features:
             embed.add_field(name="Premium Status", value="Active")
@@ -59,7 +58,7 @@ class StatusCommand(Bloxlink.Module):
         profile = await has_premium(guild=CommandArgs.guild)
 
         embed = Embed()
-        embed.set_author(name=CommandArgs.guild.name, icon_url=CommandArgs.guild.icon.url)
+        embed.set_author(name=CommandArgs.guild.name, icon_url=CommandArgs.guild.icon.url if CommandArgs.guild.icon else None)
 
         if "premium" in profile.features:
             embed.add_field(name="Premium Status", value="Active")

@@ -13,7 +13,6 @@ logging.basicConfig(level=getattr(logging, environ.get("LOG_LEVEL", "WARNING")))
 
 discord.http._set_api_version(9)
 
-
 async def register_modules():
     get_files = Bloxlink.get_module("utils", attrs="get_files")
 
@@ -89,9 +88,16 @@ async def main():
     await signals_handler()
     await register_modules()
 
+    await Bloxlink.start(TOKEN)
+
 
 
 if __name__ == "__main__":
-    asyncio.run(main(), debug=True)
+    loop = asyncio.get_event_loop()
+    asyncio.set_event_loop(loop)
 
-    Bloxlink.run(TOKEN)
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.run_until_complete(Bloxlink.close())
+        loop.close()

@@ -5,7 +5,7 @@ import re
 get_user, get_accounts = Bloxlink.get_module("robloxnew.users", attrs=["get_user", "get_accounts"], name_override="users")
 
 
-@Bloxlink.command
+
 class GetInfoCommand(Bloxlink.Module):
     """retrieve the Roblox information of a user"""
 

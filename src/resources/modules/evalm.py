@@ -21,16 +21,16 @@ class EvalM(Bloxlink.Module):
 		# remove `foo`
 		return content.strip('` \n')
 
-	async def __call__(self, code, message=None, env=None, codeblock=True):
+	async def __call__(self, code, interaction=None, env=None, codeblock=True):
 		env = env or {}
 
 		load_env = {
 			"client": self.client,
-			"channel": message and message.channel,
-			"author": message and message.author,
-			"guild": message and message.guild,
-			"message": message,
-			"r": self.r,
+			"channel": interaction and interaction.channel,
+			"author": interaction and interaction.author,
+			"guild": interaction and interaction.guild,
+			"interaction": interaction,
+			"db": self.db,
 			"redis": self.redis,
 			"cache": self.cache,
 			"_": self._last_result

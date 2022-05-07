@@ -20,6 +20,3 @@ class Binds(Bloxlink.Module):
 
         return set(group_ids.keys()).union(set(role_binds.get("groups", {}).keys()))
 
-
-    async def update_user(self, user, guild):
-        pass

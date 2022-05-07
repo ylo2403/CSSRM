@@ -5,17 +5,15 @@
 Roblox Verification made easy! Features everything you need to integrate your Discord server with Roblox.
 
 ## Dependencies
-  - Python 3.5+ (satisfied if using our Docker Compose file)
-  - [Docker](https://www.docker.com/)
-  - [Docker Compose](https://docs.docker.com/compose/)
-  - [MongoDB](https://www.mongodb.com/) (satisfied if using our Docker Compose file)
-  - [Redis](https://redis.io) (satisfied if using our Docker Compose file)
-  - [Requirements file](https://github.com/bloxlink/Bloxlink/blob/master/requirements.txt) (satisfied if using our Dockerfile)
+  - Python 3.8+
+  - [MongoDB](https://www.mongodb.com/)
+  - [Redis](https://redis.io)
+  - [Requirements file](https://github.com/bloxlink/Bloxlink/blob/master/requirements.txt)
 
 ## Configuration
   ### Configuration files
-  Edit the [config.py](https://github.com/bloxlink/Bloxlink/blob/master/src/config.py) file. Some values, the "secrets" or "tokens", can be optionally saved as environmental variables instead.
-  Save your environmental variables in [docker-compose.yml](https://github.com/bloxlink/Bloxlink/blob/master/docker-compose.yml) if you choose not to save the secrets in the config file.
+  First, rename [config.py.example](https://github.com/bloxlink/Bloxlink/blob/master/src/config.py.example) to `config.py`.
+  Edit the config.py file. Some values, the "secrets" or "tokens", can be optionally saved as environmental variables instead.
   Valid secrets which can be saved as environmental variables are found in the [secrets.py](https://github.com/bloxlink/Bloxlink/blob/master/src/resources/secrets.py) file.
 
   Environmental variables have priority over the config file!
@@ -24,18 +22,19 @@ Roblox Verification made easy! Features everything you need to integrate your Di
   Some options which aren't required to be changed are in the [constants.py](https://github.com/bloxlink/Bloxlink/blob/master/src/resources/constants.py) file.
 
   ### Image Server
-  The [Bloxlink Image Server](https://github.com/bloxlink/image-server) is required to run in order for some of Bloxlink's functionality to work. Run the instance, then put your server URL (could just be `localhost`) in the [config.py](https://github.com/bloxlink/Bloxlink/blob/master/src/config.py) file. Make sure the auth used for the Image Server is the same as in your config file. These values can also be environmental variables.
+  The [Bloxlink Image Server](https://github.com/bloxlink/image-server) is required to run in order for some of Bloxlink's functionality to work. Run the instance, then put your server URL (could just be `localhost`) in the config.py file. Make sure the auth used for the Image Server is the same as in your config file. These values can also be environmental variables.
 
 ## Intents
 The **Members Privileged Intent** is required for the bot to function. This can be toggled on your [Developer Dashboard](https://discord.com/developers/applications) unless your bot reached over 100 servers.
 
-## Quick Setup
+## Setup
 ```sh
 $ git clone https://github.com/bloxlink/Bloxlink
 $ cd Bloxlink
 [run image server]
 [change the configuration]
-$ docker-compose up --build
+$ python3.8 -m pip install -r requirements.txt
+$ python3.8 src/bot.py
 ```
 
 ## Disclaimer

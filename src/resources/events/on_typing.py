@@ -21,6 +21,9 @@ class ChannelTypingEvent(Bloxlink.Module):
         async def on_typing(channel, user, when):
             if isinstance(user, Member):
                 guild = user.guild
+
+                return
+
                 donator_profile = await has_premium(guild=guild)
 
                 if "premium" in donator_profile.features:

@@ -13,4 +13,4 @@ class SettingsCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
 
-        await response.send("You can change your server settings from our website: {link}")
+        await CommandArgs.response.send("You can modify your settings from our dashboard: https://blox.link/dashboard")

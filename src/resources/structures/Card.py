@@ -8,6 +8,7 @@ import discord
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
 set_user_value, set_db_value, get_db_value, get_user_value = Bloxlink.get_module("cache", attrs=["set_user_value", "set_db_value", "get_db_value", "get_user_value"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 class MoreInformationSelect(discord.ui.Select):
@@ -59,6 +60,8 @@ class Card(Bloxlink.Module):
         self.message = None
         self.roblox_user = roblox_user
 
+        self.premium_user = False
+
         self.from_interaction = from_interaction
         self.interaction_args = {"hidden": True} if self.from_interaction else {}
 
@@ -92,6 +95,8 @@ class Card(Bloxlink.Module):
         self.add_invite_button()
 
         await self.request_front_card()
+
+        self.premium_user = "premium" in (await has_premium(user=self.user)).features
 
     async def fetch_request_group_ranks(self):
         if self.guild and not self.group_ranks:
@@ -233,7 +238,7 @@ class Card(Bloxlink.Module):
         else:
             background_data = self.paginator.current_items[0][3]
 
-            self.paginator.unlocked = self.paginator.current_items[0][2] in self.user_backgrounds or self.user.id in background_data.get("unlocked", [])
+            self.paginator.unlocked = self.premium_user or self.paginator.current_items[0][2] in self.user_backgrounds or self.user.id in background_data.get("unlocked", [])
             self.paginator.custom_button.disabled = False
 
             if self.equipped_background == self.paginator.current_items[0][2]:

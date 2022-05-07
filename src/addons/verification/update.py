@@ -132,6 +132,8 @@ class UpdateCommand(Bloxlink.Module):
 
             #async with response.loading():
             if len_users > 1:
+                await response.send(f"Updating **{len_users}** users...")
+
                 for user in users:
                     if not user.bot:
                         try:

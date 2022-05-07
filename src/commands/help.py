@@ -49,7 +49,7 @@ class HelpCommand(Bloxlink.Module):
 
             raise CancelCommand
 
-        if CommandArgs.slash_command or (guild and not channel.permissions_for(guild.me).attach_files):
+        if guild and not channel.permissions_for(guild.me).attach_files:
             urls = "\n".join(self.urls)
             await response.send(f"Some general info is below! To view all commands, say `/commands`.\n{urls}")
         else:

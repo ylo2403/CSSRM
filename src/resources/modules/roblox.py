@@ -42,6 +42,7 @@ class Roblox(Bloxlink.Module):
     def __init__(self):
         self.pending_verifications = {}
 
+
     @staticmethod
     async def get_roblox_id(username) -> Tuple[str, str]:
         username_lower = username.lower()
@@ -680,6 +681,11 @@ class Roblox(Bloxlink.Module):
                                                 pass
                                             else:
                                                 try:
+                                                    await member.send(f"This server ({guild.name}) forbids the use of alterantive accounts, so your old account has been removed from the server.")
+                                                except discord.errors.Forbidden:
+                                                    pass
+
+                                                try:
                                                     await user_find.kick(reason=f"disallowAlts is enabled - alt of {member} ({member.id})")
                                                 except discord.errors.Forbidden:
                                                     pass
@@ -700,6 +706,11 @@ class Roblox(Bloxlink.Module):
                                                 action_participle    = action == "kick" and "kicked" or "banned"
 
                                                 try:
+                                                    await member.send(f"This server ({guild.name}) forbids ban-evaders, and as you have a banned account in the server, you have been {action_participle}.")
+                                                except discord.errors.Forbidden:
+                                                    pass
+
+                                                try:
                                                     await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))
                                                 except (discord.errors.Forbidden, discord.errors.HTTPException):
                                                     pass
@@ -709,6 +720,7 @@ class Roblox(Bloxlink.Module):
                                                     raise CancelCommand
 
                                                 return added, removed, chosen_nickname, errored, warnings, roblox_user
+
                 try:
                     added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
                         member,
@@ -762,7 +774,7 @@ class Roblox(Bloxlink.Module):
                                 try:
                                     await member.send(f"_Bloxlink Age-Limit_\nYou were kicked from **{guild.name}** for not being at least "
                                                     f"`{age_limit}` days old on your Roblox account `{roblox_user.username}` (days={roblox_user.age}). If this is a mistake, "
-                                                    f"then please join {SERVER_INVITE} and link a different account with `/verify add`. "
+                                                    f"then please join {SERVER_INVITE} and link a different account with `/verify`. "
                                                     f"Finally, use the `/switchuser` command and provide this ID to the command: `{guild.id}`")
                                 except discord.errors.Forbidden:
                                     pass
@@ -879,12 +891,12 @@ class Roblox(Bloxlink.Module):
                                 try:
                                     if accounts:
                                         await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to {ACCOUNT_SETTINGS_URL} and set a "
-                                                        "primary account, then try rejoining this server.")
+                                                          "primary account, then try rejoining this server.")
                                     else:
                                         await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                        f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
-                                                        "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
-                                                        f"Join {SERVER_INVITE} for additional help.")
+                                                          f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
+                                                          "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
+                                                          f"Join {SERVER_INVITE} for additional help.")
                                 except discord.errors.Forbidden:
                                     pass
 
@@ -935,6 +947,8 @@ class Roblox(Bloxlink.Module):
                 else:
                     if "UserNotVerified" in exceptions:
                         raise UserNotVerified
+
+                    return added, removed, chosen_nickname, errored, warnings, roblox_user
 
             elif join == False:
                 leave_channel = await get_guild_value(guild, "leaveChannel")
@@ -1655,7 +1669,7 @@ class Roblox(Bloxlink.Module):
                     raise CancelCommand
 
         if unverified:
-            raise UserNotVerified
+            raise UserNotVerified()
 
         if not roblox_user:
             roblox_user = (await self.get_user(user=user, guild=guild, everything=True))[0]
@@ -2228,8 +2242,11 @@ class RobloxUser(Bloxlink.Module):
             if roblox_data["avatar"] is not None:
                 avatar_url = roblox_data["avatar"]
             else:
-                avatar_url, _ = await fetch(f"{BASE_URL}/bust-thumbnail/json?userId={roblox_data['id']}&height=180&width=180", json=True)
-                avatar_url = avatar_url.get("Url")
+                try:
+                    avatar_url, _ = await fetch(f"{THUMBNAIL_API}/v1/users/avatar-bust?userIds={roblox_data['id']}&size=100x100&format=Png&isCircular=false", json=True)
+                    avatar_url = avatar_url.get("data", [])[0].get("imageUrl")
+                except RobloxNotFound:
+                    avatar_url = None
 
                 if roblox_user:
                     roblox_user.avatar = avatar_url

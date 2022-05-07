@@ -2,10 +2,10 @@ from importlib import import_module
 from os import environ as env
 from discord import AutoShardedClient, AllowedMentions, Intents, Game
 from config import WEBHOOKS # pylint: disable=E0611
-from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, IS_DOCKER, TABLE_STRUCTURE, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
-from ..secrets import (REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, MONGO_CONNECTION_STRING, MONGO_DB) # pylint: disable=import-error, no-name-in-module
+from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
+from ..secrets import (REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, MONGO_CONNECTION_STRING, MONGO_CA_FILE) # pylint: disable=import-error, no-name-in-module
 from . import Permissions # pylint: disable=import-error, no-name-in-module
-from async_timeout import timeout
+from os.path import exists
 import functools
 import traceback
 import datetime
@@ -43,7 +43,14 @@ class BloxlinkStructure(AutoShardedClient):
 
     @staticmethod
     def get_database():
-        db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING)[MONGO_DB]
+        if MONGO_CA_FILE:
+            ca_file = exists("cert.crt")
+
+            if not ca_file:
+                with open("src/cert.crt", "w") as f:
+                    f.write(MONGO_CA_FILE)
+
+        db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_CONNECTION_STRING, tlsCAFile="src/cert.crt" if MONGO_CA_FILE else None)["bloxlink"]
         db.get_io_loop = asyncio.get_running_loop
 
         return db
@@ -72,15 +79,10 @@ class BloxlinkStructure(AutoShardedClient):
             return sentry_sdk.capture_exception()
     """
     def error(self, text, title=None):
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-
+        loop = asyncio.get_event_loop()
         logger.exception(text)
 
-        if not loop.is_closed:
-            loop.create_task(self._error(str(text), title=title))
+        loop.create_task(self._error(str(text), title=title))
 
     async def _error (self, text, title=None):
         if (not text) or text == "Unclosed connection":
@@ -135,12 +137,12 @@ class BloxlinkStructure(AutoShardedClient):
         module_dir = module.__module__.lower()
 
         if hasattr(new_module, "__setup__"):
-            loop.create_task(new_module.__setup__())
+            asyncio.run_coroutine_threadsafe(new_module.__setup__(), loop)
 
         Bloxlink.log(f"Loaded {module_name}")
 
         if hasattr(new_module, "__loaded__"):
-            loop.create_task(new_module.__loaded__())
+            asyncio.run_coroutine_threadsafe(new_module.__loaded__(), loop)
 
         if BloxlinkStructure.loaded_modules.get(module_dir):
             BloxlinkStructure.loaded_modules[module_dir][module_name] = new_module
@@ -287,14 +289,13 @@ Bloxlink = BloxlinkStructure(
 def load_redis():
     redis = redis_cache = None
 
-    if IS_DOCKER:
-        while not redis:
-            try:
-                redis = aredis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-            except aredis.exceptions.ConnectionError:
-                pass
-            else:
-                redis_cache = redis.cache("cache")
+    while not redis:
+        try:
+            redis = aredis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+        except aredis.exceptions.ConnectionError:
+            pass
+        else:
+            redis_cache = redis.cache("cache")
 
     return redis, redis_cache
 

@@ -1,5 +1,7 @@
 from ..structures import Bloxlink, DonatorProfile # pylint: disable=import-error, no-name-in-module
 from discord import Object
+import discord
+import datetime
 
 from time import time
 
@@ -8,11 +10,39 @@ from time import time
 fetch = Bloxlink.get_module("utils", attrs="fetch")
 get_db_value, set_db_value, get_user_value, set_user_value, cache_get, cache_set = Bloxlink.get_module("cache", attrs=["get_db_value", "set_db_value", "get_user_value", "set_user_value", "get", "set"])
 
+
+
+
+class OldPremiumView(discord.ui.View):
+    @discord.ui.button(label="Suppress Warnings", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild  = interaction.guild
+        user = interaction.user
+
+        # check if user has manage user
+        if user.resolved_permissions.administrator or user.resolved_permissions.manage_guild:
+            datetime_now = datetime.datetime.now()
+            await set_db_value("guilds", guild, oldPremiumWarningsSuppressed=datetime_now.timestamp())
+            await interaction.response.send_message("All warnings were suppressed for 1 month.", ephemeral=True)
+        else:
+            await interaction.response.send_message("You do not have permission to suppress warnings.", ephemeral=True)
+
+        self.stop()
+
+
 @Bloxlink.module
 class Premium(Bloxlink.Module):
     def __init__(self):
         self.patrons = {}
 
+        Bloxlink.loop.create_task(self.update_patrons())
+
+    async def update_patrons(self):
+        cursor = self.db.patreon.find({})
+
+        while await cursor.fetch_next:
+            patron = cursor.next_object()
+            self.patrons[patron["_id"]] = True
 
     async def has_premium(self, guild=None, user=None):
         premium_data = await get_db_value("guilds" if guild else "users", guild or user, "premium") or {}
@@ -36,7 +66,7 @@ class Premium(Bloxlink.Module):
 
             features = {"premium"}
 
-            if tier == "pro":
+            if tier == "pro" or premium_data.get("patreon"):
                 features.add("pro")
 
             return DonatorProfile(
@@ -56,6 +86,11 @@ class Premium(Bloxlink.Module):
     async def check_old_premium(self, guild=None, user=None):
         if not user:
             user = Object(guild.owner_id)
+
+        prem_data = await get_user_value(user, "premium") or {}
+
+        if prem_data.get("transferFrom"):
+            user = Object(int(prem_data["transferFrom"]))
 
         return await self.has_patreon_premium(user) or await self.has_selly_premium(user) or DonatorProfile(user=user)
 
@@ -81,16 +116,18 @@ class Premium(Bloxlink.Module):
                 user=user,
                 typex="key",
                 features=features,
-                user_facing_tier="Basic Premium"
+                user_facing_tier="Basic Premium",
+                old_premium=True
             )
 
     async def has_patreon_premium(self, user):
-        if self.patrons.get(user.id):
+        if self.patrons.get(str(user.id)):
             return DonatorProfile(
                 user=user,
                 typex="patreon",
                 features={"premium", "pro"},
-                user_facing_tier="Pro"
+                user_facing_tier="Basic",
+                old_premium=True
             )
 
     async def add_features(self, user, features, *, days=-1):

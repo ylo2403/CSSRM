@@ -64,7 +64,8 @@ elif RELEASE == "CANARY":
 elif RELEASE == "LOCAL":
     EMBED_COLOR = PURPLE_COLOR
 
-VERIFY_URL = "https://blox.link/verify/"
+VERIFY_URL_GUILD = "https://blox.link/dashboard/verifications/verify?page=username&guild={guild}"
+VERIFY_URL = "https://blox.link/dashboard/verifications"
 ACCOUNT_SETTINGS_URL = "https://blox.link/account/"
 
 VERIFYALL_MAX_SCAN = 5
@@ -178,6 +179,7 @@ DEFAULTS = {
     "unbanRelatedAccounts": False,
     "disallowAlts": False,
     "disallowBanEvaders": False,
+    "verifyChannelTextModal": "Welcome to **{server-name}!** Click the button below to Verify with Bloxlink and gain access to the rest of the server."
 }
 
 ARROW = "\u2192"
@@ -196,7 +198,7 @@ HELP_DESCRIPTION = "**Welcome to Bloxlink!**\n\n" \
                    "**Invite:** https://blox.link/invite\n\n" \
                    "Please use `/setup` to set-up your server.\n" \
                    "**Bloxlink tutorials:** https://blox.link/tutorials/\n" \
-                   "Want sweet perks for your server? Check out our **[Patreon!](https://www.patreon.com/join/bloxlink?)**"
+                  # "Want sweet perks for your server? Check out our **[Patreon!](https://www.patreon.com/join/bloxlink?)**"
 
 
 TRANSFER_COOLDOWN = 5

@@ -10,12 +10,7 @@ get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
 NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
-              "servers with premium from Patreon.com. If you are indeed subscribed " \
-              "on patreon, then please use the `/transfer to` command on the normal " \
-              "Bloxlink bot and transfer your premium **to the server owner**. You may " \
-              "revoke the premium transfer with `/transfer disable`. Also note that " \
-              "it may take up to 10 minutes for the bot to register your premium from Patreon " \
-              "**after** linking your Discord account. Find more information with the " \
+              "servers with Pro from https://blox.link.\nFind more information with the " \
               "`/donate` command. Any trouble? Message us here: " + SERVER_INVITE
 
 WELCOME_MESSAGE = "\n\n".join([
