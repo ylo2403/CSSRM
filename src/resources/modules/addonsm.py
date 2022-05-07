@@ -34,7 +34,7 @@ class AddonsM(Bloxlink.Module):
                         addon_command_module = import_module(f"addons.{addon_category}.{command}")
 
                         for attr_name in dir(addon_command_module):
-                            if "Command" in attr_name and hasattr(getattr(addon_command_module, attr_name), "__main__"): # it's probably a command tbh, should have a better system to check tho
+                            if "Command" in attr_name and hasattr(getattr(addon_command_module, attr_name), "__main__"): # it's probably a command. should have a better system to check tho
                                 command_structure = getattr(addon_command_module, attr_name)
 
                                 self.new_command(command_structure, addon=addon_category_structure)

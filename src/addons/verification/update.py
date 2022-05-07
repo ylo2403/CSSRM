@@ -2,12 +2,12 @@ from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-erro
 from resources.exceptions import Error, UserNotVerified, Message, BloxlinkBypass, CancelCommand, PermissionError, Blacklisted # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 from resources.constants import RELEASE # pylint: disable=import-error, no-name-in-module
-from discord import Object, User
+from discord import User
 from discord.errors import NotFound
 import math
 
 guild_obligations, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "format_update_embed"])
-get_features = Bloxlink.get_module("premium", attrs="get_features")
+has_premium = Bloxlink.get_module("premium", attrs="has_premium")
 
 
 class UpdateCommand(Bloxlink.Module):
@@ -47,12 +47,9 @@ class UpdateCommand(Bloxlink.Module):
         user_slash = CommandArgs.parsed_args.get("user")
         role_slash = CommandArgs.parsed_args.get("role")
         users_ = CommandArgs.parsed_args.get("users") or ([user_slash, role_slash] if user_slash or role_slash else None)
-        prefix = CommandArgs.prefix
 
         author = CommandArgs.author
         guild = CommandArgs.guild
-
-        guild_data = CommandArgs.guild_data
 
         users = []
 
@@ -111,19 +108,19 @@ class UpdateCommand(Bloxlink.Module):
 
                         raise Message(f"This server has an ongoing cooldown! You must wait **{cooldown_time}** more minutes.")
 
-            donator_profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
-            premium = donator_profile.features.get("premium")
+            donator_profile = await has_premium(guild=guild)
+            premium = "premium" in donator_profile.features
 
             if not premium:
-                donator_profile, _ = await get_features(author)
-                premium = donator_profile.features.get("premium")
+                donator_profile = await has_premium(user=author)
+                premium = "premium" in donator_profile.features
 
             cooldown = 0
 
             if len_users > 10:
                 if not premium:
                     raise Error("You need premium in order to update more than 10 members at a time! "
-                                f"Use `{prefix}donate` for instructions on donating.")
+                                f"Use `/donate` for instructions on donating.")
 
                 if len_users >= 100:
                     cooldown = math.ceil(((len_users / 1000) * 120) * 60)
@@ -133,18 +130,16 @@ class UpdateCommand(Bloxlink.Module):
                 if self.redis:
                     await self.redis.set(redis_cooldown_key, 2, ex=86400)
 
-            trello_board = CommandArgs.trello_board
-
             #async with response.loading():
             if len_users > 1:
+                await response.send(f"Updating **{len_users}** users...")
+
                 for user in users:
                     if not user.bot:
                         try:
                             added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                                 user,
                                 guild             = guild,
-                                guild_data        = guild_data,
-                                trello_board      = trello_board,
                                 roles             = True,
                                 nickname          = True,
                                 dm                = False,
@@ -178,8 +173,6 @@ class UpdateCommand(Bloxlink.Module):
                     added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
                         user,
                         guild             = guild,
-                        guild_data        = guild_data,
-                        trello_board      = trello_board,
                         roles             = True,
                         nickname          = True,
                         cache             = False,
@@ -190,7 +183,6 @@ class UpdateCommand(Bloxlink.Module):
                     _, card, embed = await format_update_embed(
                         roblox_user, user,
                         added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
-                        guild_data=guild_data,
                         author = author,
                         guild = guild,
                     )

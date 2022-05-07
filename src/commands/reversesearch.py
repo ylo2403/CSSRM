@@ -4,6 +4,7 @@ from discord import Embed
 from discord.errors import NotFound
 
 get_user = Bloxlink.get_module("roblox", attrs=["get_user"])
+get_db_value = Bloxlink.get_module("cache", attrs=["get_db_value"])
 
 
 @Bloxlink.command
@@ -47,7 +48,7 @@ class ReverseSearchCommand(Bloxlink.Module):
             raise Error("This Roblox account doesn't exist.")
         else:
             roblox_id = account.id
-            discord_ids = (await self.r.db("bloxlink").table("robloxAccounts").get(roblox_id).run() or {}).get("discordIDs")
+            discord_ids = await get_db_value("roblox_accounts", roblox_id, "discordIDs") or []
             results = []
 
             if discord_ids:

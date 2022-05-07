@@ -1,4 +1,4 @@
-from ..structures import Bloxlink, InteractionPaginator, TimeoutView # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink, InteractionPaginator # pylint: disable=import-error, no-name-in-module
 from ..constants import BLOXLINK_STAFF
 from ..secrets import IMAGE_SERVER_URL, IMAGE_SERVER_AUTH
 from io import BytesIO
@@ -7,7 +7,8 @@ import discord
 
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
-
+set_user_value, set_db_value, get_db_value, get_user_value = Bloxlink.get_module("cache", attrs=["set_user_value", "set_db_value", "get_db_value", "get_user_value"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 class MoreInformationSelect(discord.ui.Select):
@@ -59,6 +60,8 @@ class Card(Bloxlink.Module):
         self.message = None
         self.roblox_user = roblox_user
 
+        self.premium_user = False
+
         self.from_interaction = from_interaction
         self.interaction_args = {"hidden": True} if self.from_interaction else {}
 
@@ -92,6 +95,8 @@ class Card(Bloxlink.Module):
         self.add_invite_button()
 
         await self.request_front_card()
+
+        self.premium_user = "premium" in (await has_premium(user=self.user)).features
 
     async def fetch_request_group_ranks(self):
         if self.guild and not self.group_ranks:
@@ -167,10 +172,7 @@ class Card(Bloxlink.Module):
 
         await self.paginator.message.edit(view=self.paginator)
 
-        await self.r.db("bloxlink").table("users").insert({
-            "id": str(self.user.id),
-            "unlocks": unlocks
-        }, conflict="update").run()
+        await set_user_value(self.user, unlocks=unlocks)
 
         return True
 
@@ -180,9 +182,6 @@ class Card(Bloxlink.Module):
                 if self.from_interaction:
                     self.response.renew(interaction)
 
-            equipped_roblox_data = await self.r.table("robloxProfiles").get(str(self.roblox_user.id)).run() or {"id": str(self.roblox_user.id)}
-            equipped_roblox_data["background"] = background_name
-
             self.paginator.custom_button.label = "Equipped"
             self.paginator.custom_button.disabled = True
             self.paginator.custom_button.style = discord.ButtonStyle.success
@@ -191,7 +190,7 @@ class Card(Bloxlink.Module):
 
             self.equipped_background = background_name
 
-            await self.r.table("robloxProfiles").insert(equipped_roblox_data, conflict="update").run()
+            await set_db_value("roblox_profiles", self.roblox_user, background=background_name)
 
             await self.response.send("Successfully equipped your background! Go view it with `/getinfo`!", **self.interaction_args)
 
@@ -239,7 +238,7 @@ class Card(Bloxlink.Module):
         else:
             background_data = self.paginator.current_items[0][3]
 
-            self.paginator.unlocked = self.paginator.current_items[0][2] in self.user_backgrounds or self.user.id in background_data.get("unlocked", [])
+            self.paginator.unlocked = self.premium_user or self.paginator.current_items[0][2] in self.user_backgrounds or self.user.id in background_data.get("unlocked", [])
             self.paginator.custom_button.disabled = False
 
             if self.equipped_background == self.paginator.current_items[0][2]:
@@ -257,9 +256,8 @@ class Card(Bloxlink.Module):
                 self.paginator.custom_button.style = discord.ButtonStyle.secondary
 
     async def get_user_unlocks(self):
-        user_data = await self.r.db("bloxlink").table("users").get(str(self.user.id)).run() or {"id": str(self.user.id)}
+        unlocks = await get_user_value(self.user, "unlocks") or {}
 
-        unlocks = user_data.get("unlocks") or {"id": str(self.user.id)}
         unlocks["backgrounds"] = unlocks.get("backgrounds") or {}
         unlocks["tokens"] = unlocks.get("tokens") or {}
         unlocks["tokens"]["backgrounds"] = unlocks["tokens"].get("backgrounds", 0)
@@ -272,9 +270,7 @@ class Card(Bloxlink.Module):
 
     @staticmethod
     async def get_equipped_background(roblox_id):
-        roblox_equipped_data = await Bloxlink.Module.r.table("robloxProfiles").get(str(roblox_id)).run() or {}
-
-        return roblox_equipped_data.get("background")
+        return await get_db_value("roblox_profiles", roblox_id, "background")
 
     async def get_paginator(self, **backgrounds):
         paginator = InteractionPaginator({

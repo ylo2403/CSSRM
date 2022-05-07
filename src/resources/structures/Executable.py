@@ -5,7 +5,7 @@ from inspect import iscoroutinefunction
 import discord
 import re
 
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
@@ -24,7 +24,7 @@ class Executable:
         self.hidden = getattr(executable, "hidden", self.category == "Developer")
         self.free_to_use = getattr(executable, "free_to_use", False)
         self.addon = getattr(executable, "addon", None) # FIXME
-        self.fn = executable.__main__
+        self.fn = getattr(executable, "__main__", None)
         self.cooldown = getattr(executable, "cooldown", 0)
         self.premium = self.permissions.premium or self.category == "Premium"
         self.developer_only = self.permissions.developer_only or self.category == "Developer" or getattr(executable, "developer_only", False) or getattr(executable, "developer", False)
@@ -70,16 +70,11 @@ class Executable:
                 raise PermissionError("This command is reserved for the Bloxlink Developer.")
 
         if (kwargs.get("premium", self.premium) or permissions.premium) and not kwargs.get("free_to_use", self.free_to_use):
-            prem, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+            prem = await has_premium(guild=guild)
 
-            if not prem.features.get("premium"):
-                prem, _ = await get_features(author)
-
-                if not prem.attributes["PREMIUM_ANYWHERE"]:
-                    raise Message("This command is reserved for Bloxlink Premium subscribers!\n"
-                                  "The server owner must have premium for this to work. If you "
-                                  "would like the server owner to have premium instead, please use the `!transfer` "
-                                  "command.\nYou may subscribe to Bloxlink Premium on Patreon: https://patreon.com/bloxlink", type="info")
+            if "premium" not in prem.features:
+                raise Message("This command is reserved for Bloxlink Premium subscribers!\n"
+                              f"You may subscribe to Bloxlink Premium from our dashboard: {f'https://blox.link/dashboard/guilds/{guild.id}/premium' if guild else 'https://blox.link/dashboard'}", type="info")
         try:
             if not dm:
                 author_perms = author.guild_permissions
@@ -93,7 +88,7 @@ class Executable:
 
                     magic_roles = await get_guild_value(guild, ["magicRoles", {}])
 
-                    if has_magic_role(author, magic_roles, "Bloxlink Admin"):
+                    if await has_magic_role(author, guild, "Bloxlink Admin", magic_roles_data=magic_roles):
                         return True
                     else:
                         if role_name == "Bloxlink Manager":
@@ -109,7 +104,7 @@ class Executable:
                                 raise PermissionError("You need the `Kick` or `Ban` permission to run this command.")
 
                         elif role_name == "Bloxlink Updater":
-                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or has_magic_role(author, magic_roles, "Bloxlink Updater"):
+                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or await has_magic_role(author, guild, "Bloxlink Updater", magic_roles_data=magic_roles):
                                 pass
                             else:
                                 raise PermissionError("You either need: a role called `Bloxlink Updater`, the `Manage Roles` "

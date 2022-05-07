@@ -5,28 +5,32 @@ import asyncio
 from concurrent.futures._base import CancelledError
 import discord
 from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
-from ..structures import Bloxlink, Args, Command, Locale, Arguments, Response, Application # pylint: disable=import-error, no-name-in-module
+from ..structures import Bloxlink, Command, Locale, Arguments, Response, Application # pylint: disable=import-error, no-name-in-module
 from ..constants import MAGIC_ROLES, DEFAULTS, RELEASE, CLUSTER_ID, ORANGE_COLOR # pylint: disable=import-error, no-name-in-module
 from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
 from config import BOTS # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from resources.modules.premium import OldPremiumView # pylint: disable=import-error, no-name-in-module, no-name-in-module
+import datetime
+import random
 
 
-get_prefix, fetch = Bloxlink.get_module("utils", attrs=["get_prefix", "fetch"])
-get_board, get_options = Bloxlink.get_module("trello", attrs=["get_board", "get_options"])
+fetch = Bloxlink.get_module("utils", attrs=["fetch"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
-get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+get_guild_value, set_db_value, set_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_db_value", "set_guild_value"])
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 BOT_ID = BOTS[RELEASE]
 COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands" if RELEASE != "LOCAL" else f"https://discord.com/api/v8/applications/{BOT_ID}/guilds/439265180988211211/commands"
 GUILD_COMMANDS_URL = "https://discord.com/api/v8/applications/{BOT_ID}/guilds/{GUILD_ID}/commands"
 
+
+
 @Bloxlink.module
 class Commands(Bloxlink.Module):
-    """mannages both interaction commands and prefixed-commands"""
+    """mannages interaction commands"""
     def __init__(self):
         self.commands   = {}
 
@@ -34,8 +38,6 @@ class Commands(Bloxlink.Module):
         """sync the slash commands and context-menus"""
 
         if CLUSTER_ID == 0:
-            return
-
             interaction_commands = []
             all_guild_commands = {}
 
@@ -56,67 +58,108 @@ class Commands(Bloxlink.Module):
                         all_guild_commands[guild_id] = all_guild_commands.get(guild_id) or []
                         all_guild_commands[guild_id].append(command_json)
 
+            text, response = await fetch(COMMANDS_URL, "PUT", body=interaction_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+
+            if response.status == 200:
+                Bloxlink.log("Successfully synced the Global Slash Commands")
+            elif response.status != 403:
+                print(interaction_commands, flush=True)
+                print(response.status, text, flush=True)
+
 
             for guild_command_id, guild_commands in all_guild_commands.items():
-                text2, response2 = await fetch(GUILD_COMMANDS_URL.format(BOT_ID=BOT_ID, GUILD_ID=guild_command_id), "PUT", body=guild_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+                text, response = await fetch(GUILD_COMMANDS_URL.format(BOT_ID=BOT_ID, GUILD_ID=guild_command_id), "PUT", body=guild_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
-                if response2.status == 200:
+                if response.status == 200:
                     Bloxlink.log(f"Successfully synced Slash Commands for guild {guild_command_id}")
-                else:
+                elif response.status != 403:
                     print(interaction_commands, flush=True)
-                    print(response2.status, text2, flush=True)
+                    print(response.status, text, flush=True)
 
-            text1, response1 = await fetch(COMMANDS_URL, "PUT", body=interaction_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
+            # # list commands
+            # text, response = await fetch(COMMANDS_URL, "GET", headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
 
-            if response1.status == 200:
-                Bloxlink.log("Successfully synced the Global Slash Commands")
-            else:
-                print(interaction_commands, flush=True)
-                print(response1.status, text1, flush=True)
+            # print(text)
 
-    async def command_checks(self, command, prefix, response, guild_data, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
+
+    async def parse_message(self, message):
+        guild = message.guild
+        prefix = await get_guild_value(guild, ["prefix", "!"])
+
+        if message.content.startswith(prefix):
+            command_name = message.content[len(prefix):].split(" ")[0]
+
+            for index, command in self.commands.items():
+                if index == command_name or command_name in getattr(command, "aliases", []):
+                    await self.post_slash_command_warning(command_name, message)
+                    break
+
+    async def post_slash_command_warning(self, command_name, message):
+        channel = message.channel
+        guild   = message.guild
+
+        embed = discord.Embed(title=f"Please use /{command_name} to execute this command!", description=f"Discord is requiring **all bots** to switch to Slash Commands (which Bloxlink already supports!).\n\nPlease use `/{command_name}` instead to execute this command."
+                              "\n\n**Don't see Slash Commands?** Get the Server Admins to Re-authorize the bot here (__they don't need to kick it__): https://blox.link/invite and make sure the **Use Application Commands** permission is enabled for members.\n\n[Click here to see the Discord FAQ on Slash Commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ)")
+        embed.set_image(url="https://i.imgur.com/wVo8gt2.png")
+        embed.colour = ORANGE_COLOR
+
+        reference = discord.MessageReference(message_id=message and message.id, channel_id=channel.id,
+                                             guild_id=guild and guild.id, fail_if_not_exists=False)
+
+        try:
+            await channel.send(embed=embed, reference=reference)
+        except (discord.errors.NotFound, discord.errors.Forbidden):
+            pass
+
+    async def command_checks(self, command, response, author, channel, locale, CommandArgs, message=None, guild=None, subcommand_attrs=None, slash_command=False):
         channel_id      = str(channel.id) if channel else None
         donator_profile = None
         dm = not bool(guild)
         subcommand_attrs = subcommand_attrs or {}
 
         if guild:
-            if getattr(command, "addon", False):
-                enabled_addons = guild and await get_enabled_addons(guild) or {}
+            # if getattr(command, "addon", False):
+            #     enabled_addons = guild and await get_enabled_addons(guild) or {}
 
-                if str(command.addon) not in enabled_addons:
-                    raise CancelCommand
+            #     if str(command.addon) not in enabled_addons:
+            #         raise CancelCommand
 
-                if getattr(command.addon, "premium", False):
-                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+            #     if getattr(command.addon, "premium", False):
+            #         donator_profile = await has_premium(guild=guild)
 
-                    if not donator_profile.features.get("premium"):
-                        await response.error(f"This add-on requires premium! You may use `{prefix}donate` for instructions on donating.\n"
-                                            f"You may also disable this add-on with `{prefix}addon change`.", hidden=True)
+            #         if "premium" not in donator_profile.features:
+            #             await response.error(f"This add-on requires premium! You may use `/donate` for instructions on donating.\n"
+            #                                  f"You may also disable this add-on with `/addon change`.", hidden=True)
 
-                        raise CancelCommand
+            #             raise CancelCommand
 
-            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "prefix", "add-features", "stats"):
+            if RELEASE == "PRO":
+                pro_bot_enabled = await get_guild_value(guild, "proBot")
+
+                if not pro_bot_enabled:
+                    await set_guild_value(guild, proBot=True)
+
+            if RELEASE == "PRO" and command.name not in ("donate", "transfer", "eval", "status", "add-features", "stats"):
                 if not donator_profile:
-                    donator_profile, _ = await get_features(discord.Object(id=guild.owner_id), guild=guild)
+                    donator_profile = await has_premium(guild=guild)
 
-                if not donator_profile.features.get("pro"):
-                    await response.error(f"Server not authorized to use Pro. Please use the `{prefix}donate` command to see information on "
-                                        "how to get Bloxlink Pro.", hidden=True)
+                if "pro" not in donator_profile.features:
+                    await response.error(f"Server not authorized to use Pro. Please use the `/donate` command to see information on "
+                                          "how to get Bloxlink Pro.", hidden=True)
 
                     raise CancelCommand
 
             if not command.bypass_channel_perms:
                 if command.premium_bypass_channel_perms and not donator_profile:
-                    donator_profile, _ = await get_features(author, guild=guild)
+                    donator_profile = await has_premium(user=author)
 
-                ignored_channels = guild_data.get("ignoredChannels", {})
-                disabled_commands = guild_data.get("disabledCommands", {})
+                ignored_channels = await get_guild_value(guild, "ignoredChannels") or {}
+                disabled_commands = await get_guild_value(guild, "disabledCommands") or {}
 
                 author_perms = author.guild_permissions
 
-                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or discord.utils.find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and donator_profile.features.get("premium"))):
-                    premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://patreon.com/bloxlink." if command.premium_bypass_channel_perms else ""
+                if guild.owner_id != author.id and not (author_perms.manage_guild or author_perms.administrator or discord.utils.find(lambda r: r.name in MAGIC_ROLES, author.roles) or (command.premium_bypass_channel_perms and "premium" in donator_profile.features)):
+                    premium_upsell = "\n**Pro-tip:** Bloxlink Premium users can use this command in disabled channels! Learn more at https://blox.link." if command.premium_bypass_channel_perms else ""
                     ignored_channel = ignored_channels.get(channel_id) or (channel.category and ignored_channels.get(str(channel.category.id)))
                     bypass_roles = ignored_channel.get("bypassRoles", []) if ignored_channel else []
 
@@ -153,24 +196,6 @@ class Commands(Bloxlink.Module):
 
                         raise CancelCommand
 
-        if not slash_command and getattr(command, "slash_only", False):
-            embed = discord.Embed(title="Please use this command as a Slash Command!", description="This command can only be used "
-                    f"as a Slash Command. Please use `/{command.name}` instead to execute this command. Non-slash commands will be "
-                    "disappearing **April of 2022!**\n\nPlease note that **all bots** will be **required** to switch to Slash Commands by next April (which Bloxlink already supports).\n\n"
-                    "**Don't see Slash Commands?** Re-authorize the bot here (__you don't need to kick it__): https://blox.link/invite")
-            embed.set_image(url="https://i.imgur.com/IsrRp5U.png")
-            embed.colour = ORANGE_COLOR
-
-            reference = discord.MessageReference(message_id=message and message.id, channel_id=channel_id,
-                                            guild_id=guild and guild.id, fail_if_not_exists=False)
-
-            try:
-                await channel.send(embed=embed, reference=reference, delete_after=30)
-            except (discord.errors.NotFound, discord.errors.Forbidden):
-                pass
-
-            raise CancelCommand
-
         restriction = await get_restriction("users", author.id)
 
         if restriction:
@@ -182,10 +207,10 @@ class Commands(Bloxlink.Module):
         if command.cooldown and self.cache:
             redis_cooldown_key = f"cooldown_cache:{command.name}:{author.id}"
 
-            if not donator_profile or (donator_profile and not donator_profile.features.get("premium")):
-                donator_profile, _ = await get_features(author)
+            if not donator_profile or (donator_profile and "premium" not in donator_profile.features):
+                donator_profile = await has_premium(user=author)
 
-            if not donator_profile.features.get("premium"):
+            if "premium" not in donator_profile.features:
                 on_cooldown = await self.cache.get(redis_cooldown_key)
 
                 if on_cooldown:
@@ -194,8 +219,8 @@ class Commands(Bloxlink.Module):
                     embed = discord.Embed(title="Slow down!")
                     embed.description = "This command has a short cooldown since it's relatively expensive for the bot. " \
                                         f"You'll need to wait **{cooldown_time}** more second(s).\n\nDid you know? " \
-                                        "**[Bloxlink Premium](https://www.patreon.com/join/bloxlink?)** subscribers NEVER " \
-                                        f"see any cooldowns. Find out more information with `{prefix}donate`."
+                                        "**[Bloxlink Premium](https://blox.link)** subscribers NEVER " \
+                                        "see any cooldowns. Find out more information with `/donate`."
 
                     m = await response.send(embed=embed, hidden=True)
 
@@ -249,7 +274,7 @@ class Commands(Bloxlink.Module):
 
 
 
-    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data=None, guild=None, message=None, trello_board=None, after_text="", slash_command=False):
+    async def execute_command(self, command, fn, response, CommandArgs, author, channel, arguments, locale, interaction, guild=None, message=None, after_text="", slash_command=False):
         my_permissions = guild and guild.me.guild_permissions
 
         try:
@@ -276,17 +301,14 @@ class Commands(Bloxlink.Module):
             await response.error("The Roblox API is currently offline; please wait until Roblox is back online before re-running this command.")
         except CancelledPrompt as e:
             arguments.cancelled = True
-
-            if trello_board:
-                trello_options, _ = await get_options(trello_board)
-                guild_data.update(trello_options)
+            prompt_delete = await get_guild_value(guild, ["promptDelete", DEFAULTS.get("promptDelete")])
 
             if e.message:
                 text = f"**{locale('prompt.cancelledPrompt')}:** {e}"
             else:
                 text = f"**{locale('prompt.cancelledPrompt')}.**"
 
-            if ((e.type == "delete" and not e.dm) and guild_data.get("promptDelete", DEFAULTS.get("promptDelete"))):
+            if ((e.type == "delete" and not e.dm) and prompt_delete):
                 if my_permissions and my_permissions.manage_messages:
                     if message:
                         try:
@@ -339,6 +361,28 @@ class Commands(Bloxlink.Module):
             await response.error(locale("errors.commandError"))
             Bloxlink.error(traceback.format_exc(), title=f"Error source: {command.name}.py\n{f'Guild ID: {guild.id}' if guild else ''}")
 
+        else:
+            if guild:
+                guild_premium = await has_premium(guild=guild)
+                author_permissions = author.guild_permissions
+
+                if guild_premium.old_premium:
+                    old_premium_timestamp = await get_guild_value(guild, ["oldPremiumWarningsSuppressed", 0])
+                    time_expiring = datetime.datetime.fromtimestamp(old_premium_timestamp)
+
+                    if time_expiring + datetime.timedelta(days=30) <= datetime.datetime.utcnow():
+                        await response.send("This server has the old, deprecated premium. **You must migrate this server to use the new system** or it'll stop working soon!\n"
+                                            "Have the subscription owner go to <https://blox.link/dashboard/patreon> to migrate and make this error go away.", view=OldPremiumView(), hidden=True)
+
+
+                if "premium" not in guild_premium.features and (author_permissions.manage_guild or author_permissions.administrator):
+                    chance = random.randint(0, 100)
+
+                    if chance <= 10:
+                        await response.send("Did you know? You can subscribe to premium and unlock features like `/verifyall` that lets you update everyone, more binds, set an age limit, and more!\n"
+                                            f"Subscribe from our [Dashboard!](<https://blox.link/dashboard/guilds/{guild.id}/premium>)", hidden=True)
+
+
         finally:
             delete_messages = response.delete_message_queue
             prompt_messages = arguments.messages
@@ -367,12 +411,6 @@ class Commands(Bloxlink.Module):
                 else:
                     delete_messages = [] # we'll populate this with the command information
 
-                # since trello-set options will be strings
-                try:
-                    delete_commands_after = int(delete_commands_after)
-                except ValueError:
-                    delete_commands_after = 0
-
                 if delete_commands_after:
                     if message:
                         delete_messages.append(message.id)
@@ -382,125 +420,14 @@ class Commands(Bloxlink.Module):
                     await asyncio.sleep(delete_commands_after)
 
                 if delete_messages:
-                    if slash_command and response.first_slash_command and not arguments.cancelled:
+                    if slash_command and response.first_slash_command and not arguments.cancelled and not delete_commands_after:
                         await response.first_slash_command.edit(content="_**Command finished.**_", embed=None, view=None)
 
                     try:
-                        await channel.purge(limit=100, check=lambda m: (m.id in delete_messages) or (delete_commands_after and re.search(f"^[</{command.name}:{slash_command}>]", m.content)))
+                        await channel.purge(limit=100, check=lambda m: m.id in delete_messages)
+                        await interaction.delete_original_message()
                     except (discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
-
-
-    async def parse_message(self, message, guild_data=None):
-        guild = message.guild
-        content = message.content
-        author = message.author
-        channel = message.channel
-
-        if guild:
-            guild_restriction = await get_restriction("guilds", guild.id)
-
-            if guild_restriction:
-                await guild.leave()
-                raise CancelCommand
-
-        guild_permissions = guild and guild.me.guild_permissions
-
-        channel_id = channel and str(channel.id)
-        guild_id   = guild and str(guild.id)
-
-        trello_board = guild and await get_board(guild)
-        prefix, _    = await get_prefix(guild, trello_board)
-
-        client_match = re.search(f"^(<@!?{self.client.user.id}>)", content)
-        check = (content[:len(prefix)].lower() == prefix.lower() and prefix) or client_match and client_match.group(0)
-        check_verify_channel = False
-
-        if check:
-            after = content[len(check):].strip()
-            args = after.split(" ")
-            command_name = args[0] and args[0].lower()
-            del args[0]
-
-            if command_name:
-                for index, command in self.commands.items():
-                    if index == command_name or command_name in getattr(command, "aliases", []):
-                        if guild:
-                            if isinstance(author, discord.User):
-                                try:
-                                    author = await guild.fetch_member(author.id)
-                                except discord.errors.NotFound:
-                                    raise CancelCommand
-
-                        guild_data = guild_data or (guild and (await self.r.table("guilds").get(guild_id).run() or {"id": guild_id})) or {}
-
-                        fn = command.fn
-                        subcommand_attrs = {}
-                        subcommand = False
-
-                        if args:
-                            # subcommand checking
-                            subcommand = command.subcommands.get(args[0])
-                            if subcommand:
-                                fn = subcommand
-                                subcommand_attrs = getattr(fn, "__subcommandattrs__", None)
-                                del args[0]
-
-                        after = args and " ".join(args) or ""
-
-                        CommandArgs = Args(
-                            command_name = index,
-                            real_command_name = command_name,
-                            message = message,
-                            channel = message.channel,
-                            author  = message.author,
-                            guild = message.guild,
-                            guild_data = guild_data,
-                            flags = {},
-                            prefix = prefix,
-                            real_prefix = prefix,
-                            has_permission = False,
-                            command = command,
-                            slash_command = False
-                        )
-
-                        if getattr(fn, "__flags__", False):
-                            flags, flags_str = command.parse_flags(after)
-                            content = content.replace(flags_str, "")
-                            message.content = content
-                            after = after.replace(flags_str, "")
-                            CommandArgs.flags = flags
-
-                        locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-                        response = Response(CommandArgs, author, channel, guild, message, interaction=None)
-
-                        CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
-
-                        await self.command_checks(command, prefix, response, guild_data, author, channel, locale, CommandArgs, message, guild, subcommand_attrs, slash_command=False)
-
-                        arguments = Arguments(CommandArgs, author, channel, command, guild, message, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command={})
-
-                        await self.execute_command(command, fn, response, CommandArgs, author, channel, arguments, locale, guild_data, guild, message, trello_board, after, False)
-
-                        break
-
-                else:
-                    check_verify_channel = True
-            else:
-                check_verify_channel = True
-        else:
-            check_verify_channel = True
-
-        if guild and guild_permissions.manage_messages:
-            if check_verify_channel:
-                verify_channel_id = await get_guild_value(guild, "verifyChannel")
-
-                if verify_channel_id and channel_id == verify_channel_id:
-                    if not discord.utils.find(lambda r: r.name in MAGIC_ROLES, author.roles):
-                        try:
-                            await message.delete()
-                        except (discord.errors.Forbidden, discord.errors.NotFound):
-                            pass
 
 
     def slash_command_to_json(self, command):
@@ -594,18 +521,15 @@ class Commands(Bloxlink.Module):
 
         if CLUSTER_ID == 0:
             if RELEASE == "MAIN":
-                await self.r.db("bloxlink").table("commands").delete().run()
-                if not command.addon:
-                    await self.r.db("bloxlink").table("commands").insert({
-                        "id": command.name,
+                if not (command.addon or command.hidden):
+                    await set_db_value("commands", command.name, **{
                         "description": command.description,
-                        #"usage": command.usage,
+                        "usage": command.usage,
                         "category": command.category,
-                        "addon": command.addon and str(command.addon),
                         "hidden": command.hidden,
                         "subcommands": subcommands,
                         "slashCompatible": command.slash_enabled
-                    }, conflict="replace").run()
+                    })
 
 
     def app_command_to_json(self, application):
@@ -679,12 +603,13 @@ class Commands(Bloxlink.Module):
     async def execute_interaction_command(self, typex, command_name, guild, channel, user, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
         command = self.commands.get(command_name)
 
+        if not command:
+            raise Exception(f"Command not found: {command_name}")
+
         if typex == "extensions" and not isinstance(command, Application):
             raise CancelCommand
         elif typex == "commands" and not isinstance(command, Command):
             raise CancelCommand
-
-        guild_id = guild and str(guild.id)
 
         if guild:
             guild_restriction = await get_restriction("guilds", guild.id)
@@ -695,8 +620,6 @@ class Commands(Bloxlink.Module):
 
         if command:
             subcommand_attrs = {}
-            trello_board = None
-            guild_data = {}
 
             if subcommand and command.subcommands.get(subcommand):
                 fn = command.subcommands[subcommand]
@@ -704,34 +627,8 @@ class Commands(Bloxlink.Module):
             else:
                 fn = command.fn
 
-            if guild:
-                guild_data = await self.r.table("guilds").get(guild_id).run() or {"id": guild_id}
-                trello_board = guild and await get_board(guild)
-
-            real_prefix, _ = await get_prefix(guild, trello_board)
-
-            CommandArgs = Args(
-                command_name = command_name,
-                real_command_name = command_name,
-                message = None,
-                guild_data = guild_data,
-                flags = {},
-                prefix = "/",
-                real_prefix = real_prefix,
-                has_permission = False,
-                command = command,
-                guild = guild,
-                channel = channel,
-                author = user,
-                interaction = interaction,
-                slash_command = True,
-                resolved = resolved
-            )
-
-            CommandArgs.flags = {} if getattr(fn, "__flags__", False) else None # unsupported by slash commands
-
-            locale = Locale(guild_data and guild_data.get("locale", "en") or "en")
-            response = Response(CommandArgs, user, channel, guild, None, interaction=interaction, forwarded=forwarded)
+            locale = Locale("en")
+            response = Response.from_interaction(interaction, resolved=resolved, command=command, locale=locale, forwarded=forwarded)
 
             if command_args:
                 response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)
@@ -740,9 +637,9 @@ class Commands(Bloxlink.Module):
                 await response.send("You are currently in a prompt! Please complete it or say `cancel` to cancel.", hidden=True)
                 raise CancelCommand
 
-            CommandArgs.add(locale=locale, response=response, trello_board=trello_board)
+            response.args.add(locale=locale, response=response)
 
-            await self.command_checks(command, "/", response, guild_data, user, channel, locale, CommandArgs, None, guild, subcommand_attrs, slash_command=True)
+            await self.command_checks(command=command, response=response, author=user, channel=channel, CommandArgs=response.args, locale=locale, guild=guild, subcommand_attrs=subcommand_attrs, slash_command=True)
 
             if command.slash_defer and not forwarded:
                 try:
@@ -750,6 +647,6 @@ class Commands(Bloxlink.Module):
                 except discord.NotFound:
                     raise CancelCommand
 
-            arguments = Arguments(CommandArgs, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
+            arguments = Arguments(response.args, user, channel, command, guild, None, subcommand=(subcommand, subcommand_attrs) if subcommand else None, slash_command=arguments)
 
-            await self.execute_command(command, fn, response, CommandArgs, user, channel, arguments, locale, guild_data, guild, slash_command=True)
+            await self.execute_command(command=command, fn=fn, response=response, CommandArgs=response.args, author=user, channel=channel, arguments=arguments, locale=locale, guild=guild, slash_command=True, interaction=interaction)

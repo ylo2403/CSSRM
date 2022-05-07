@@ -37,7 +37,7 @@
 			"embed": {
 				"title": "What is Bloxlink?",
 				"field_1": {
-					"line_1": "Looking for a list of a commands? Use `{prefix}commands` instead.",
+					"line_1": "Looking for a list of a commands? Use `/commands` instead.",
 					"line_2": "Bloxlink is a Roblox integration for Discord. We add the ability to bring over Roblox to your Discord server by syncing Group roles to Server roles, linking Roblox accounts to Discord accounts, and more. [READ MORE](https://blox.link)",
 					"line_3": "We're on a mission to simplify integrating Roblox into Discord so players and groups can spend more time connecting with their friends and communities."
 				},
@@ -84,9 +84,8 @@
 			"group": "group",
 			"entireGroup": "entire group",
 			"errors": {
-				"noPremiumBindLimitExceeded": "You've exceeded the free bind limit of **{free_bind_count}.** Please delete some with `{prefix}unbind` before adding any more.\nPremium users may bind up to **{prem_bind_count}** binds! See `{prefix}donate` for instructions on receiving premium.",
-				"premiumBindLimitExceeded": "You've exceeded the premium bind limit of **{prem_bind_count}.** Please delete some with `{prefix}unbind` before adding any more.",
-				"trelloError": "In order for me to create Trello binds, please add `@bloxlink` to your Trello board."
+				"noPremiumBindLimitExceeded": "You've exceeded the free bind limit of **{free_bind_count}.** Please delete some with `/unbind` before adding any more.\nPremium users may bind up to **{prem_bind_count}** binds! See `/donate` for instructions on receiving premium.",
+				"premiumBindLimitExceeded": "You've exceeded the premium bind limit of **{prem_bind_count}.** Please delete some with `/unbind` before adding any more."
 			},
 			"prompts": {
 				"bindTypePrompt": {
@@ -94,7 +93,7 @@
 					"choices": ["group", "asset", "badge", "gamepass", "devforum members", "roblox staff"]
 				},
 				"nicknamePrompt": {
-					"line": "Should these members be given a nickname different from the server-wide `{prefix}nickname`? Please specify a nickname, or say `skip` to skip this option and default to the server-wide nickname `{prefix}nickname` template.\n\nYou may use these templates: ```{nickname_templates}```",
+					"line": "Should these members be given a nickname different from the server-wide `/nickname`? Please specify a nickname, or say `skip` to skip this option and default to the server-wide nickname `/nickname` template.\n\nYou may use these templates: ```{nickname_templates}```",
 					"footer": "Say **skip** to skip this option."
 				},
 				"groupPrompt": {

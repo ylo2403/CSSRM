@@ -18,14 +18,10 @@ class ViewBindsCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
 
-        guild_data = CommandArgs.guild_data
-        trello_board = CommandArgs.trello_board
-        prefix = CommandArgs.prefix
+        role_binds, group_ids = await get_binds(guild)
 
-        role_binds, group_ids, _ = await get_binds(guild_data=guild_data, trello_board=trello_board)
-
-        if count_binds(guild_data, role_binds=role_binds, group_ids=group_ids) == 0:
-            raise Message(f"You have no bounded roles! Please use `{CommandArgs.prefix}bind` "
+        if await count_binds(guild) == 0:
+            raise Message("You have no bounded roles! Please use `/bind` "
                            "to make a new role bind.", type="silly")
 
         embed = Embed(title="Bloxlink Role Binds")
@@ -49,7 +45,7 @@ class ViewBindsCommand(Bloxlink.Module):
                         for rank_id, rank_data in group_data.get("binds", {}).items():
                             role_names = set()
 
-                            if rank_data["roles"]:
+                            if rank_data.get("roles"):
                                 for role_ in rank_data["roles"]:
                                     role_cache_find = role_cache.get(role_)
 
@@ -171,7 +167,7 @@ class ViewBindsCommand(Bloxlink.Module):
                             text.append(f"**Roles:** {', '.join(role_names)} {ARROW} **Nickname:** {bind_data['nickname']}")
 
                         else:
-                            text.append(f"**Roles:** (No Roles) {ARROW} **Nickname:** {bind_vg_data['nickname']}")
+                            text.append(f"**Roles:** (No Roles) {ARROW} **Nickname:** {bind_data['nickname']}")
                     else:
                         for bind_id, bind_vg_data in bind_data.items():
                             display_name = bind_vg_data.get("displayName") or "(No Name)"
@@ -215,6 +211,6 @@ class ViewBindsCommand(Bloxlink.Module):
 
 
         embed.set_author(name="Powered by Bloxlink", icon_url=Bloxlink.user.avatar.url)
-        embed.set_footer(text=f"Use {prefix}bind to make a new bind, or {prefix}unbind to delete a bind")
+        embed.set_footer(text="Use /bind to make a new bind, or /unbind to delete a bind")
 
         await CommandArgs.response.send(embed=embed)

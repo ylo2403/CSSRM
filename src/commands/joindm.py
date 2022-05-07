@@ -4,7 +4,7 @@ from resources.exceptions import Message # pylint: disable=import-error, no-name
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 @Bloxlink.command
@@ -34,18 +34,17 @@ class JoinDMCommand(Bloxlink.Module):
     async def verified(self, CommandArgs):
         """set the DM message of people who are VERIFIED on Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
-        verifiedDM = guild_data.get("verifiedDM", DEFAULTS.get("welcomeMessage"))
-
         author = CommandArgs.author
         guild = CommandArgs.guild
 
+        verified_DM = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")])
+
         response = CommandArgs.response
 
-        if verifiedDM:
+        if verified_DM:
             response.delete(await response.send("When people join your server and are **VERIFIED** on Bloxlink, they will "
                                                f"receive this DM:"))
-            response.delete(await response.send(f"```{verifiedDM}```"))
+            response.delete(await response.send(f"```{verified_DM}```"))
 
         parsed_args_1 = (await CommandArgs.prompt([{
             "prompt": "Would you like to **change** the DM people get when they join and are verified, or "
@@ -63,18 +62,12 @@ class JoinDMCommand(Bloxlink.Module):
                 "formatting": False
             }], last=True))["text"]
 
-            guild_data["verifiedDM"] = parsed_args_2
-            await set_guild_value(guild, "verifiedDM", parsed_args_2)
-
-            await self.r.table("guilds").insert(guild_data, conflict="update").run()
+            await set_guild_value(guild, verifiedDM=parsed_args_2)
 
         elif parsed_args_1 == "disable":
-            guild_data["verifiedDM"] = None
-            await set_guild_value(guild, "verifiedDM", None)
+            await set_guild_value(guild, verifiedDM=None)
 
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")
 
@@ -84,15 +77,15 @@ class JoinDMCommand(Bloxlink.Module):
 
         author = CommandArgs.author
         guild = CommandArgs.guild
-        guild_data = CommandArgs.guild_data
-        unverifiedDM = guild_data.get("unverifiedDM")
+
+        unverified_DM = await get_guild_value(guild, ["unverifiedDM", DEFAULTS.get("unverifiedDM")])
 
         response = CommandArgs.response
 
-        if unverifiedDM:
+        if unverified_DM:
             response.delete(await response.send("When people join your server and are **UNVERIFIED** on Bloxlink, they will "
                                                f"receive this DM:"))
-            response.delete(await response.send(f"```{unverifiedDM}```"))
+            response.delete(await response.send(f"```{unverified_DM}```"))
 
 
         parsed_args_1 = (await CommandArgs.prompt([{
@@ -111,17 +104,11 @@ class JoinDMCommand(Bloxlink.Module):
                 "formatting": False
             }], last=True))["text"]
 
-            guild_data["unverifiedDM"] = parsed_args_2
-            await set_guild_value(guild, "unverifiedDM", parsed_args_2)
-
-            await self.r.table("guilds").insert(guild_data, conflict="update").run()
+            await set_guild_value(guild, unverifiedDM=parsed_args_2)
 
         elif parsed_args_1 == "disable":
-            guild_data["unverifiedDM"] = None
-            await set_guild_value(guild, "unverifiedDM", None)
+            await set_guild_value(guild, unverifiedDM=None)
 
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
-
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `unverified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **changed** the `joinDM` option for `unverified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully **{parsed_args_1}d** your DM message.", type="success")

@@ -2,20 +2,21 @@ from ...structures.Bloxlink import Bloxlink # pylint: disable=no-name-in-module,
 import discord
 
 
+get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+
+
+
 @Bloxlink.module
 class Binds(Bloxlink.Module):
     def __init__(self):
         pass
 
     async def get_linked_group_ids(self, guild):
-        guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {}
+        db_data = await get_guild_value(guild, "roleBinds", "groupIDs") or {}
 
-        role_binds = guild_data.get("roleBinds") or {}
-        group_ids  = guild_data.get("groupIDs") or {}
+        role_binds = db_data.get("roleBinds") or {}
+        group_ids  = db_data.get("groupIDs") or {}
 
 
         return set(group_ids.keys()).union(set(role_binds.get("groups", {}).keys()))
 
-
-    async def update_user(self, user, guild):
-        pass

@@ -1,13 +1,13 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import RobloxNotFound, Error, RobloxAPIError, Message # pylint: disable=import-error, no-name-in-module
 from resources.constants import LIMITS # pylint: disable=import-error, no-name-in-module
-from discord import Embed, Object
+from discord import Embed
 import re
 
 
 get_group, get_user = Bloxlink.get_module("roblox", attrs=["get_group", "get_user"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
-get_features = Bloxlink.get_module("premium", attrs=["get_features"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 RESTRICTION_NAME_DB_USER_MAP = {
@@ -70,8 +70,7 @@ class RestrictCommand(Bloxlink.Module):
         focused_option = focused_option.lower()
 
         guild = interaction.guild
-        guild_data = await self.r.table("guilds").get(str(guild.id)).run() or {}
-        restrictions = guild_data.get("restrictions") or {}
+        restrictions = await get_guild_value(guild, "restrictions")
         parsed_restrictions = []
 
         for restriction_name, title_name in RESTRICTION_NAME_DB_USER_MAP.items():
@@ -135,27 +134,25 @@ class RestrictCommand(Bloxlink.Module):
     async def add(self, CommandArgs):
         """restrict certain people or groups from verifying in your server"""
 
-        guild_data   = CommandArgs.guild_data
         parsed_args  = CommandArgs.parsed_args
         response     = CommandArgs.response
         author       = CommandArgs.author
         guild        = CommandArgs.guild
-        prefix       = CommandArgs.prefix
 
         reason       = parsed_args["reason"]
 
         got_entry = False
 
-        restrictions = guild_data.get("restrictions", {})
+        restrictions = await get_guild_value(guild, "restrictions") or {}
         len_restrictions = len(restrictions.get("users", [])) + len(restrictions.get("robloxAccounts", [])) + len(restrictions.get("groups", []))
 
         if len_restrictions >= LIMITS["RESTRICTIONS"]["FREE"]:
-            profile, _ = await get_features(Object(id=guild.owner_id), guild=guild)
+            profile = await has_premium(guild=guild)
 
-            if not profile.features.get("premium"):
+            if "premium" not in profile.features:
                 raise Error(f"You have the max restrictions `({LIMITS['RESTRICTIONS']['FREE']})` allowed for free servers! You may "
                             f"unlock **additional restrictions** `({LIMITS['RESTRICTIONS']['PREMIUM']})` by subscribing to premium. Find out "
-                            f"more info with `{prefix}donate`.\nFor now, you may remove restrictions with `{prefix}restrict remove` "
+                            "more info with `/donate`.\nFor now, you may remove restrictions with `/restrict remove` "
                             "to add additional restrictions.")
             else:
                 if len_restrictions >= LIMITS["RESTRICTIONS"]["PREMIUM"]:
@@ -198,10 +195,7 @@ class RestrictCommand(Bloxlink.Module):
             raise Message("You need to supply at least one argument!", type="silly")
 
 
-        guild_data["restrictions"] = restrictions
-        await set_guild_value(guild, "restrictions", restrictions)
-
-        await self.r.table("guilds").insert(guild_data, conflict="update").run()
+        await set_guild_value(guild, restrictions=restrictions)
 
         await response.success(f"Successfully **updated** your restrictions!")
 
@@ -212,8 +206,7 @@ class RestrictCommand(Bloxlink.Module):
         response = CommandArgs.response
         guild    = CommandArgs.guild
 
-        guild_data = CommandArgs.guild_data
-        restrictions = guild_data.get("restrictions", {})
+        restrictions = await get_guild_value(guild, "restrictions") or {}
 
         if not restrictions:
             return await response.silly("You have no restrictions!")
@@ -240,8 +233,7 @@ class RestrictCommand(Bloxlink.Module):
         guild    = CommandArgs.guild
         response = CommandArgs.response
 
-        guild_data = CommandArgs.guild_data
-        restrictions = guild_data.get("restrictions") or {}
+        restrictions = await get_guild_value(guild, "restrictions") or {}
 
         remove_data = CommandArgs.parsed_args["restriction_data"]
         remove_data_match = self._remove_data_regex.search(remove_data)
@@ -258,10 +250,10 @@ class RestrictCommand(Bloxlink.Module):
                 if not restrictions[directory_name]:
                     restrictions.pop(directory_name, None)
 
-                guild_data["restrictions"] = restrictions
-                await set_guild_value(guild, "restrictions", restrictions)
+                if not restrictions:
+                    restrictions = None
 
-                await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+                await set_guild_value(guild, restrictions=restrictions)
 
                 await response.success(f"Successfully **removed** this **{directory_name[:-1]}** from your restrictions.")
 

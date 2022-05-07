@@ -1,7 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES, TRELLO # pylint: disable=import-error, no-name-in-module
+from resources.constants import ARROW, BROWN_COLOR, NICKNAME_TEMPLATES # pylint: disable=import-error, no-name-in-module
 from resources.exceptions import Error, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module
-from aiotrello.exceptions import TrelloNotFound, TrelloUnauthorized, TrelloBadRequest
 import discord
 import re
 
@@ -9,9 +8,8 @@ NICKNAME_DEFAULT = "{smart-name}"
 VERIFIED_DEFAULT = "Verified"
 
 get_group = Bloxlink.get_module("roblox", attrs=["get_group"])
-trello, get_options = Bloxlink.get_module("trello", attrs=["trello", "get_options"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-clear_guild_data = Bloxlink.get_module("cache", attrs=["clear_guild_data"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 
@@ -25,6 +23,7 @@ class SetupCommand(Bloxlink.Module):
         self.category = "Administration"
         self.aliases = ["set-up"]
         self.slash_enabled = True
+        self.slash_defer = True
 
     @staticmethod
     async def validate_group(message, content, prompt, guild):
@@ -45,41 +44,16 @@ class SetupCommand(Bloxlink.Module):
 
         return group
 
-    @staticmethod
-    async def validate_trello_board(message, content, prompt, guild):
-        content_lower = content.lower()
-
-        if content_lower in ("skip", "next"):
-            return "skip"
-        elif content_lower == "disable":
-            return "disable"
-
-        try:
-            board = await trello.get_board(content, card_limit=TRELLO["CARD_LIMIT"], list_limit=TRELLO["LIST_LIMIT"])
-        except (TrelloNotFound, TrelloBadRequest):
-            return None, "No Trello board was found with this ID. Please try again."
-        except TrelloUnauthorized:
-            return None, "I don't have permission to view this Trello board; please make sure " \
-                         "this Trello board is set to **PUBLIC**, or add `@bloxlink` to your Trello board."
-
-        return board
-
     async def __main__(self, CommandArgs):
         guild = CommandArgs.guild
         author = CommandArgs.author
         response = CommandArgs.response
-        prefix = CommandArgs.prefix
 
-        guild_data = CommandArgs.guild_data
-        group_ids = guild_data.get("groupIDs", {})
+        group_ids = await get_guild_value(guild, "groupIDs") or {}
 
         settings_buffer = []
-
+        insertion = {}
         parsed_args_1 = {}
-        parsed_args_2 = {}
-        parsed_args_3 = {}
-        parsed_args_4 = {}
-
         nickname = None
 
         response.delete(await response.info("See this video for a set-up walkthrough: <https://blox.link/tutorial/setup/>", dm=False, no_dm_post=True))
@@ -162,29 +136,6 @@ class SetupCommand(Bloxlink.Module):
 
             settings_buffer.append(f"**merge_replace** {ARROW} {merge_replace}")
 
-        if CommandArgs.trello_board:
-            parsed_args_3 = (await CommandArgs.prompt([
-                {
-                    "prompt": "We've detected that you have a **Trello board** linked to this server!\n"
-                              "Trello functionality on Bloxlink is **deprecated** and **will be removed** "
-                              "in a future update in favor of our upcoming **Server Dashboard**.\n\n"
-                              "You may unlink Trello from your server by saying `disable`.\nIf you're "
-                              "not ready to unlink Trello yet, say `skip`.",
-                    "name": "trello_choice",
-                    "type": "choice",
-                    "components": [discord.ui.Select(max_values=1, options=[
-                            discord.SelectOption(label="Disable", description="Your Trello board will be unlinked."),
-                            discord.SelectOption(label="Skip")
-                        ])],
-                    "choices": ["disable", "skip"],
-                    "embed_title": "Trello Deprecation"
-
-                }
-            ], dm=False, no_dm_post=True))["trello_choice"]
-
-            if parsed_args_3[0] == "disable":
-                guild_data.pop("trelloID")
-
 
         parsed_args_4 = await CommandArgs.prompt([
             {
@@ -208,7 +159,7 @@ class SetupCommand(Bloxlink.Module):
                         try:
                             if not (role in guild.me.roles or role.is_default()):
                                 try:
-                                    await role.delete(reason=f"{author} chose to replace roles through {prefix}setup")
+                                    await role.delete(reason=f"{author} chose to replace roles through /setup")
                                 except discord.errors.Forbidden:
                                     pass
                                 except discord.errors.HTTPException:
@@ -226,22 +177,20 @@ class SetupCommand(Bloxlink.Module):
 
         if verified:
             if verified_lower == "disable":
-                guild_data["verifiedRoleEnabled"] = False
+                insertion["verifiedRoleEnabled"] = False
             elif verified_lower not in ("next", "skip"):
-                guild_data["verifiedRoleName"] = verified
-                guild_data["verifiedRoleEnabled"] = True
+                insertion["verifiedRoleName"] = verified
+                insertion["verifiedRoleEnabled"] = True
 
         if group_ids:
-            guild_data["groupIDs"] = group_ids
+            insertion["groupIDs"] = group_ids
 
-        if nickname not in ("skip", "next"):
-            guild_data["nicknameTemplate"] = nickname
+        if nickname != "skip":
+            insertion["nicknameTemplate"] = nickname
 
 
-        await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+        await set_guild_value(guild, **insertion)
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has **set-up** the server.", BROWN_COLOR)
-
-        await clear_guild_data(guild)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has **set-up** the server.", BROWN_COLOR)
 
         await response.success("Your server is now **configured** with Bloxlink!", dm=False, no_dm_post=True)

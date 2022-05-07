@@ -2,13 +2,11 @@ from os import getpid
 import json
 import uuid
 import asyncio
-from discord import Status, Game, Streaming, VerificationLevel
-from discord.errors import NotFound, Forbidden
+import discord
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, IS_DOCKER, PLAYING_STATUS, RELEASE, GREEN_COLOR, PROMPT, DEFAULTS # pylint: disable=import-error, no-name-in-module
+from ..constants import CLUSTER_ID, SHARD_RANGE, STARTED, RELEASE, GREEN_COLOR, PROMPT, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
 from ..exceptions import (BloxlinkBypass, Blacklisted, Blacklisted, PermissionError, # pylint: disable=import-error, no-name-in-module
-                         RobloxAPIError, CancelCommand, RobloxDown) # pylint: disable=import-error, no-name-in-module
-from config import PREFIX # pylint: disable=import-error, no-name-in-module, no-name-in-module
+                         RobloxAPIError, CancelCommand, RobloxDown, Error, UserNotVerified) # pylint: disable=import-error, no-name-in-module
 from time import time
 from math import floor
 from psutil import Process
@@ -18,6 +16,7 @@ eval = Bloxlink.get_module("evalm", attrs="__call__")
 post_event, suppress_timeout_errors = Bloxlink.get_module("utils", attrs=["post_event", "suppress_timeout_errors"])
 guild_obligations, get_user, get_nickname, format_update_embed = Bloxlink.get_module("roblox", attrs=["guild_obligations", "get_user", "get_nickname", "format_update_embed"])
 get_guild_value = Bloxlink.get_module("cache", attrs="get_guild_value")
+
 
 
 @Bloxlink.module
@@ -48,7 +47,7 @@ class IPC(Bloxlink.Module):
             else:
                 self.clusters.add(original_cluster)
 
-                data = json.dumps({
+                response_data = json.dumps({
                     "nonce": None,
                     "cluster_id": CLUSTER_ID,
                     "data": list(self.clusters),
@@ -57,142 +56,169 @@ class IPC(Bloxlink.Module):
                     "waiting_for": waiting_for
                 })
 
-                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
-        elif type == "VERIFICATION":
-            discord_id = int(data["discordID"])
-            guild_id = int(data["guildID"])
-            roblox_id = data["robloxID"]
-            #roblox_accounts = data["robloxAccounts"]
+        elif type == "ACTION_REQUEST":
+            action = data.get("action")
+            action_type = data.get("type")
+            guild_id = int(data.get("guildID"))
 
             guild = Bloxlink.get_guild(guild_id)
 
             if guild:
-                member = guild.get_member(discord_id)
+                response_data = {
+                    "nonce": nonce,
+                }
 
-                if not member:
-                    try:
-                        member = await guild.fetch_member(discord_id)
-                    except NotFound:
-                        return
+                if action == "request":
+                    if action_type == "channels":
+                        response_data["type"] = "channels"
+                        response_data["result"] = [
+                            {
+                                "id": str(c.id),
+                                "name": c.name,
+                                "position": c.position,
+                                "type": c.type,
 
-                if member.pending:
-                    try:
-                        await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please go into the server and complete the screening before you're allowed in.")
-                    except Forbidden:
-                        pass
+                            } for c in guild.channels
+                        ]
 
-                    return
+                        response_data["success"] = True
+                    elif action_type == "roles":
+                        response_data["type"] = "roles"
+                        response_data["result"] = [
+                            {
+                                "id": str(r.id),
+                                "name": r.name,
+                                "position": r.position,
+                                "hoist": r.hoist,
+                                "managed": r.managed,
+                                "permissions": r.permissions.value
 
-                if guild.verification_level == VerificationLevel.highest:
-                    try:
-                        await member.send(f"This server ({guild.name}) requires that you **verify your phone number.** Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
-                    except Forbidden:
-                        pass
+                            } for r in guild.roles
+                        ]
 
-                    return
-
-                try:
-                    roblox_user = (await get_user(roblox_id=roblox_id))[0]
-                except RobloxDown:
-                    try:
-                        await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
-                    except Forbidden:
-                        pass
-
-                    return
-
-                except RobloxAPIError as e:
-                    print(e, flush=True)
-
-                    try:
-                        await member.send("An unknown Roblox API error occured. Please try again later.")
-                    except Forbidden:
-                        pass
-
-                    return
-
-                try:
-                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
-                        member,
-                        guild                = guild,
-                        join                 = True,
-                        roles                = True,
-                        nickname             = True,
-                        roblox_user          = roblox_user,
-                        cache                = False,
-                        dm                   = False,
-                        exceptions           = ("Blacklisted", "BloxlinkBypass", "RobloxAPIError", "RobloxDown", "PermissionError"))
-
-                except Blacklisted as b:
-                    blacklist_text = ""
-
-                    if isinstance(b.message, str):
-                        blacklist_text = f"You have an active restriction for: `{b}`"
+                        response_data["success"] = True
                     else:
-                        blacklist_text = f"You have an active restriction from Bloxlink."
+                        response_data["success"] = False
+                        response_data["error"] = "Invalid action type"
 
-                    try:
-                        await member.send(f"Failed to update you in the server: `{blacklist_text}`")
-                    except Forbidden:
-                        pass
+                elif action == "create":
+                    error = None
 
-                except BloxlinkBypass:
-                    try:
-                        await member.send(f"You have the `Bloxlink Bypass` role, so I am unable to update you in the server.")
-                    except Forbidden:
-                        pass
+                    if action_type == "roles":
+                        role_name = data["name"]
+                        role = discord.utils.find(lambda r: r.name == role_name, guild.roles)
 
-                except RobloxAPIError:
-                    try:
-                        await member.send("An unknown Roblox API error occured, so I was unable to update you in the server. Please try again later.")
-                    except Forbidden:
-                        pass
+                        if not role:
+                            try:
+                                role = await guild.create_role(name=role_name)
+                            except discord.errors.Forbidden:
+                                error = "Insufficient permissions"
+                            except discord.errors.HTTPException as e:
+                                error = f"HTTP Exception -- {e}"
 
-                except RobloxDown:
-                    try:
-                        await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
-                    except Forbidden:
-                        pass
+                        if not error:
+                            response_data["result"] = {
+                                "id": str(role.id),
+                                "name": role.name,
+                            }
+                            response_data["success"] = True
+                        else:
+                            response_data["success"] = False
+                            response_data["error"] = error
 
-                except PermissionError as e:
-                    try:
-                        await member.send(f"A permission error occured, so I was unable to update you in the server: `{e}`")
-                    except Forbidden:
-                        pass
+                    elif action_type == "webhooks":
+                        channel_id = data["channelID"]
+                        webhook_name = data["name"]
+                        webhook_avatar = data["avatar"]
 
-                except CancelCommand:
-                    pass
+                        channel = guild.get_channel(int(channel_id))
+
+                        if channel:
+                            try:
+                                webhook = await channel.create_webhook(name=webhook_name)
+                            except discord.errors.Forbidden:
+                                response_data["error"] = "Insufficient permissions"
+                                response_data["success"] = False
+                            except discord.errors.HTTPException as e:
+                                response_data["error"] = f"HTTP Exception -- {e}"
+                                response_data["success"] = False
+                            else:
+                                response_data["result"] = {
+                                    "id": str(webhook.id),
+                                    "token": webhook.token,
+                                    "channelID": str(webhook.channel_id),
+                                }
+                                response_data["success"] = True
+                        else:
+                            response_data["error"] = "Channel not found"
+                            response_data["success"] = False
+
+                    else:
+                        response_data["success"] = False
+                        response_data["error"] = "Invald action type"
 
                 else:
-                    verified_dm, guild_data = await get_guild_value(guild, ["joinDM", ""], return_guild_data=True)
-                    server_message = ""
+                    response_data["success"] = False
+                    response_data["error"] = "Invald action type"
 
-                    _, card, embed = await format_update_embed(
-                        roblox_user,
-                        member,
-                        guild=guild,
-                        added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname,
-                        guild_data=guild_data,
-                        from_interaction=False
-                    )
 
-                    if verified_dm and verified_dm != DEFAULTS.get("welcomeMessage"):
-                        server_message = await get_nickname(member, verified_dm, guild_data=guild_data, roblox_user=roblox_user, dm=True, is_nickname=False)
-                        server_message = f"\n\nThis message was set by the Server Admins:\n{server_message}"[:1500]
+                await self.redis.publish(nonce, json.dumps(response_data))
+
+        elif type == "VERIFICATION":
+            if data.get("guildID"): # ignore verifications by v2
+                return
+
+            discord_id = int(data["discordID"])
+            guilds = data["guilds"]
+            roblox_id = data["robloxID"]
+
+            for guild_id in guilds:
+                guild = Bloxlink.get_guild(int(guild_id))
+
+                if guild:
+                    member = guild.get_member(discord_id)
+
+                    if not member:
+                        try:
+                            member = await guild.fetch_member(discord_id)
+                        except discord.errors.NotFound:
+                            return
+
+                    if member.pending or guild.verification_level == discord.VerificationLevel.highest:
+                        return
 
                     try:
-                        msg = await member.send(f"Your account was successfully updated to **{roblox_user.username}** in the server **{guild.name}.**"
-                                                f"{server_message}", files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed)
-                    except Forbidden:
-                        pass
-                    else:
-                        if card:
-                            card.response = member
-                            card.message = msg
-                            card.view.message = msg
+                        roblox_user = (await get_user(roblox_id=roblox_id))[0]
+                    except RobloxDown:
+                        return
 
-                    await post_event(guild, guild_data, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+                    except RobloxAPIError as e:
+                        print(e, flush=True)
+
+                        return
+
+                    try:
+                        added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+                            member,
+                            guild                = guild,
+                            join                 = True,
+                            roles                = True,
+                            nickname             = True,
+                            roblox_user          = roblox_user,
+                            cache                = False,
+                            dm                   = False,
+                            exceptions           = ("CancelCommand", "UserNotVerified", "Blacklisted", "BloxlinkBypass", "RobloxAPIError", "RobloxDown", "PermissionError"))
+
+                    except (CancelCommand, UserNotVerified, Blacklisted, BloxlinkBypass, RobloxAPIError, RobloxDown, PermissionError):
+                        pass
+
+                    else:
+                        try:
+                            await post_event(guild, "verification", f"{member.mention} has **verified** as `{roblox_user.username}`.", GREEN_COLOR)
+                        except Error:
+                            pass
 
 
         elif type == "EVAL":
@@ -231,7 +257,7 @@ class IPC(Bloxlink.Module):
                 except asyncio.TimeoutError:
                     message_ = "cancel (timeout)"
 
-                data = json.dumps({
+                response_data = json.dumps({
                     "nonce": nonce,
                     "cluster_id": CLUSTER_ID,
                     "data": getattr(message_, "content", message_),
@@ -240,7 +266,7 @@ class IPC(Bloxlink.Module):
                     "waiting_for": waiting_for
                 })
 
-                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
         elif type == "DM_AND_INTERACTION":
             if 0 in SHARD_RANGE:
@@ -266,7 +292,7 @@ class IPC(Bloxlink.Module):
                 except asyncio.TimeoutError:
                     message_content = {"type": "message", "content": "cancel (timeout)"}
 
-                data = json.dumps({
+                response_data = json.dumps({
                     "nonce": nonce,
                     "cluster_id": CLUSTER_ID,
                     "data": message_content,
@@ -275,7 +301,7 @@ class IPC(Bloxlink.Module):
                     "waiting_for": waiting_for
                 })
 
-                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+                await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
         elif type == "STATS":
             seconds = floor(time() - STARTED)
@@ -300,7 +326,7 @@ class IPC(Bloxlink.Module):
             process = Process(getpid())
             mem = floor(process.memory_info()[0] / float(2 ** 20))
 
-            data = json.dumps({
+            response_data = json.dumps({
                 "nonce": nonce,
                 "cluster_id": CLUSTER_ID,
                 "data": (len(self.client.guilds), mem, uptime),
@@ -309,10 +335,10 @@ class IPC(Bloxlink.Module):
                 "waiting_for": waiting_for
             })
 
-            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
         elif type == "USERS":
-            data = json.dumps({
+            response_data = json.dumps({
                 "nonce": nonce,
                 "cluster_id": CLUSTER_ID,
                 "data": (sum([g.member_count for g in self.client.guilds]), len(self.client.guilds)),
@@ -321,20 +347,21 @@ class IPC(Bloxlink.Module):
                 "waiting_for": waiting_for
             })
 
-            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
         elif type == "PLAYING_STATUS":
             presence_type = extras.get("presence_type", "normal")
-            playing_status = extras.get("status", PLAYING_STATUS).format(prefix=PREFIX)
+            playing_status = extras.get("status", PLAYING_STATUS)
 
             if presence_type == "normal":
-                await Bloxlink.change_presence(status=Status.online, activity=Game(playing_status))
+                await Bloxlink.change_presence(status=discord.Status.online, activity=discord.Game(playing_status))
+
             elif presence_type == "streaming":
                 stream_url = extras.get("stream_url", "https://twitch.tv/blox_link")
 
-                await Bloxlink.change_presence(activity=Streaming(name=playing_status, url=stream_url))
+                await Bloxlink.change_presence(activity=discord.Streaming(name=playing_status, url=stream_url))
 
-            data = json.dumps({
+            response_data = json.dumps({
                 "nonce": nonce,
                 "cluster_id": CLUSTER_ID,
                 "data": True,
@@ -343,30 +370,29 @@ class IPC(Bloxlink.Module):
                 "waiting_for": waiting_for
             })
 
-            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", data)
+            await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
 
     async def __setup__(self):
-        if IS_DOCKER:
-            pubsub = self.redis.pubsub()
-            await pubsub.subscribe(f"{RELEASE}:GLOBAL", f"{RELEASE}:CLUSTER_{CLUSTER_ID}", "VERIFICATION")
+        pubsub = self.redis.pubsub()
+        await pubsub.subscribe(f"{RELEASE}:GLOBAL", f"{RELEASE}:CLUSTER_{CLUSTER_ID}", "VERIFICATION", "ACTION_REQUEST")
 
-            data = json.dumps({
-                "nonce": None,
-                "cluster_id": CLUSTER_ID,
-                "data": CLUSTER_ID,
-                "type": "IDENTIFY",
-                "original_cluster": CLUSTER_ID,
-                "waiting_for": None
-            })
+        response_data = json.dumps({
+            "nonce": None,
+            "cluster_id": CLUSTER_ID,
+            "data": CLUSTER_ID,
+            "type": "IDENTIFY",
+            "original_cluster": CLUSTER_ID,
+            "waiting_for": None
+        })
 
-            await self.redis.publish(f"{RELEASE}:GLOBAL", data)
+        await self.redis.publish(f"{RELEASE}:GLOBAL", response_data)
 
-            while True:
-                message = await pubsub.get_message(ignore_subscribe_messages=True)
+        while True:
+            message = await pubsub.get_message(ignore_subscribe_messages=True)
 
-                if message:
-                    self.loop.create_task(self.handle_message(message))
+            if message:
+                self.loop.create_task(self.handle_message(message))
 
 
     async def broadcast(self, message, type, send_to=f"{RELEASE}:GLOBAL", waiting_for=None, timeout=10, response=True, **kwargs):
@@ -378,7 +404,7 @@ class IPC(Bloxlink.Module):
         future = self.loop.create_future()
         self.pending_tasks[nonce] = [future, {x:"cluster timeout" for x in self.clusters}, 0]
 
-        data = json.dumps({
+        response_data = json.dumps({
             "nonce": response and nonce,
             "data": message,
             "type": type,
@@ -389,7 +415,7 @@ class IPC(Bloxlink.Module):
         })
 
 
-        await self.redis.publish(send_to, data)
+        await self.redis.publish(send_to, response_data)
 
         if response:
             try:

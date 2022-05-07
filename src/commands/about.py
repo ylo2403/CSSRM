@@ -15,11 +15,10 @@ class AboutCommand(Bloxlink.Module):
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
         locale   = CommandArgs.locale
-        prefix   = CommandArgs.prefix
 
         embed = Embed(title=locale("commands.about.title"))
 
-        embed.add_field(name=locale("commands.about.embed.title"), value=f"**{locale('commands.about.embed.field_1.line_1', prefix=prefix)}**\n{locale('commands.about.embed.field_1.line_2')}"
+        embed.add_field(name=locale("commands.about.embed.title"), value=f"**{locale('commands.about.embed.field_1.line_1')}**\n{locale('commands.about.embed.field_1.line_2')}"
                                                                          f"\n\n{locale('commands.about.embed.field_1.line_3')}", inline=False)
 
 

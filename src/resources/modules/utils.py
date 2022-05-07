@@ -2,11 +2,11 @@ from os import listdir
 from re import compile
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from config import PREFIX # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from ..secrets import PROXY_URL # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..secrets import PROXY_URL, TOKEN # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..exceptions import Error
 from discord.errors import NotFound, Forbidden
-from discord import Embed
+import discord
 from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
 from requests.utils import requote_uri
 from async_timeout import timeout as a_timeout
@@ -14,14 +14,16 @@ import asyncio
 import aiohttp
 import json as json_
 
-is_patron = Bloxlink.get_module("patreon", attrs="is_patron")
-get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
+
+get_guild_value, set_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_guild_value"])
 
 @Bloxlink.module
 class Utils(Bloxlink.Module):
     def __init__(self):
         self.option_regex = compile("(.+):(.+)")
-        self.timeout = aiohttp.ClientTimeout(total=20)
+        self.timeout = None
+        self.session = None
+        self.loop = None
 
     @staticmethod
     def get_files(directory):
@@ -48,37 +50,75 @@ class Utils(Bloxlink.Module):
         except asyncio.TimeoutError:
             pass
 
-    async def post_event(self, guild, guild_data, event_name, text, color=None):
-        if guild_data:
-            log_channels = guild_data.get("logChannels")
-        else:
-            log_channels = await get_guild_value(guild, "logChannels")
-
-        log_channels = log_channels or {}
+    async def post_event(self, guild, event_name, text, color=None):
+        log_channels = await get_guild_value(guild, "logChannels") or {}
         log_channel  = log_channels.get(event_name) or log_channels.get("all")
 
+        webhook = None
+
         if log_channel:
-            text_channel = guild.get_channel(int(log_channel))
+            if isinstance(log_channel, str): # old data
+                text_channel = guild.get_channel(int(log_channel))
 
-            if text_channel:
-                embed = Embed(title=f"{event_name.title()} Event", description=text)
-                embed.colour = color
+                if text_channel:
+                    permissions = text_channel.permissions_for(guild.me)
 
-                try:
-                    await text_channel.send(embed=embed)
-                except (Forbidden, NotFound):
-                    pass
+                    if not permissions.manage_webhooks:
+                        raise Error("Events are enabled but I couldn't create the webhook! Please make sure I have the `Manage Webhooks` permission.")
 
-    async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20):
+                    webhook = discord.utils.find(lambda w: w.name == "Bloxlink Webhooks", await text_channel.webhooks())
+
+                    if not webhook:
+                        webhook = await text_channel.create_webhook(name="Bloxlink Webhooks", reason="Created webhook for event")
+
+                    log_channels[event_name] = {
+                        "channel": log_channel,
+                        "webhook": {
+                            "id": str(webhook.id),
+                            "token": webhook.token
+                        }
+                    }
+
+                    webhook = discord.Webhook.partial(id=int(webhook.id), token=webhook.token, bot_token=TOKEN, session=self.session) # so we can authenticate the webhook with a bot token
+
+                    await set_guild_value(guild, logChannels=log_channels)
+
+            else:
+                webhook = discord.Webhook.partial(id=log_channel["webhook"]["id"], token=log_channel["webhook"]["token"], bot_token=TOKEN, session=self.session)
+
+            if not webhook:
+                return
+
+            if not webhook.token:
+                return
+
+            embed = discord.Embed(title=f"{event_name.title()} Event", description=text)
+            embed.colour = color
+
+            try:
+                await webhook.send(embed=embed)
+            except (Forbidden, NotFound):
+                pass
+
+    async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20, proxy=True):
         params  = params or {}
         headers = headers or {}
         new_json = {}
         proxied = False
 
+        if not self.loop:
+            self.loop = asyncio.get_event_loop()
+
+        if not self.timeout:
+            self.timeout = aiohttp.ClientTimeout(total=20)
+
+        if not self.session:
+            self.session = aiohttp.ClientSession(timeout=self.timeout, loop=self.loop)
+
         if text or bytes:
             json = False
 
-        if PROXY_URL and "roblox.com" in url:
+        if proxy and PROXY_URL and "roblox.com" in url:
             old_url = url
             new_json["url"] = url
             new_json["data"] = body or {}
@@ -102,118 +142,146 @@ class Utils(Bloxlink.Module):
                 params[k] = "true" if v else "false"
 
         try:
-            async with a_timeout(timeout): # I noticed sometimes the aiohttp timeout parameter doesn't work. This is added as a backup.
-                async with self.session.request(method, url, json=new_json, params=params, headers=headers, timeout=timeout) as response:
-                    if proxied:
+            async with self.session.request(method, url, json=new_json, params=params, headers=headers, timeout=self.timeout) as response:
+                if proxied:
+                    try:
+                        response_json = await response.json()
+                    except aiohttp.client_exceptions.ContentTypeError:
+                        raise RobloxAPIError
+
+                    response_body = response_json["req"]["body"]
+                    response_status = response_json["req"]["status"]
+                    response.status = response_status
+
+                    if not isinstance(response_body, dict):
                         try:
-                            response_json = await response.json()
-                        except aiohttp.client_exceptions.ContentTypeError:
-                            raise RobloxAPIError
+                            response_body_json = json_.loads(response_body)
+                        except:
+                            pass
+                        else:
+                            response_body = response_body_json
+                else:
+                    response_status = response.status
+                    response_body = None
 
-                        response_body = response_json["req"]["body"]
-                        response_status = response_json["req"]["status"]
-                        response.status = response_status
-
-                        if not isinstance(response_body, dict):
-                            try:
-                                response_body_json = json_.loads(response_body)
-                            except:
-                                pass
-                            else:
-                                response_body = response_body_json
-                    else:
-                        response_status = response.status
-                        response_body = None
-
-                    if raise_on_failure:
-                        if response_status == 503:
-                            raise RobloxDown
-                        elif response_status == 404:
-                            raise RobloxNotFound
-                        elif response_status >= 400:
-                            if proxied:
-                                print(old_url, response_body, flush=True)
-                            else:
-                                print(old_url, await response.text(), flush=True)
-                            raise RobloxAPIError
-
-                        if json:
-                            if not proxied:
-                                try:
-                                    response_body = await response.json()
-                                except aiohttp.client_exceptions.ContentTypeError:
-                                    raise RobloxAPIError
-
-                            if isinstance(response_body, dict):
-                                return response_body, response
-                            else:
-                                return {}, response
-
-                    if text:
+                if raise_on_failure:
+                    if response_status == 503:
+                        raise RobloxDown
+                    elif response_status == 404:
+                        raise RobloxNotFound
+                    elif response_status >= 400:
                         if proxied:
-                            return str(response_body), response
-
-                        text = await response.text()
-
-                        return text, response
-
-                    elif json:
-                        if proxied:
-                            if not isinstance(response_body, dict):
-                                print("Roblox API Error: ", old_url, type(response_body), response_body, flush=True)
-
-                                if raise_on_failure:
-                                    raise RobloxAPIError
-
-                            return response_body, response
-
-                        try:
-                            json = await response.json()
-                        except aiohttp.client_exceptions.ContentTypeError:
+                            print(old_url, response_body, flush=True)
+                        else:
                             print(old_url, await response.text(), flush=True)
+                        raise RobloxAPIError
 
-                            raise RobloxAPIError
+                    if json:
+                        if not proxied:
+                            try:
+                                response_body = await response.json()
+                            except aiohttp.client_exceptions.ContentTypeError:
+                                raise RobloxAPIError
 
-                        return json, response
+                        if isinstance(response_body, dict):
+                            return response_body, response
+                        else:
+                            return {}, response
 
-                    elif bytes:
-                        return await response.read(), response
+                if text:
+                    if proxied:
+                        return str(response_body), response
 
-                    return response
+                    text = await response.text()
+
+                    return text, response
+
+                elif json:
+                    if proxied:
+                        if not isinstance(response_body, dict):
+                            print("Roblox API Error: ", old_url, type(response_body), response_body, flush=True)
+
+                            if raise_on_failure:
+                                raise RobloxAPIError
+
+                        return response_body, response
+
+                    try:
+                        json = await response.json()
+                    except aiohttp.client_exceptions.ContentTypeError:
+                        print(old_url, await response.text(), flush=True)
+
+                        raise RobloxAPIError
+
+                    return json, response
+
+                elif bytes:
+                    return await response.read(), response
+
+                return response
 
         except asyncio.TimeoutError:
             print(f"URL {old_url} timed out", flush=True)
             raise RobloxDown
 
+    # async def fetch(self, url, method="GET", params=None, headers=None, json=None, body=None, text=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20):
+    #     params  = params or {}
+    #     headers = headers or {}
 
-    async def get_prefix(self, guild=None, trello_board=None):
-        if RELEASE == "PRO" and guild:
-            prefix = await get_guild_value(guild, "proPrefix")
+    #     url = requote_uri(url)
 
-            if prefix:
-                return prefix, None
+    #     if RELEASE == "LOCAL":
+    #         Bloxlink.log(f"Making HTTP request: {url}")
 
-        if trello_board:
-            try:
-                List = await trello_board.get_list(lambda L: L.name == "Bloxlink Settings")
+    #     for k, v in params.items():
+    #         if isinstance(v, bool):
+    #             params[k] = "true" if v else "false"
 
-                if List:
-                    card = await List.get_card(lambda c: c.name[:6] == "prefix")
+    #     if bytes or json:
+    #         text = False
 
-                    if card:
-                        if card.name == "prefix":
-                            if card.desc:
-                                return card.desc.strip(), card
+    #     # if "roblox.com" in url:
+    #     proxy = "aaa"
+    #     # else:
+    #     #     proxy = None
 
-                        else:
-                            match = self.option_regex.search(card.name)
+    #     try:
+    #         async with a_timeout(timeout): # I noticed sometimes the aiohttp timeout parameter doesn't work. This is added as a backup.
+    #             async with self.session.request(method, url, json=body, params=params, headers=headers, timeout=timeout, proxy=proxy) as response:
+    #                 if response.status == 503:
+    #                     raise RobloxDown
 
-                            if match:
-                                return match.group(2), card
+    #                 if raise_on_failure:
+    #                     if response.status >= 500:
+    #                         if retry != 0:
+    #                             retry -= 1
+    #                             await asyncio.sleep(1.0)
 
-            except asyncio.TimeoutError:
-                pass
+    #                             return await self.fetch(url, raise_on_failure=raise_on_failure, bytes=bytes, json=json, text=text, params=params, headers=headers, retry=retry, timeout=timeout)
 
-        prefix = guild and await get_guild_value(guild, ["prefix", PREFIX])
+    #                         raise RobloxAPIError
 
-        return prefix or PREFIX, None
+    #                     elif response.status == 400:
+    #                         raise RobloxAPIError
+    #                     elif response.status == 404:
+    #                         raise RobloxNotFound
+
+    #                 if bytes:
+    #                     return await response.read(), response
+    #                 elif text:
+    #                     return await response.text(), response
+    #                 elif json:
+    #                     return await response.json(), response
+
+    #     except ServerDisconnectedError:
+    #         if retry != 0:
+    #             return await self.fetch(url, retry=retry-1, raise_on_failure=raise_on_failure, bytes=bytes, json=json, text=text, params=params, headers=headers, timeout=timeout)
+    #         else:
+    #             raise ServerDisconnectedError
+
+    #     except ClientOSError:
+    #         # TODO: raise HttpError with non-roblox URLs
+    #         raise RobloxAPIError
+
+    #     except asyncio.TimeoutError:
+    #         raise RobloxDown

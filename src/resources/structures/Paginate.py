@@ -137,7 +137,7 @@ class InteractionPaginator(discord.ui.View):
 
             if not self.current_items:
                 self.embed.description = "_No items to show._"
-                self.embed.set_image(url=discord.Embed.Empty)
+                self.embed.set_image(url=None)
             else:
                 item = self.current_items[0]
 

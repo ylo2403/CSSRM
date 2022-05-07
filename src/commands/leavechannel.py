@@ -5,7 +5,7 @@ import discord
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
-set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
+set_guild_value, get_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value", "get_guild_value"])
 
 
 @Bloxlink.command
@@ -40,12 +40,11 @@ class LeaveChannelCommand(Bloxlink.Module):
     async def verified(self, CommandArgs):
         """set the leave message of people who are VERIFIED on Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
-        leave_channel = guild_data.get("leaveChannel") or {}
-        verified_message = leave_channel.get("verified")
-
         author = CommandArgs.author
         guild = CommandArgs.guild
+
+        leave_channel = await get_guild_value(guild, "leaveChannel") or {}
+        verified_message = leave_channel.get("verified")
 
         response = CommandArgs.response
 
@@ -112,23 +111,17 @@ class LeaveChannelCommand(Bloxlink.Module):
                         includes["robloxUsername"] = True
 
             leave_channel["verified"] = {"channel": str(channel.id), "message": text, "includes": includes}
-            guild_data["leaveChannel"] = leave_channel
 
-            await set_guild_value(guild, "leaveChannel", leave_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, leaveChannel=leave_channel)
 
         elif parsed_args_1 == "Disable":
             leave_channel.pop("verified", None)
-            guild_data["leaveChannel"] = leave_channel
 
-            await set_guild_value(guild, "leaveChannel", leave_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, leaveChannel=leave_channel)
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully {change_text} your leave message.", type="success")
 
@@ -136,12 +129,11 @@ class LeaveChannelCommand(Bloxlink.Module):
     async def unverified(self, CommandArgs):
         """set the leave message of people who are UNVERIFIED on Bloxlink"""
 
-        guild_data = CommandArgs.guild_data
-        leave_channel = guild_data.get("leaveChannel") or {}
-        unverified_message = leave_channel.get("unverified")
-
         author = CommandArgs.author
         guild = CommandArgs.guild
+
+        leave_channel = await get_guild_value(guild, "leaveChannel") or {}
+        unverified_message = leave_channel.get("unverified")
 
         response = CommandArgs.response
 
@@ -212,22 +204,16 @@ class LeaveChannelCommand(Bloxlink.Module):
                 includes["ping"] = True
 
             leave_channel["unverified"] = {"channel": str(channel.id), "message": text, "includes": includes, "embed": embed_format}
-            guild_data["leaveChannel"] = leave_channel
 
-            await set_guild_value(guild, "leaveChannel", leave_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, leaveChannel=leave_channel)
 
         else:
             leave_channel.pop("unverified", None)
-            guild_data["leaveChannel"] = leave_channel
 
-            await set_guild_value(guild, "leaveChannel", leave_channel)
-
-            await self.r.table("guilds").insert(guild_data, conflict="replace").run()
+            await set_guild_value(guild, leaveChannel=leave_channel)
 
         change_text = f"**{'changed' if parsed_args_1 == 'Change message' else 'disabled'}**"
 
-        await post_event(guild, guild_data, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
+        await post_event(guild, "configuration", f"{author.mention} ({author.id}) has {change_text} the `leaveChannel` option for `verified` members.", BROWN_COLOR)
 
         raise Message(f"Successfully {change_text} your leave message.", type="success")

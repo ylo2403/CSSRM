@@ -13,7 +13,7 @@ ALL_USER_API_SCOPES = ["groups", "badges", "avatar"]
 
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
-cache_set, cache_get = Bloxlink.get_module("cache", attrs=["set", "get"])
+cache_set, cache_get, get_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "get_user_value"])
 get_linked_group_ids = Bloxlink.get_module("robloxnew.binds", attrs=["get_linked_group_ids"], name_override="binds")
 
 
@@ -270,12 +270,11 @@ class Users(Bloxlink.Module):
         return roblox_user, roblox_accounts
 
     async def get_user_chosen_account(self, user, guild):
-        user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {"id": str(user.id)}
+        options = await get_user_value(user, "robloxAccounts", "robloxID") or {}
 
-        roblox_accounts = user_data.get("robloxAccounts", {})
-        accounts = roblox_accounts.get("accounts", [])
-        guilds = roblox_accounts.get("guilds", {})
-        primary_account = user_data.get("robloxID")
+        accounts = options.get("robloxAccounts", {}).get("accounts", [])
+        guilds = options.get("robloxAccounts", {}).get("guilds", {})
+        primary_account = options.get("robloxID")
 
         roblox_account = guild and guilds.get(str(guild.id)) or primary_account
 
@@ -324,9 +323,7 @@ class Users(Bloxlink.Module):
         return roblox_id, correct_username
 
     async def get_accounts(self, user, parse_accounts=False):
-        user_data = await self.r.db("bloxlink").table("users").get(str(user.id)).run() or {}
-
-        ids = user_data.get("robloxAccounts", {}).get("accounts", [])
+        ids = (await get_user_value(user, ["robloxAccounts", {}])).get("accounts", [])
 
         accounts = {}
         tasks = []

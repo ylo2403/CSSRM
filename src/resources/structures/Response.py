@@ -2,12 +2,12 @@ from discord.errors import Forbidden, HTTPException, DiscordException, NotFound
 from discord import Object, Webhook, AllowedMentions, User, Member, TextChannel, DMChannel, MessageReference, ui, Embed
 from discord.webhook import WebhookMessage
 from ..exceptions import PermissionError, Message # pylint: disable=no-name-in-module, import-error
-from ..structures import Bloxlink, Paginate # pylint: disable=no-name-in-module, import-error
+from ..structures import Bloxlink, Paginate, Args # pylint: disable=no-name-in-module, import-error
 from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
 
-loop = asyncio.get_event_loop()
+
 
 get_features = Bloxlink.get_module("premium", attrs=["get_features"])
 cache_set, cache_get, cache_pop = Bloxlink.get_module("cache", attrs=["set", "get", "pop"])
@@ -47,6 +47,8 @@ class ResponseLoading:
         self.from_reaction_fail_msg = None
 
         self.backup_text = backup_text
+
+        self._loop = asyncio.get_event_loop()
 
     @staticmethod
     def _check_reaction(message):
@@ -96,14 +98,14 @@ class ResponseLoading:
 
     def __enter__(self):
         if not self.response.interaction:
-            loop.create_task(self._send_loading())
+            self._loop.create_task(self._send_loading())
         return self
 
     def __exit__(self, tb_type, tb_value, traceback):
         if (tb_type is None) or (tb_type == Message):
-            loop.create_task(self._remove_loading(error=False))
+            self._loop.create_task(self._remove_loading(error=False))
         else:
-            loop.create_task(self._remove_loading(error=True))
+            self._loop.create_task(self._remove_loading(error=True))
 
     async def __aenter__(self):
         if not self.response.interaction:
@@ -136,6 +138,30 @@ class Response(Bloxlink.Module):
         self.interaction = interaction
         self.first_slash_command = None
         self.forwarded = forwarded
+
+        self.send_modal = interaction.response.send_modal if interaction else None
+
+    @staticmethod
+    def from_interaction(interaction, resolved=None, command=None, locale=None, forwarded=False):
+        guild = interaction.guild
+        channel = interaction.channel
+        user = interaction.user
+
+        command_args = Args(
+            command_name = command.name if command else None,
+            message = None,
+            flags = {},
+            has_permission = False,
+            command = command,
+            guild = guild,
+            channel = channel,
+            author = user,
+            interaction = interaction,
+            slash_command = True,
+            resolved = resolved
+        )
+
+        return Response(command_args, user, channel, guild, locale, interaction=interaction, forwarded=forwarded)
 
     def loading(self, text="Please wait until the operation completes."):
         return ResponseLoading(self, text)
@@ -194,6 +220,9 @@ class Response(Bloxlink.Module):
             reply = False
             reference = None
             mention_author = False
+
+        if channel_override:
+            send_as_slash_command = False
 
         if reply and not self.interaction:
             if reference:
