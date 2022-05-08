@@ -1,6 +1,6 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
-from discord import User, Message
+from discord import User, Message, PartialMessageable
 from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
 
 
@@ -17,7 +17,10 @@ async def on_interaction(interaction):
     channel = interaction.channel
     user    = interaction.user
 
-    if data.get("target_id"): # context menu command
+    if isinstance(channel, PartialMessageable):
+        return
+
+    if data["type"] == 2: # context menu command
         resolved = None
 
         if data.get("resolved"):
@@ -32,7 +35,7 @@ async def on_interaction(interaction):
         except CancelCommand:
             pass
 
-    else: # slash command
+    elif data["type"] == 1: # slash command
         if not command_name:
             return
 

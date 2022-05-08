@@ -37,7 +37,7 @@ class DonateCommand(Bloxlink.Module):
         #embed.add_field(name="User Premium", value="Lessens restrictions, no cooldowns on commands, unlocks a special background for your /getinfo profile. This does NOT grant you Server Premium.", inline=False)
 
         view = discord.ui.View()
-        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click for Server Premium", url=f"https://blox.link/dashboard/guilds/{guild.id}/premium"))
+        view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click for Server Premium", url=f"https://blox.link/dashboard/guilds/{guild.id}/premium" if guild else "https://blox.link/"))
         #view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Click for User Premium", url="https://www.patreon.com/join/bloxlink?"))
 
         await response.send(embed=embed, view=view)

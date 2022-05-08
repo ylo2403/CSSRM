@@ -98,8 +98,10 @@ class RobloxUser:
             avatar = user_json_data.get("avatar")
 
             if avatar:
-                self.headshot = avatar["headshotThumbnail"]
-                self.avatar = avatar["bustThumbnail"]
+                avatar_url, avatar_response = await fetch(avatar["bustThumbnail"])
+
+                if avatar_response.status == 200:
+                    self.avatar = avatar_url.get("data", [{}])[0].get("imageUrl")
 
     async def get_group_ranks(self, guild):
         group_ranks = {}
