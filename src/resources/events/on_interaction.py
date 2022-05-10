@@ -20,7 +20,10 @@ async def on_interaction(interaction):
     if isinstance(channel, PartialMessageable):
         return
 
-    if data["type"] == 2: # context menu command
+    if not data.get("type"):
+        return
+
+    if data["type"] in (2, 3): # context menu command
         resolved = None
 
         if data.get("resolved"):
