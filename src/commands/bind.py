@@ -185,7 +185,7 @@ class BindCommand(Bloxlink.Module):
 
                     if not discord_role:
                         try:
-                            discord_role = await guild.create_role(name=roleset_data[0])
+                            discord_role = await guild.create_role(name=roleset_data[0], reason="Creating group role from /bind")
                         except discord.errors.Forbidden:
                             raise PermissionError("I was unable to create the Discord role. Please ensure my role has the `Manage Roles` permission.")
 

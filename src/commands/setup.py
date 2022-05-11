@@ -171,7 +171,7 @@ class SetupCommand(Bloxlink.Module):
                 for _, roleset_data in group.rolesets.items():
                     if not discord.utils.find(lambda r: r.name == roleset_data[0], guild.roles):
                         try:
-                            await guild.create_role(name=roleset_data[0])
+                            await guild.create_role(name=roleset_data[0], reason="Creating role from /setup")
                         except discord.errors.Forbidden:
                             raise Error("Please ensure I have the `Manage Roles` permission; setup aborted.")
 
