@@ -97,9 +97,13 @@ class VerifyM(Bloxlink.Module):
 
     @staticmethod
     async def get_verify_link(guild):
-        is_premium = "premium" in (await has_premium(guild=guild)).features if guild else False
+        if guild:
+            premium = await has_premium(guild=guild)
 
-        return VERIFY_URL_GUILD.format(guild=guild.id) if is_premium else VERIFY_URL
+            if "premium" in premium.features and not premium.old_premium:
+                return VERIFY_URL_GUILD.format(guild=guild.id)
+
+        return VERIFY_URL
 
 
     async def update_user(self, user, guild):

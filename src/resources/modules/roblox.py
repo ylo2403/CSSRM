@@ -553,7 +553,7 @@ class Roblox(Bloxlink.Module):
             async def post_log(channel_data, color):
                 if event and channel_data:
                     if not unverified:
-                        if channel_data.get("verified"):
+                        if channel_data.get("verified") and channel_data["verified"].get("channel"):
                             channel_id = int(channel_data["verified"]["channel"])
                             channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
 
@@ -1254,8 +1254,8 @@ class Roblox(Bloxlink.Module):
         verify_role_enabled   = options.get("verifiedRoleEnabled")
         unverify_role_enabled = options.get("unverifiedRoleEnabled")
 
-        unverified_role_name = options.get("unverifiedRoleName")
-        verified_role_name   = options.get("verifiedRoleName")
+        unverified_role_name = options.get("unverifiedRoleName") or DEFAULTS.get("unverifiedRoleName")
+        verified_role_name   = options.get("verifiedRoleName") or DEFAULTS.get("verifiedRoleName")
 
         allow_old_roles = options.get("allowOldRoles")
 
@@ -1268,11 +1268,11 @@ class Roblox(Bloxlink.Module):
         unverified_role = None
 
         if unverify_role_enabled:
-            unverified_role = discord.utils.find(lambda r: (r.name == unverified_role_name or r.id == unverified_role_id) and not r.managed, guild.roles)
+            unverified_role = discord.utils.find(lambda r: (r.id == unverified_role_id or r.name == unverified_role_name) and not r.managed, guild.roles)
 
             if not unverified_role:
                 try:
-                    unverified_role = await guild.create_role(name=unverified_role_name)
+                    unverified_role = await guild.create_role(name=unverified_role_name, reason="Creating missing Unverified role")
                 except discord.errors.Forbidden:
                     raise PermissionError("I was unable to create the Unverified Role. Please "
                                           "ensure I have the `Manage Roles` permission.")
@@ -1281,7 +1281,7 @@ class Roblox(Bloxlink.Module):
 
 
         if verify_role_enabled:
-            verified_role = discord.utils.find(lambda r: (r.name == verified_role_name or r.id == verified_role_id) and not r.managed, guild.roles)
+            verified_role = discord.utils.find(lambda r: (r.id == verified_role_id or r.name == verified_role_name) and not r.managed, guild.roles)
 
             if not verified_role:
                 try:
@@ -1576,7 +1576,7 @@ class Roblox(Bloxlink.Module):
                                     dynamic_roles = await get_guild_value(guild, ["dynamicRoles", DEFAULTS.get("dynamicRoles")])
                                     if dynamic_roles:
                                         try:
-                                            group_role = await guild.create_role(name=group.user_rank_name)
+                                            group_role = await guild.create_role(name=group.user_rank_name, reason="Creating missing group role")
                                         except discord.errors.Forbidden:
                                             raise PermissionError(f"Sorry, I wasn't able to create the role {group.user_rank_name}."
                                                                    "Please ensure I have the `Manage Roles` permission.")
