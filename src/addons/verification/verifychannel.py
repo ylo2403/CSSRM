@@ -46,6 +46,14 @@ class VerifyChannelCommand(Bloxlink.Module):
         self.aliases = ["verificationchannel", "verification-channel"]
         self.category = "Administration"
         self.slash_enabled = True
+        self.arguments = [
+            {
+                "prompt": "Do you have an existing verification channel?",
+                "type": "channel",
+                "name": "existing_channel",
+                "optional": True
+            }
+        ]
 
     async def __main__(self, CommandArgs):
         response = CommandArgs.response
@@ -53,8 +61,10 @@ class VerifyChannelCommand(Bloxlink.Module):
 
         is_premium = "premium" in (await has_premium(guild=guild)).features
 
+        existing_channel = CommandArgs.parsed_args["existing_channel"]
+
         verify_category = discord.utils.find(lambda c: c.name == "Verification", guild.categories) or await guild.create_category(name="Verification")
-        verify_channel  = discord.utils.find(lambda c: c.name == "verify", guild.text_channels)    or await guild.create_text_channel(name="verify", category=verify_category)
+        verify_channel  = existing_channel or discord.utils.find(lambda c: c.name == "verify", guild.text_channels) or await guild.create_text_channel(name="verify", category=verify_category)
 
         await verify_channel.set_permissions(guild.me, send_messages=True, read_messages=True)
 
@@ -62,7 +72,7 @@ class VerifyChannelCommand(Bloxlink.Module):
 
         try:
             if is_premium:
-                verify_instructions = verify_instructions or verify_channel
+                verify_instructions = existing_channel or verify_instructions or verify_channel
                 welcome_message = await get_guild_value(guild, "welcomeMessage")
 
                 modal = VerifyChannelModal(verify_channel)
