@@ -14,10 +14,7 @@ class UpdateCommand(Bloxlink.Module):
     """force update user(s) with roles and nicknames"""
 
     def __init__(self):
-        permissions = Bloxlink.Permissions().build("BLOXLINK_UPDATER")
-        permissions.allow_bypass = True
-
-        self.permissions = permissions
+        self.permissions = Bloxlink.Permissions(manage_guild=True, manage_roles=True)
         self.aliases = ["update", "updateroles", "update-user"]
         self.arguments = [
             {

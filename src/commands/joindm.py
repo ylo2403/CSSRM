@@ -12,7 +12,7 @@ class JoinDMCommand(Bloxlink.Module):
     """greets people who join the server. by default, this is ENABLED for verified members."""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.arguments = [{
             "prompt": "Would you like to alter/disable the DM messages for **verified** or **unverified** users?",

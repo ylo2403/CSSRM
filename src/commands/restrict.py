@@ -30,7 +30,7 @@ class RestrictCommand(Bloxlink.Module):
     """restrict a Roblox user or group from verifying in your server"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.aliases = ["restriction"]
         self.slash_enabled = True

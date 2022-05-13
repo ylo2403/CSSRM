@@ -19,7 +19,7 @@ class SetupCommand(Bloxlink.Module):
     """set-up your server with Bloxlink"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.aliases = ["set-up"]
         self.slash_enabled = True

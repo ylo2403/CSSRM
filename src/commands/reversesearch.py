@@ -21,7 +21,7 @@ class ReverseSearchCommand(Bloxlink.Module):
             "name": "target"
         }]
         self.category = "Administration"
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.aliases = ["reverse-search"]
         self.slash_enabled = True
 

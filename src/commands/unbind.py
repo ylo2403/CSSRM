@@ -38,7 +38,7 @@ class UnBindCommand(Bloxlink.Module):
             }
         ]
 
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Binds"
         self.aliases = ["delbind", "delbinds", "un-bind", "del-bind"]
         self.slash_enabled = True

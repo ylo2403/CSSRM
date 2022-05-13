@@ -13,7 +13,7 @@ class JoinChannelCommand(Bloxlink.Module):
     """greets people who join the server in your channel."""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.arguments = [{
             "prompt": "Would you like to alter/disable the join messages for **verified** or **unverified** users?",

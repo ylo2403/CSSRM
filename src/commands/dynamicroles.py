@@ -10,7 +10,7 @@ class DynamicRolesCommand(Bloxlink.Module):
     """automatically create missing group roles. by default, this is ENABLED."""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.hidden = True
 

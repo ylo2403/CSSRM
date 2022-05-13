@@ -14,7 +14,7 @@ class IgnoreChannelCommand(Bloxlink.Module):
     """enable/disable commands from a channel"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
+        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Administration"
         self.aliases = ["ignore", "ignore-channel"]
         self.slash_enabled = True
