@@ -112,7 +112,7 @@ class IPC(Bloxlink.Module):
 
                         if not role:
                             try:
-                                role = await guild.create_role(name=role_name)
+                                role = await guild.create_role(name=role_name, reason="Creating role from website")
                             except discord.errors.Forbidden:
                                 error = "Insufficient permissions"
                             except discord.errors.HTTPException as e:
