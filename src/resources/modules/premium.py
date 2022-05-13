@@ -52,12 +52,15 @@ class Premium(Bloxlink.Module):
 
         if premium_data and premium_data.get("active"):
             if guild:
-                tier, term = premium_data["type"].split("/")
+                try:
+                    tier, term = premium_data["type"].split("/")
 
-                if tier == "basic":
-                    user_facing_tier = "Basic Premium"
-                elif tier == "pro":
-                    user_facing_tier = "Pro"
+                    if tier == "basic":
+                        user_facing_tier = "Basic Premium"
+                    elif tier == "pro":
+                        user_facing_tier = "Pro"
+                except ValueError:
+                    user_facing_tier = premium_data["type"]
 
             else:
                 user_facing_tier = "User Premium"
@@ -66,7 +69,7 @@ class Premium(Bloxlink.Module):
 
             features = {"premium"}
 
-            if tier == "pro" or premium_data.get("patreon"):
+            if tier == "pro" or premium_data.get("patreon") or "pro" in user_facing_tier.lower():
                 features.add("pro")
 
             return DonatorProfile(

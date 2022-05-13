@@ -608,15 +608,15 @@ class Roblox(Bloxlink.Module):
                                 except (discord.errors.NotFound, discord.errors.Forbidden):
                                     pass
                     else:
-                        if channel_data.get("unverified"):
+                        if channel_data.get("unverified") and channel_data["unverified"].get("channel"):
                             channel_id = int(channel_data["unverified"]["channel"])
                             channel = discord.utils.find(lambda c: c.id == channel_id, guild.text_channels)
 
                             if channel:
                                 join_channel_message = channel_data["unverified"]["message"]
                                 join_message_parsed = (await self.get_nickname(member, join_channel_message, skip_roblox_check=True, dm=dm, is_nickname=False))[:2000]
-                                includes = channel_data["unverified"]["includes"]
-                                format_embed = channel_data["unverified"]["embed"]
+                                includes = channel_data["unverified"].get("includes") or {}
+                                format_embed = channel_data["unverified"].get("embed")
 
                                 embed   = None
                                 content = None
@@ -1268,7 +1268,11 @@ class Roblox(Bloxlink.Module):
         unverified_role = None
 
         if unverify_role_enabled:
-            unverified_role = discord.utils.find(lambda r: (r.id == unverified_role_id or r.name == unverified_role_name) and not r.managed, guild.roles)
+            if unverified_role_id:
+                unverified_role = discord.utils.find(lambda r: (r.id == unverified_role_id) and not r.managed, guild.roles)
+
+            if not unverified_role:
+                unverified_role = discord.utils.find(lambda r: (r.name == unverified_role_name) and not r.managed, guild.roles)
 
             if not unverified_role:
                 try:
@@ -1281,7 +1285,11 @@ class Roblox(Bloxlink.Module):
 
 
         if verify_role_enabled:
-            verified_role = discord.utils.find(lambda r: (r.id == verified_role_id or r.name == verified_role_name) and not r.managed, guild.roles)
+            if verified_role_id:
+                verified_role = discord.utils.find(lambda r: (r.id == verified_role_id) and not r.managed, guild.roles)
+
+            if not verified_role:
+                verified_role = discord.utils.find(lambda r: (r.name == verified_role_name) and not r.managed, guild.roles)
 
             if not verified_role:
                 try:
