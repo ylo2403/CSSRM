@@ -57,9 +57,13 @@ class InteractionPaginator(discord.ui.View):
             await self.on_page_change() # pylint: disable=not-callable
 
     async def fast_rewind_press(self, interaction):
-       await self.start_position()
+        await interaction.response.defer(thinking=False)
+
+        await self.start_position()
 
     async def fast_forward_press(self, interaction):
+        await interaction.response.defer(thinking=False)
+
         all_items = self.items[self.current_category]
 
         self.i = math.ceil((len(all_items) / self.max_items)) * self.max_items
@@ -78,6 +82,8 @@ class InteractionPaginator(discord.ui.View):
         await self.message.edit(embed=self.embed, view=self)
 
     async def back_press(self, interaction):
+        await interaction.response.defer(thinking=False)
+
         self.i = self.i-self.max_items
 
         all_items = self.items[self.current_category]
@@ -98,6 +104,8 @@ class InteractionPaginator(discord.ui.View):
         await self.message.edit(embed=self.embed, view=self)
 
     async def forward_press(self, interaction):
+        await interaction.response.defer(thinking=False)
+
         all_items = self.items[self.current_category]
         self.current_items = all_items[self.i:self.i+self.max_items]
 
