@@ -21,6 +21,8 @@ class InteractionPaginatorSelect(discord.ui.Select):
         super().__init__(placeholder=paginator.current_category, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=False)
+
         self.paginator.current_category = self.values[0]
 
         await self.paginator.start_position()
