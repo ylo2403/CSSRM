@@ -21,7 +21,7 @@ class VerifyM(Bloxlink.Module):
             if intro_message != DEFAULTS.get("verifyChannelTextModal"):
                 self.add_item(item=discord.ui.Button(label="The text above was set by the Server Admins. ONLY verify from https://blox.link.",
                                                      disabled=True,
-                                                     custom_id="verify_view:warning_button",
+                                                     custom_id="warning:modified_content_button",
                                                      row=0))
 
             verify_button = discord.ui.Button(label=verify_button_text,
