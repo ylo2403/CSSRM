@@ -291,9 +291,9 @@ def load_redis():
 
     while not redis:
         try:
-            redis = aredis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+            redis = aredis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, retry_on_timeout=True)
         except aredis.exceptions.ConnectionError:
-            pass
+            raise SystemError("Failed to connect to Redis.")
         else:
             redis_cache = redis.cache("cache")
 
