@@ -3,7 +3,7 @@ from resources.constants import GOLD_COLOR # pylint: disable=import-error, no-na
 from discord import Embed
 
 
-get_features, has_premium = Bloxlink.get_module("premium", attrs=["get_features", "has_premium"])
+has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 @Bloxlink.command
