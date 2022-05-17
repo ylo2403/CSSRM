@@ -603,11 +603,11 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None):
+    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None, channel=None):
         command = self.commands.get(command_name)
 
         guild   = interaction.guild
-        channel = interaction.channel
+        channel = channel or interaction.channel
         user    = interaction.user
 
         if not command:
