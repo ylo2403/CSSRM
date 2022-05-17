@@ -13,9 +13,7 @@ async def on_interaction(interaction):
     command_name = interaction.data.get("name")
     command_args = {}
 
-    guild   = interaction.guild
     channel = interaction.channel
-    user    = interaction.user
 
     if isinstance(channel, PartialMessageable):
         return
@@ -33,8 +31,7 @@ async def on_interaction(interaction):
                 resolved = Message(state=interaction._state, channel=channel, data=list(data["resolved"]["messages"].values())[0])
 
         try:
-            await execute_interaction_command("extensions", command_name, guild=guild, channel=channel, user=user,
-                                              interaction=interaction, resolved=resolved)
+            await execute_interaction_command("extensions", command_name, interaction=interaction, resolved=resolved)
         except CancelCommand:
             pass
 
@@ -73,8 +70,7 @@ async def on_interaction(interaction):
 
         # execute slash command
         try:
-            await execute_interaction_command("commands", command_name, guild=guild, channel=channel,
-                                              user=user, interaction=interaction, subcommand=subcommand,
+            await execute_interaction_command("commands", command_name, interaction=interaction, subcommand=subcommand,
                                               arguments=command_args)
         except CancelCommand:
             pass
