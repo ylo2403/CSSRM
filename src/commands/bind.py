@@ -22,7 +22,7 @@ class BindCommand(Bloxlink.Module):
 
     def __init__(self):
         self.aliases = ["newbind"]
-        self.permissions = Bloxlink.Permissions(manage_guild=True)
+        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Binds"
         self.slash_enabled = True
 

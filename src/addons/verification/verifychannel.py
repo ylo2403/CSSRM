@@ -42,7 +42,7 @@ class VerifyChannelCommand(Bloxlink.Module):
     """create a special verification channel"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions(manage_guild=True, manage_roles=True)
+        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.aliases = ["verificationchannel", "verification-channel"]
         self.category = "Administration"
         self.slash_enabled = True

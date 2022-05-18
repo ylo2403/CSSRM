@@ -11,7 +11,6 @@ class ViewBindsCommand(Bloxlink.Module):
     """view your server bound roles"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions(manage_guild=True)
         self.category = "Binds"
         self.aliases = ["binds", "view-binds"]
         self.slash_enabled = True

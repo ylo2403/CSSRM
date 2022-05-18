@@ -1,5 +1,6 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
-import discord
+from resources.exceptions import PermissionError # pylint: disable=import-error, no-name-in-module
+from discord.errors import NotFound, Forbidden
 import time
 
 
@@ -21,7 +22,7 @@ class PingCommand(Bloxlink.Module):
 
         try:
             await channel.trigger_typing()
-        except (discord.errors.NotFound, discord.errors.Forbidden):
+        except (NotFound, Forbidden):
             pass
 
         t_2 = time.perf_counter()

@@ -6,7 +6,7 @@ class SettingsCommand(Bloxlink.Module):
     """change, view, or reset your Bloxlink settings"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions(manage_guild=True)
+        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.slash_enabled = True
 

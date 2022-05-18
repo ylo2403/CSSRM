@@ -13,7 +13,7 @@ class LeaveChannelCommand(Bloxlink.Module):
     """greets people who leave the server in your channel."""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions(manage_guild=True)
+        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
         self.arguments = [{
             "prompt": "Would you like to alter/disable the leave messages for **verified** or **unverified** users?",

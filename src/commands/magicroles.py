@@ -14,7 +14,7 @@ class MagicRolesCommand(Bloxlink.Module):
     """add/view/remove magic roles"""
 
     def __init__(self):
-        self.permissions = Bloxlink.Permissions(manage_guild=True)
+        self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Premium"
         self.hidden = True
         self.aliases = ["magicrole", "magicroles", "magic-roles"]

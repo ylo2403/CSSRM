@@ -59,7 +59,7 @@ class Executable:
     def __repr__(self):
         return self.__str__()
 
-    async def check_permissions(self, author, guild, channel, permissions=None, **kwargs):
+    async def check_permissions(self, author, guild, locale, dm=False, permissions=None, **kwargs):
         permissions = permissions or self.permissions
 
         if RELEASE != "LOCAL" and author.id == OWNER:
@@ -74,23 +74,99 @@ class Executable:
 
             if "premium" not in prem.features:
                 raise Message("This command is reserved for Bloxlink Premium subscribers!\n"
-                              f"You may subscribe to Bloxlink Premium from our dashboard: <{f'https://blox.link/dashboard/guilds/{guild.id}/premium' if guild else 'https://blox.link/dashboard'}>", type="info")
+                              f"You may subscribe to Bloxlink Premium from our dashboard: {f'https://blox.link/dashboard/guilds/{guild.id}/premium' if guild else 'https://blox.link/dashboard'}", type="info")
+        try:
+            if not dm:
+                author_perms = author.guild_permissions
 
-        if permissions.function:
-            if iscoroutinefunction(permissions.function):
-                data = [await permissions.function(author)]
-            else:
-                data = [permissions.function(author)]
+                for role_exception in permissions.exceptions["roles"]:
+                    if discord.utils.find(lambda r: r.name == role_exception, author.roles):
+                        return True
 
-            if not data[0]:
-                raise PermissionError("You do not have the required permissions to use this command.")
+                if permissions.bloxlink_role:
+                    role_name = permissions.bloxlink_role
 
-            if isinstance(data[0], tuple):
-                if not data[0][0]:
-                    raise PermissionError(data[0][1])
+                    magic_roles = await get_guild_value(guild, ["magicRoles", {}])
 
-        if channel and permissions.value != 0 and not channel.permissions_for(author).is_strict_superset(permissions):
-            raise PermissionError("You do not have the required permissions to use this command.")
+                    if await has_magic_role(author, guild, "Bloxlink Admin", magic_roles_data=magic_roles):
+                        return True
+                    else:
+                        if role_name == "Bloxlink Manager":
+                            if author_perms.manage_guild or author_perms.administrator:
+                                pass
+                            else:
+                                raise PermissionError("You need the `Manage Server` permission to run this command.")
+
+                        elif role_name == "Bloxlink Moderator":
+                            if author_perms.kick_members or author_perms.ban_members or author_perms.administrator:
+                                pass
+                            else:
+                                raise PermissionError("You need the `Kick` or `Ban` permission to run this command.")
+
+                        elif role_name == "Bloxlink Updater":
+                            if author_perms.manage_guild or author_perms.administrator or author_perms.manage_roles or await has_magic_role(author, guild, "Bloxlink Updater", magic_roles_data=magic_roles):
+                                pass
+                            else:
+                                raise PermissionError("You either need: a role called `Bloxlink Updater`, the `Manage Roles` "
+                                                      "role permission, or the `Manage Server` role permission.")
+
+                        elif role_name == "Bloxlink Admin":
+                            if author_perms.administrator:
+                                pass
+                            else:
+                                raise PermissionError("You need the `Administrator` role permission to run this command.")
+
+                if permissions.allowed.get("discord_perms"):
+                    for perm in permissions.allowed["discord_perms"]:
+                        if perm == "Manage Server":
+                            if author_perms.manage_guild or author_perms.administrator:
+                                pass
+                            else:
+                                raise PermissionError("You need the `Manage Server` permission to run this command.")
+                        else:
+                            if not getattr(author_perms, perm, False) and not perm.administrator:
+                                raise PermissionError(f"You need the `{perm}` permission to run this command.")
+
+
+                for role in permissions.allowed["roles"]:
+                    if not discord.utils.find(lambda r: r.name == role, author.roles):
+                        raise PermissionError(f"Missing role: `{role}`")
+
+            if permissions.allowed.get("functions"):
+                for function in permissions.allowed["functions"]:
+
+                    if iscoroutinefunction(function):
+                        data = [await function(author)]
+                    else:
+                        data = [function(author)]
+
+                    if not data[0]:
+                        raise PermissionError
+
+                    if isinstance(data[0], tuple):
+                        if not data[0][0]:
+                            raise PermissionError(data[0][1])
+
+        except PermissionError as e:
+            if e.message:
+                raise e from None
+
+            raise PermissionError("You do not meet the required permissions for this command.")
+
+    @staticmethod
+    def parse_flags(content):
+        flags = {m.group(1): m.group(2) or True for m in flag_pattern.finditer(content)}
+
+        if flags:
+            try:
+                content = content[content.index("--"):]
+            except ValueError:
+                try:
+                    content = content[content.index("-"):]
+                except ValueError:
+                    return {}, ""
+
+        return flags, flags and content or ""
 
 
 class Command(Executable):
