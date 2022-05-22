@@ -117,4 +117,3 @@ class VerifyChannelCommand(Bloxlink.Module):
 
         except discord.errors.Forbidden:
             await response.send("I encountered a permission error. Please make sure I can create channels and set permissions.")
-
