@@ -33,6 +33,8 @@ if RELEASE == "LOCAL":
 else:
     SELF_HOST = False
 
+SERVER_INVITE = "https://discord.gg/jJKWpsr"
+
 STARTED = time()
 
 RED_COLOR       = 0xdb2323
@@ -65,8 +67,7 @@ elif RELEASE == "LOCAL":
     EMBED_COLOR = PURPLE_COLOR
 
 VERIFY_URL_GUILD = "https://blox.link/dashboard/verifications/verify?page=username&guild={guild}"
-VERIFY_URL = "https://blox.link/dashboard/verifications"
-ACCOUNT_SETTINGS_URL = "https://blox.link/account/"
+VERIFY_URL = "https://blox.link/verify"
 
 VERIFYALL_MAX_SCAN = 5
 
@@ -179,7 +180,23 @@ DEFAULTS = {
     "unbanRelatedAccounts": False,
     "disallowAlts": False,
     "disallowBanEvaders": False,
-    "verifyChannelTextModal": "Welcome to **{server-name}!** Click the button below to Verify with Bloxlink and gain access to the rest of the server."
+    "verifyChannelTextModal": "Welcome to **{server-name}!** Click the button below to Verify with Bloxlink and gain access to the rest of the server.",
+    "groupLockKickMessageVerified": "You've been kicked from **{server-name}** because your Roblox account **{roblox-name}** is not in the group **{group-name}.**\n\n"
+                                    "**How to fix this:** Join {group-url}, then rejoin the server.\n\n**Wrong Roblox account?** Go to <" + VERIFY_URL + "> to change your account.",
+    "groupLockKickMessageRolesetsVerified": "You've been kicked from **{server-name}** because your Roblox account **{roblox-name}** does not have the required Roleset in **{group-name}.**\n\n"
+                                    "**How to fix this:** Join {group-url}, then rejoin the server.\n\n**Wrong Roblox account?** Go to <" + VERIFY_URL + "> to change your account.",
+    "groupLockDMMessageVerified": "You are required to join the group **{group-name}** to access **{server-name}.**\n\n"
+                                  "**How to fix this:** Join {group-url}, then run `/getrole`.\n\n**Wrong Roblox account?** Go to <" + VERIFY_URL + "> to change your account.",
+    "groupLockDMMessageRolesetsVerified": "You are required to have the required Roleset in **{group-name}** to access **{server-name}.**\n\n"
+                                  "**How to fix this:** Join {group-url}, then run `/getrole`.\n\n**Wrong Roblox account?** Go to <" + VERIFY_URL + "> to change your account.",
+    "kickMessageNotVerified": "You were kicked from **{server-name}** for not being linked to Bloxlink.\n\n"
+                            f"**How to fix this:** Go to <" + VERIFY_URL + "> to verify with Bloxlink.\n\n"
+                            "**Stuck? Watch this video:** <https://www.youtube.com/watch?v=mSbD91Zug5k&t=0s>\n\n"
+                            f"Join {SERVER_INVITE} for additional help.",
+    "DMMessageNotVerified": "You are required to verify with Bloxlink in order to access **{server-name}**.\n\n"
+                            f"**How to fix this:** Go to <" + VERIFY_URL + "> to verify with Bloxlink.\n\n"
+                            "**Stuck? Watch this video:** <https://www.youtube.com/watch?v=mSbD91Zug5k&t=0s>\n\n"
+                            f"Join {SERVER_INVITE} for additional help."
 }
 
 ARROW = "\u2192"
@@ -202,8 +219,6 @@ HELP_DESCRIPTION = "**Welcome to Bloxlink!**\n\n" \
 
 
 TRANSFER_COOLDOWN = 5
-
-SERVER_INVITE = "https://discord.gg/jJKWpsr"
 
 TABLE_STRUCTURE = {
     "bloxlink": [
@@ -243,7 +258,7 @@ LIMITS = {
     }
 }
 
-PLAYING_STATUS = "/help | /invite"
+PLAYING_STATUS = "/help /invite"
 
 AVATARS = {
     "PRIDE": "https://cdn.discordapp.com/attachments/480614508633522176/730969660010266644/rainbow_resized.png"

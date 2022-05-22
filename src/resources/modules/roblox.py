@@ -1,3 +1,4 @@
+from mailbox import NotEmptyError
 from ..structures.Bloxlink import Bloxlink # pylint: disable=no-name-in-module, import-error
 from ..structures.Card import Card # pylint: disable=no-name-in-module, import-error
 from ..exceptions import (BadUsage, RobloxAPIError, Error, CancelCommand, UserNotVerified,# pylint: disable=no-name-in-module, import-error
@@ -7,7 +8,7 @@ import discord
 from datetime import datetime
 from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 from ..constants import (BLOXLINK_STAFF, RELEASE, DEFAULTS,SERVER_INVITE, GREEN_COLOR, # pylint: disable=import-error, no-name-in-module
-                         RED_COLOR, ACCOUNT_SETTINGS_URL, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
+                         RED_COLOR, VERIFY_URL, IGNORED_SERVERS) # pylint: disable=import-error, no-name-in-module
 import json
 import re
 import asyncio
@@ -447,6 +448,10 @@ class Roblox(Bloxlink.Module):
             "server-name", guild.name
         ).replace(
             "prefix", "/"
+        ).replace(
+            "group-url", group.url if group else ""
+        ).replace(
+            "group-name", group.name if group else ""
         )
 
         for outer_nick in nickname_template_regex.findall(template):
@@ -790,67 +795,78 @@ class Roblox(Bloxlink.Module):
 
                     if required_groups:
                         for group_id, group_data in required_groups.items():
-                            group = roblox_user.groups.get(group_id)
+                            user_group = roblox_user.groups.get(group_id)
+                            group = user_group or await self.get_group(group_id, full_group=True)
 
-                            if group:
+                            group_lock_action = group_data.get("verifiedAction", "kick")
+                            required_rolesets = group_data.get("roleSets")
+
+                            if group_lock_action == "kick":
+                                if user_group and required_rolesets:
+                                    default_dm = DEFAULTS.get("groupLockKickMessageRolesetsVerified")
+                                else:
+                                    default_dm = DEFAULTS.get("groupLockKickMessageVerified")
+                            else:
+                                if user_group and required_rolesets:
+                                    default_dm = DEFAULTS.get("groupLockDMMessageRolesetsVerified")
+                                else:
+                                    default_dm = DEFAULTS.get("groupLockDMMessageVerified")
+
+                            dm_message_raw = group_data.get("dmMessage") or default_dm
+                            dm_message = await self.get_nickname(member, dm_message_raw, guild=guild, is_nickname=False, group=user_group or group, roblox_user=roblox_user)
+
+                            view = discord.ui.View()
+                            if dm_message_raw and dm_message_raw != default_dm:
+                                view.add_item(item=discord.ui.Button(label="The text above was set by the Server Admins. ONLY verify from https://blox.link.",
+                                                disabled=True,
+                                                custom_id="warning:modified_content_button",
+                                                row=0))
+
+                            if user_group:
                                 if group_data.get("roleSets"):
                                     for allowed_roleset in group_data["roleSets"]:
                                         if isinstance(allowed_roleset, list):
-                                            if allowed_roleset[0] <= group.user_rank_id <= allowed_roleset[1]:
+                                            if allowed_roleset[0] <= user_group.user_rank_id <= allowed_roleset[1]:
                                                 break
                                         else:
-                                            if (group.user_rank_id == allowed_roleset) or (allowed_roleset < 0 and abs(allowed_roleset) <= group.user_rank_id):
+                                            if (user_group.user_rank_id == allowed_roleset) or (allowed_roleset < 0 and abs(allowed_roleset) <= user_group.user_rank_id):
                                                 break
                                     else:
                                         if dm:
-                                            dm_message = group_data.get("dmMessage")
-                                            group_url = f"https://www.roblox.com/groups/{group_id}/-"
-
-                                            if dm_message:
-                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
-                                                        f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                        f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\n"
-                                                        f"These instructions were set by the Server Admins:\n\n{dm_message}")
-                                            else:
-                                                text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` doesn't have an allowed Roleset in the group "
-                                                        f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                        f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
                                             try:
-                                                await member.send(text)
+                                                await member.send(dm_message, view=view)
                                             except discord.errors.Forbidden:
                                                 pass
-                                        try:
-                                            await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
-                                        except discord.errors.Forbidden:
-                                            pass
+
+                                        if group_lock_action == "kick":
+                                            try:
+                                                await member.kick(reason=f"SERVER-LOCK: doesn't have the allowed roleset(s) for group {group_id}")
+                                            except discord.errors.Forbidden:
+                                                pass
+                                            else:
+                                                raise CancelCommand
+
                                         else:
-                                            raise CancelCommand
+                                            raise Blacklisted(f"you do not have the required Roleset in the group [{group.name}](<{group.url}>).", prefix=False)
 
                                         return added, removed, chosen_nickname, errored, warnings, roblox_user
                             else:
                                 if dm:
-                                    dm_message = group_data.get("dmMessage")
-                                    group_url = f"https://www.roblox.com/groups/{group_id}/-"
-
-                                    if dm_message:
-                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
-                                                f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                f"Need additional help? Go to {SERVER_INVITE} and ask for help!\n\nThese instructions were set by the Server Admins:\n\n{dm_message}`")
-                                    else:
-                                        text = (f"_Bloxlink Server-Lock_\nYour Roblox account `{roblox_user.username}` is not in the group "
-                                                f"{group_url}, so you cannot join the **{guild.name}** server.\n\nWrong account? Go to <https://blox.link/verification/{guild.id}> and change it!\n\n"
-                                                f"Need additional help? Go to {SERVER_INVITE} and ask for help!")
-
                                     try:
-                                        await member.send(text)
+                                        await member.send(dm_message, view=view)
                                     except discord.errors.Forbidden:
                                         pass
-                                try:
-                                    await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
-                                except discord.errors.Forbidden:
-                                    pass
+
+                                if group_lock_action == "kick":
+                                    try:
+                                        await member.kick(reason=f"SERVER-LOCK: not in group {group_id}")
+                                    except discord.errors.Forbidden:
+                                        pass
+                                    else:
+                                        raise CancelCommand
                                 else:
-                                    raise CancelCommand
+                                    raise Blacklisted(f"you are not in the required group [{group.name}](<{group.url}>). Please join [{group.name}](<{group.url}>) then run this command again.", prefix=False)
+
 
                                 return added, removed, chosen_nickname, errored, warnings, roblox_user
 
@@ -890,11 +906,11 @@ class Roblox(Bloxlink.Module):
                             if dm:
                                 try:
                                     if accounts:
-                                        await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to {ACCOUNT_SETTINGS_URL} and set a "
+                                        await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to <{VERIFY_URL}> and set a "
                                                           "primary account, then try rejoining this server.")
                                     else:
                                         await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                          f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
+                                                          f"You may link your account to Bloxlink by visiting <{VERIFY_URL}> and completing the verification process.\n"
                                                           "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
                                                           f"Join {SERVER_INVITE} for additional help.")
                                 except discord.errors.Forbidden:
@@ -911,24 +927,39 @@ class Roblox(Bloxlink.Module):
 
                     if required_groups:
                         if dm:
+                            should_kick_unverified = any(g.get("unverifiedAction", "kick") == "kick" for g in required_groups.values())
+
+                            if should_kick_unverified:
+                                dm_message = DEFAULTS.get("kickMessageNotVerified")
+                            else:
+                                dm_message = DEFAULTS.get("DMMessageNotVerified")
+
+                            dm_message = await self.get_nickname(member, dm_message, guild=guild, is_nickname=False, roblox_user=None, skip_roblox_check=True)
+
                             try:
                                 if accounts:
-                                    await member.send(f"_Bloxlink Server-Lock_\nYou have no primary account set! Please go to {ACCOUNT_SETTINGS_URL} and set a "
-                                                    "primary account, then try rejoining this server.")
+                                    await member.send(f"You have no primary account set! Please go to <{VERIFY_URL}> and set a "
+                                                      "primary account, then try rejoining this server.")
                                 else:
-                                    await member.send(f"_Bloxlink Server-Lock_\nYou were kicked from **{guild.name}** for not being linked to Bloxlink.\n"
-                                                    f"You may link your account to Bloxlink by visiting <https://blox.link/verification/{guild.id}> and completing the verification process.\n"
-                                                    "Stuck? Watch this video: <https://youtu.be/0SH3n8rY9Fg>\n"
-                                                    f"Join {SERVER_INVITE} for additional help.")
+                                    if should_kick_unverified:
+                                        await member.send(f"You were kicked from **{guild.name}** for not being linked to Bloxlink.\n\n"
+                                                          f"**How to fix this:** Go to <" + VERIFY_URL + "> to verify with Bloxlink.\n\n"
+                                                          "**Stuck? Watch this video:** <https://www.youtube.com/watch?v=mSbD91Zug5k&t=0s>\n\n"
+                                                          f"Join {SERVER_INVITE} for additional help.")
+                                    else:
+                                        await member.send(f"{guild.name} requires that you verify with Bloxlink in order to access the rest of the server.\n\n"
+                                                          f"**How to fix this:** Go to <" + VERIFY_URL + "> to verify with Bloxlink.")
+
                             except discord.errors.Forbidden:
                                 pass
 
-                        try:
-                            await member.kick(reason="SERVER-LOCK: not linked to Bloxlink")
-                        except discord.errors.Forbidden:
-                            pass
-                        else:
-                            raise CancelCommand
+                        if should_kick_unverified:
+                            try:
+                                await member.kick(reason="GROUP-LOCK: not linked to Bloxlink")
+                            except discord.errors.Forbidden:
+                                pass
+                            else:
+                                raise CancelCommand
 
                         return added, removed, chosen_nickname, errored, warnings, roblox_user
 
