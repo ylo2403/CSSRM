@@ -23,7 +23,7 @@ has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
 
 BOT_ID = BOTS[RELEASE]
-COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands" if RELEASE != "LOCAL" else f"https://discord.com/api/v8/applications/{BOT_ID}/guilds/439265180988211211/commands"
+COMMANDS_URL = f"https://discord.com/api/v8/applications/{BOT_ID}/commands"
 GUILD_COMMANDS_URL = "https://discord.com/api/v8/applications/{BOT_ID}/guilds/{GUILD_ID}/commands"
 
 
@@ -40,6 +40,8 @@ class Commands(Bloxlink.Module):
         if CLUSTER_ID == 0:
             interaction_commands = []
             all_guild_commands = {}
+
+            # return
 
             for command in self.commands.values():
                 if isinstance(command, Command):
@@ -65,7 +67,6 @@ class Commands(Bloxlink.Module):
             elif response.status != 403:
                 print(interaction_commands, flush=True)
                 print(response.status, text, flush=True)
-
 
             for guild_command_id, guild_commands in all_guild_commands.items():
                 text, response = await fetch(GUILD_COMMANDS_URL.format(BOT_ID=BOT_ID, GUILD_ID=guild_command_id), "PUT", body=guild_commands, headers={"Authorization": f"Bot {TOKEN}"}, raise_on_failure=False)
@@ -245,7 +246,7 @@ class Commands(Bloxlink.Module):
             raise CancelCommand
 
         try:
-            await command.check_permissions(author, guild, locale, dm=dm, **subcommand_attrs)
+            await command.check_permissions(author, guild, channel, **subcommand_attrs)
         except PermissionError as e:
             if subcommand_attrs.get("allow_bypass"):
                 CommandArgs.has_permission = False
@@ -452,7 +453,7 @@ class Commands(Bloxlink.Module):
                         "value": choice
 
                     } for choice in prompt.get("choices", []) if len(prompt.get("choices", [])) <= 25 ],
-                    "autocomplete": bool(prompt.get("auto_complete"))
+                    "autocomplete": bool(prompt.get("auto_complete")),
                 }
 
                 return option
@@ -466,7 +467,9 @@ class Commands(Bloxlink.Module):
             json = {
                 "name": command.name,
                 "description": command.description,
-                "options": []
+                "options": [],
+                #"default_member_permissions": command.permissions.value if command.permissions.value and not command.permissions.allow_bypass else None,
+                "dm_permission": command.dm_allowed
             }
 
             if command.subcommands:
