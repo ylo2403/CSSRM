@@ -243,6 +243,6 @@ class GroupLockCommand(Bloxlink.Module):
                 value=f"**DM** {ARROW} {dm_message}\n"
                       f"{REACTIONS['DONE']} **{data.get('verifiedAction', 'kick').title()}** Guest **Verified** users\n"
                       f"{REACTIONS['DONE']} **{data.get('unverifiedAction', 'kick').title()}** Guest **Un-Verified** users",
-                      inline=False)
+                inline=False)
 
         await response.send(embed=embed)
