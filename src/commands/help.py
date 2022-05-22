@@ -61,7 +61,7 @@ class HelpCommand(Bloxlink.Module):
                     if permissions.developer_only or command.category == "Developer":
                         permission_text.append("**Developer Only**\nThis command can only be used by the Bloxlink Developer.")
 
-                    if permissions.function:
+                    if permissions.allowed["functions"]:
                         permission_text.append("**Custom Permission**\nYou must meet a custom predicate to use this command.")
 
                     if permission_text:
