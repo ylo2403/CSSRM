@@ -74,7 +74,7 @@ class Executable:
 
             if "premium" not in prem.features:
                 raise Message("This command is reserved for Bloxlink Premium subscribers!\n"
-                              f"You may subscribe to Bloxlink Premium from our dashboard: {f'https://blox.link/dashboard/guilds/{guild.id}/premium' if guild else 'https://blox.link/dashboard'}", type="info")
+                              f"You may subscribe to Bloxlink Premium from our dashboard: <{f'https://blox.link/dashboard/guilds/{guild.id}/premium' if guild else 'https://blox.link/dashboard'}>", type="info")
         try:
             if not dm:
                 author_perms = author.guild_permissions
