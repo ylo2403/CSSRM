@@ -64,9 +64,11 @@ class VerifyM(Bloxlink.Module):
 
             except Blacklisted as b:
                 if isinstance(b.message, str):
-                    await response.send(f"{user.mention} has an active restriction for: `{b}`")
+                    text = f"has an action restriction for: `{b}`" if b.prefix else b
+                    await response.send(f"{user.mention}, {text}", hidden=True)
                 else:
-                    await response.send(f"{user.mention} has an active restriction from Bloxlink.")
+                    text = f"has an action restriction from Bloxlink." if b.prefix else b
+                    await response.send(f"{user.mention}, {text}", hidden=True)
 
             except UserNotVerified:
                 verify_link = await VerifyM.get_verify_link(guild)

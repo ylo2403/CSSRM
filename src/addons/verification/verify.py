@@ -1,7 +1,7 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 import discord
 from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error, no-name-in-module
-from resources.constants import GREEN_COLOR # pylint: disable=import-error, no-name-in-module
+from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error, no-name-in-module
 
 get_user, get_nickname, get_roblox_id, parse_accounts, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "format_update_embed", "guild_obligations"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -63,9 +63,11 @@ class VerifyCommand(Bloxlink.Module):
 
         except Blacklisted as b:
             if isinstance(b.message, str):
-                raise Error(f"{author.mention} has an active restriction for: `{b}`")
+                text = f"has an action restriction for: `{b}`" if b.prefix else b
+                raise Error(f"{author.mention}, {text}")
             else:
-                raise Error(f"{author.mention} has an active restriction from Bloxlink.")
+                text = f"has an action restriction from Bloxlink." if b.prefix else b
+                raise Error(f"{author.mention} {text}")
 
         except UserNotVerified:
             verify_link = await get_verify_link(guild)

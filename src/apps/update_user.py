@@ -51,9 +51,11 @@ class UpdateUserExtension(Bloxlink.Module):
 
         except Blacklisted as b:
             if isinstance(b.message, str):
-                raise Error(f"{user.mention} has an active restriction for: `{b}`", hidden=True)
+                text = f"has an action restriction for: `{b}`" if b.prefix else b
+                raise Error(f"{user.mention}, {text}", hidden=True)
             else:
-                raise Error(f"{user.mention} has an active restriction from Bloxlink.", hidden=True)
+                text = f"has an action restriction from Bloxlink." if b.prefix else b
+                raise Error(f"{user.mention} {text}", hidden=True)
 
         except CancelCommand:
             pass

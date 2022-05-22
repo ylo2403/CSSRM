@@ -48,4 +48,6 @@ class BloxlinkBypass(BloxlinkException):
     pass
 
 class Blacklisted(BloxlinkException):
-    pass
+    def __init__(self, *args, prefix=True, **kwargs):
+        self.prefix = prefix
+        super().__init__(*args, **kwargs)
