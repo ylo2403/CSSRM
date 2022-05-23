@@ -145,8 +145,8 @@ class GroupLockCommand(Bloxlink.Module):
         donator_profile = await has_premium(guild=guild)
 
         if "premium" not in donator_profile.features:
-            if len(group_lock) >= 3:
-                raise Message("If you would like to add more than **3** groups to your Group-Lock, then you need Bloxlink Premium.\n"
+            if len(group_lock) >= 1:
+                raise Message("If you would like to add more than **1** group to your Group-Lock, then you need Bloxlink Premium.\n"
                               f"Premium subscribers can lock their server with up to **15 groups**, and Pro subscribers "
                               "can bind an **unlimited number of groups!** Subscribe from our "
                               f"[Dashboard!](<https://blox.link/dashboard/guilds/{guild.id}/premium>)", type="info")
@@ -173,7 +173,7 @@ class GroupLockCommand(Bloxlink.Module):
 
         if dm_choice == "Yes, customize the DM message":
             modal = GroupLockModal()
-            modal.add_item(item=discord.ui.TextInput(label="DM sent to verified users who aren't in your group",
+            modal.add_item(item=discord.ui.TextInput(label="DM sent to users who aren't in your group",
                             default=dm_message or default_dm,
                             style=discord.TextStyle.paragraph,
                             required=True,
