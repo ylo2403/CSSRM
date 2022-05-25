@@ -2,7 +2,7 @@ git+https://github.com/Rapptz/discord.py@b7b992375d6e9338ae93c4383c6abfb9b8a0fa6
 aiodns==3.0.0
 cchardet==2.1.7
 psutil==5.9.0
-PyJWT==2.3.0
+PyJWT==2.4.0
 python-dateutil==2.8.2
 jsonpath_ng==1.5.3
 aiotrello==0.0.7.6
