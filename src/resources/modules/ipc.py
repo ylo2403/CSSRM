@@ -180,11 +180,14 @@ class IPC(Bloxlink.Module):
                 if guild:
                     member = guild.get_member(discord_id)
 
+                    # if not member:
+                    #     try:
+                    #         member = await guild.fetch_member(discord_id)
+                    #     except discord.errors.NotFound:
+                    #         return
+
                     if not member:
-                        try:
-                            member = await guild.fetch_member(discord_id)
-                        except discord.errors.NotFound:
-                            return
+                        return
 
                     if member.pending or guild.verification_level == discord.VerificationLevel.highest:
                         return
