@@ -1,15 +1,13 @@
 from os import listdir
 from re import compile
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound, CancelCommand # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..exceptions import RobloxAPIError, RobloxDown, RobloxNotFound # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..constants import RELEASE, HTTP_RETRY_LIMIT # pylint: disable=import-error, no-name-in-module, no-name-in-module
-from ..secrets import PROXY_URL, TOKEN # pylint: disable=import-error, no-name-in-module, no-name-in-module
+from ..secrets import TOKEN, PROXY_URL, PROXY_AUTH # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from ..exceptions import Error
 from discord.errors import NotFound, Forbidden
 import discord
-from aiohttp.client_exceptions import ClientOSError, ServerDisconnectedError
 from requests.utils import requote_uri
-from async_timeout import timeout as a_timeout
 import asyncio
 import aiohttp
 import json as json_
@@ -103,7 +101,6 @@ class Utils(Bloxlink.Module):
     async def fetch(self, url, method="GET", params=None, headers=None, body=None, text=False, json=True, bytes=False, raise_on_failure=True, retry=HTTP_RETRY_LIMIT, timeout=20, proxy=True):
         params  = params or {}
         headers = headers or {}
-        new_json = {}
         proxied = False
 
         if not self.loop:
@@ -118,13 +115,18 @@ class Utils(Bloxlink.Module):
         if text or bytes:
             json = False
 
-        if proxy and PROXY_URL and "roblox.com" in url:
+        if retry and proxy and PROXY_AUTH and "roblox.com" in url:
             old_url = url
-            new_json["url"] = url
-            new_json["data"] = body or {}
             url = PROXY_URL
             proxied = True
+            real_method = method
             method = "POST"
+            body = {
+                "url": old_url,
+                "method": real_method,
+                "data": body
+            }
+            headers["Authorization"] = PROXY_AUTH
 
             if RELEASE == "LOCAL":
                 print(f"{old_url} -> {url}")
@@ -132,7 +134,6 @@ class Utils(Bloxlink.Module):
             if RELEASE == "LOCAL":
                 print(f"Making request to {url} with method {method}")
 
-            new_json = body
             old_url = url
 
         url = requote_uri(url)
@@ -142,34 +143,34 @@ class Utils(Bloxlink.Module):
                 params[k] = "true" if v else "false"
 
         try:
-            async with self.session.request(method, url, json=new_json, params=params, headers=headers, timeout=self.timeout) as response:
+            async with self.session.request(method, url, json=body, params=params, headers=headers, timeout=self.timeout) as response:
                 if proxied:
                     try:
                         response_json = await response.json()
                     except aiohttp.client_exceptions.ContentTypeError:
                         raise RobloxAPIError
 
-                    response_body = response_json["req"]["body"]
-                    response_status = response_json["req"]["status"]
-                    response.status = response_status
+                    response_body = response_json
 
-                    if not isinstance(response_body, dict):
+                    if not isinstance(response_json, dict):
                         try:
                             response_body_json = json_.loads(response_body)
-                        except:
+                        except json_.decoder.JSONDecodeError:
                             pass
                         else:
                             response_body = response_body_json
                 else:
-                    response_status = response.status
                     response_body = None
 
+                if response.status == 429 and retry and "roblox.com" in old_url:
+                    return await self.fetch(url=url, method=method, params=params, headers=headers, body=body, text=text, json=json, bytes=bytes, raise_on_failure=raise_on_failure, retry=retry-1, timeout=timeout, proxy=True)
+
                 if raise_on_failure:
-                    if response_status == 503:
+                    if response.status == 503:
                         raise RobloxDown
-                    elif response_status == 404:
+                    elif response.status == 404:
                         raise RobloxNotFound
-                    elif response_status >= 400:
+                    elif response.status >= 400:
                         if proxied:
                             print(old_url, response_body, flush=True)
                         else:

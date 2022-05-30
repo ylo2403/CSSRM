@@ -308,5 +308,6 @@ class Module:
     redis = redis
     cache = redis_cache
     conn = Bloxlink.conn
+    session = aiohttp.ClientSession()
 
 Bloxlink.Module = Module
