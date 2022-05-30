@@ -1,8 +1,9 @@
 from resources.structures.Bloxlink import Bloxlink  # pylint: disable=import-error, no-name-in-module
-from resources.exceptions import RobloxNotFound, RobloxAPIError, Message  # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import RobloxNotFound, RobloxAPIError, Message, Error  # pylint: disable=import-error, no-name-in-module
 from resources.constants import DEFAULTS, ARROW # pylint: disable=import-error, no-name-in-module
 from config import REACTIONS # pylint: disable=import-error, no-name-in-module
 import discord
+import re
 
 
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -79,6 +80,17 @@ class GroupLockCommand(Bloxlink.Module):
                 "Invalid group."
             ]
 
+    def parse_group_id(self, group):
+        if not group.isdigit():
+            group_search = self.group_id_regex.search(group)
+
+            if not group_search:
+                return None
+
+            group = group_search.group(1)
+
+        return group
+
     def __init__(self):
         self.permissions = Bloxlink.Permissions().build("BLOXLINK_MANAGER")
         self.category = "Administration"
@@ -86,8 +98,7 @@ class GroupLockCommand(Bloxlink.Module):
         self.slash_enabled = True
         self.slash_defer = False
 
-    async def __main__(self, CommandArgs):
-        pass
+        self.group_id_regex = re.compile(r".+ \((.+)\)")
 
     @Bloxlink.subcommand(arguments=[
         {
@@ -128,13 +139,19 @@ class GroupLockCommand(Bloxlink.Module):
 
         guild      = CommandArgs.guild
         response   = CommandArgs.response
-        group_id   = CommandArgs.parsed_args["group"]
+        group_id   = self.parse_group_id(CommandArgs.parsed_args["group"])
         rolesets   = CommandArgs.parsed_args["rolesets"].split(",") if CommandArgs.parsed_args["rolesets"] else []
         dm_choice  = CommandArgs.parsed_args["customize_dm"]
         verified_action     = "kick" if CommandArgs.parsed_args["verified_action"] != "DM them" else "dm"
         unverified_action   = "kick" if CommandArgs.parsed_args["unverified_action"] != "DM them" else "dm"
 
-        group = await get_group(group_id, full_group=True)
+        if not group_id:
+            raise Error("This group could not be loaded. Make sure you select an option from the dropdown.")
+
+        try:
+            group = await get_group(group_id, full_group=True)
+        except RobloxNotFound:
+            raise RobloxAPIError("This group could not be loaded. Please try again later.")
 
         group_lock = await get_guild_value(guild, "groupLock") or {}
         parsed_rolesets = []
@@ -207,11 +224,14 @@ class GroupLockCommand(Bloxlink.Module):
 
         guild      = CommandArgs.guild
         response   = CommandArgs.response
-        group_id   = CommandArgs.parsed_args["group"]
+        group_id   = self.parse_group_id(CommandArgs.parsed_args["group"])
 
         group_lock = await get_guild_value(guild, "groupLock") or {}
 
         group_lock.pop(group_id, None)
+
+        if not group_id:
+            raise Error("This group could not be loaded. Make sure you select an option from the dropdown.")
 
         await set_guild_value(guild, groupLock=group_lock if group_lock else None)
 

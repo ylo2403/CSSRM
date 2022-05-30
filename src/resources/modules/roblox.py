@@ -926,9 +926,9 @@ class Roblox(Bloxlink.Module):
                             return added, removed, chosen_nickname, errored, warnings, roblox_user
 
                     if required_groups:
-                        if dm:
-                            should_kick_unverified = any(g.get("unverifiedAction", "kick") == "kick" for g in required_groups.values())
+                        should_kick_unverified = any(g.get("unverifiedAction", "kick") == "kick" for g in required_groups.values())
 
+                        if dm:
                             if should_kick_unverified:
                                 dm_message = DEFAULTS.get("kickMessageNotVerified")
                             else:
@@ -2470,7 +2470,7 @@ class RobloxUser(Bloxlink.Module):
                         if roblox_user:
                             roblox_user.dev_forum = roblox_data["dev_forum"]
 
-                except RobloxDown:
+                except (RobloxDown, RobloxAPIError):
                     pass
 
             if embed and (everything or "dev_forum" in args or "devforum" in args):
@@ -2513,8 +2513,8 @@ class RobloxUser(Bloxlink.Module):
         if everything or "premium" in args or "badges" in args:
             await membership_and_badges()
 
-        if everything or "dev_forum" in args or "devforum" in args:
-            await dev_forum()
+        # if everything or "dev_forum" in args or "devforum" in args:
+        #     await dev_forum()
 
         if everything or "overlay" in args:
             await overlay()

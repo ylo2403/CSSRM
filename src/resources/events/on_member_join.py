@@ -31,7 +31,7 @@ class MemberJoinEvent(Bloxlink.Module):
             if guild.verification_level == discord.VerificationLevel.highest:
                 try:
                     await member.send(f"This server ({guild.name}) requires that you **verify your phone number.** Please make sure a phone number is connected to your Discord account, then use the `/getrole` command in the server to get your roles.")
-                except discord.errors.Forbidden:
+                except discord.errors.HTTPException:
                     pass
 
                 return
@@ -42,7 +42,7 @@ class MemberJoinEvent(Bloxlink.Module):
                         await member.send(f"This server ({guild.name}) has **Member Screening** enabled. Please "
                                             "complete the screening in order to access the rest of the server.\n"
                                             "Go here to learn more about Member Screening: https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ")
-                    except discord.errors.Forbidden:
+                    except discord.errors.HTTPException:
                         pass
             else:
                 if auto_verification or auto_roles:
@@ -53,5 +53,5 @@ class MemberJoinEvent(Bloxlink.Module):
                     except RobloxDown:
                         try:
                             await member.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
-                        except discord.errors.Forbidden:
+                        except discord.errors.HTTPException:
                             pass
