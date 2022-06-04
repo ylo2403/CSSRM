@@ -12,6 +12,7 @@ from config import BOTS # pylint: disable=import-error, no-name-in-module, no-na
 from resources.modules.premium import OldPremiumView # pylint: disable=import-error, no-name-in-module, no-name-in-module
 import datetime
 import random
+import time
 
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
@@ -92,7 +93,7 @@ class Commands(Bloxlink.Module):
 
             for index, command in self.commands.items():
                 if index == command_name or command_name in getattr(command, "aliases", []):
-                    await self.post_slash_command_warning(command_name, message)
+                    # await self.post_slash_command_warning(command_name, message)
                     break
 
     async def post_slash_command_warning(self, command_name, message):
@@ -246,7 +247,7 @@ class Commands(Bloxlink.Module):
             raise CancelCommand
 
         try:
-            await command.check_permissions(author, guild, channel, **subcommand_attrs)
+            await command.check_permissions(author, guild, channel, dm=dm, **subcommand_attrs)
         except PermissionError as e:
             if subcommand_attrs.get("allow_bypass"):
                 CommandArgs.has_permission = False
@@ -360,7 +361,7 @@ class Commands(Bloxlink.Module):
             """
 
             await response.error(locale("errors.commandError"))
-            Bloxlink.error(traceback.format_exc(), title=f"Error source: {command.name}.py\n{f'Guild ID: {guild.id}' if guild else ''}")
+            Bloxlink.error(traceback.format_exc(), title=f"Error source: {command.name}.py\n{f'Guild ID: {guild.id}' if guild else ''}\n{f'User ID: {author.id}' if author else ''}")
 
         else:
             if guild:
@@ -564,7 +565,7 @@ class Commands(Bloxlink.Module):
             print(response.status, text, flush=True)
 
 
-    async def send_autocomplete_options(self, interaction, command_name, subcommand, command_args, focused_option):
+    async def send_autocomplete_options(self, interaction, command_name, subcommand, command_args, focused_option, time_started):
         command = getattr(self, "commands").get(command_name)
 
         if command:
@@ -583,7 +584,9 @@ class Commands(Bloxlink.Module):
                 except TypeError:
                     send_options = await prompt["auto_complete"](interaction, command_args, focused_option["value"])
 
-                if send_options:
+                time_stop = time.time()
+
+                if send_options and time_stop - time_started < 3.0:
                     route = discord.http.Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=interaction.id, interaction_token=interaction.token)
 
                     payload = {
@@ -603,7 +606,7 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None, channel=None):
+    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None, channel=None, response=None, time_started=None):
         command = self.commands.get(command_name)
 
         guild   = interaction.guild
@@ -635,7 +638,7 @@ class Commands(Bloxlink.Module):
                 fn = command.fn
 
             locale = Locale("en")
-            response = Response.from_interaction(interaction, resolved=resolved, command=command, locale=locale, forwarded=forwarded)
+            response = response or Response.from_interaction(interaction, resolved=resolved, command=command, time_started=response and response.time_started or time_started, forwarded=forwarded)
 
             if command_args:
                 response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)

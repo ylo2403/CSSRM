@@ -6,6 +6,7 @@ from ..structures import Bloxlink, Paginate, Args # pylint: disable=no-name-in-m
 from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
+import time
 
 
 
@@ -123,7 +124,7 @@ class ResponseLoading:
 
 
 class Response(Bloxlink.Module):
-    def __init__(self, CommandArgs, author, channel, guild=None, message=None, interaction=None, forwarded=False):
+    def __init__(self, CommandArgs, author, channel, time_started, guild=None, message=None, interaction=None, forwarded=False):
         self.message = message
         self.guild   = guild
         self.author  = author
@@ -132,6 +133,8 @@ class Response(Bloxlink.Module):
         self.args    = CommandArgs
         self.command = CommandArgs.command
 
+        self.time_started = time_started
+
         self.delete_message_queue = []
         self.bot_responses        = []
 
@@ -139,13 +142,18 @@ class Response(Bloxlink.Module):
         self.first_slash_command = None
         self.forwarded = forwarded
 
+        self.deferred = False
+        self.slash_invalidated = False
+
         self.send_modal = interaction.response.send_modal if interaction else None
 
     @staticmethod
-    def from_interaction(interaction, resolved=None, command=None, locale=None, forwarded=False):
+    def from_interaction(interaction, resolved=None, command=None, forwarded=False, time_started=None):
         guild = interaction.guild
         channel = interaction.channel
         user = interaction.user
+
+        time_started = time_started or time.time()
 
         command_args = Args(
             command_name = command.name if command else None,
@@ -161,7 +169,7 @@ class Response(Bloxlink.Module):
             resolved = resolved
         )
 
-        return Response(command_args, user, channel, guild, locale, interaction=interaction, forwarded=forwarded)
+        return Response(command_args, user, channel, time_started, guild, interaction=interaction, forwarded=forwarded)
 
     def loading(self, text="Please wait until the operation completes."):
         return ResponseLoading(self, text)
@@ -173,10 +181,14 @@ class Response(Bloxlink.Module):
 
     def renew(self, interaction):
         self.interaction = interaction
+        self.slash_invalidated = False
+        self.deferred = False
+        self.time_started = time.time()
 
     async def slash_defer(self, ephemeral=False):
         await self.interaction.response.defer(ephemeral=ephemeral)
         self.args.first_slash_command = None
+        self.deferred = True
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
         msg = None
@@ -193,6 +205,15 @@ class Response(Bloxlink.Module):
 
             if files:
                 kwargs["files"] = files
+
+            time_now = time.time()
+
+            if not self.deferred and time_now - self.time_started > 3.0:
+                self.slash_invalidated = True
+                return
+            elif self.deferred and time_now - self.time_started > 900.0: # 15 minutes
+                self.slash_invalidated = True
+                return
 
             if not self.interaction.response.is_done():
                 await self.interaction.response.send_message(**kwargs)
@@ -214,6 +235,9 @@ class Response(Bloxlink.Module):
     async def send(self, content=None, embed=None, dm=False, no_dm_post=False, strict_post=False, files=None, ignore_http_check=False, paginate_field_limit=None, send_as_slash_command=True, channel_override=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), hidden=False, ignore_errors=False, reply=True, reference=None, mention_author=False, fail_on_dm=False, view=None):
         if (dm and not IS_DOCKER) or (self.interaction and hidden):
             dm = False
+
+        if self.slash_invalidated:
+            return
 
         if dm or isinstance(self.channel, DMChannel):
             send_as_slash_command = False

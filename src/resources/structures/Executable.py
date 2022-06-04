@@ -183,7 +183,7 @@ class Command(Executable):
         execute_interaction_command = Bloxlink.get_module("commands", attrs=["execute_interaction_command"])
 
         try:
-            await execute_interaction_command("commands", new_command_name, channel=new_channel or CommandArgs.interaction.channel, interaction=CommandArgs.interaction,
+            await execute_interaction_command("commands", new_command_name, channel=new_channel or CommandArgs.interaction.channel, response=CommandArgs.response, interaction=CommandArgs.interaction,
                                               subcommand=None, arguments=arguments, command_args=CommandArgs, forwarded=True)
         except CancelCommand:
             pass

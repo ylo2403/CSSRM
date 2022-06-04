@@ -42,9 +42,8 @@ class VerifyM(Bloxlink.Module):
 
             old_nickname = user.display_name
 
-            await interaction.response.defer()
-
             response = Response.from_interaction(interaction)
+            await response.slash_defer()
 
             try:
                 added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
