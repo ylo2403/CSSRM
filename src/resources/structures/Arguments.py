@@ -291,7 +291,7 @@ class Arguments:
                                 message = None
                                 custom_id = interaction.data["custom_id"]
 
-                                #self.response.renew(interaction)
+                                self.response.renew(interaction)
 
                                 if interaction.data["component_type"] == 3:
                                     select_values = interaction.data["values"]

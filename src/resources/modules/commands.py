@@ -93,7 +93,7 @@ class Commands(Bloxlink.Module):
 
             for index, command in self.commands.items():
                 if index == command_name or command_name in getattr(command, "aliases", []):
-                    # await self.post_slash_command_warning(command_name, message)
+                    await self.post_slash_command_warning(command_name, message)
                     break
 
     async def post_slash_command_warning(self, command_name, message):
@@ -565,7 +565,7 @@ class Commands(Bloxlink.Module):
             print(response.status, text, flush=True)
 
 
-    async def send_autocomplete_options(self, interaction, command_name, subcommand, command_args, focused_option, time_started):
+    async def send_autocomplete_options(self, interaction, command_name, subcommand, command_args, focused_option):
         command = getattr(self, "commands").get(command_name)
 
         if command:
@@ -584,9 +584,7 @@ class Commands(Bloxlink.Module):
                 except TypeError:
                     send_options = await prompt["auto_complete"](interaction, command_args, focused_option["value"])
 
-                time_stop = time.time()
-
-                if send_options and time_stop - time_started < 3.0:
+                if send_options and not interaction.is_expired():
                     route = discord.http.Route("POST", "/interactions/{interaction_id}/{interaction_token}/callback", interaction_id=interaction.id, interaction_token=interaction.token)
 
                     payload = {
@@ -606,7 +604,7 @@ class Commands(Bloxlink.Module):
                     except discord.errors.NotFound:
                         pass
 
-    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None, channel=None, response=None, time_started=None):
+    async def execute_interaction_command(self, typex, command_name, interaction, resolved=None, subcommand=None, arguments=None, forwarded=False, command_args=None, channel=None, response=None):
         command = self.commands.get(command_name)
 
         guild   = interaction.guild
@@ -638,7 +636,7 @@ class Commands(Bloxlink.Module):
                 fn = command.fn
 
             locale = Locale("en")
-            response = response or Response.from_interaction(interaction, resolved=resolved, command=command, time_started=response and response.time_started or time_started, forwarded=forwarded)
+            response = response or Response.from_interaction(interaction, resolved=resolved, command=command, forwarded=forwarded)
 
             if command_args:
                 response.first_slash_command = getattr(command_args, "first_slash_command", response.first_slash_command)

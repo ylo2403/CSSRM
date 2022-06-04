@@ -6,7 +6,6 @@ from ..structures import Bloxlink, Paginate, Args # pylint: disable=no-name-in-m
 from config import REACTIONS # pylint: disable=no-name-in-module
 from ..constants import IS_DOCKER, EMBED_COLOR # pylint: disable=no-name-in-module, import-error
 import asyncio
-import time
 
 
 
@@ -124,7 +123,7 @@ class ResponseLoading:
 
 
 class Response(Bloxlink.Module):
-    def __init__(self, CommandArgs, author, channel, time_started, guild=None, message=None, interaction=None, forwarded=False):
+    def __init__(self, CommandArgs, author, channel, guild=None, message=None, interaction=None, forwarded=False):
         self.message = message
         self.guild   = guild
         self.author  = author
@@ -132,8 +131,6 @@ class Response(Bloxlink.Module):
         self.prompt  = None # filled in on commands.py
         self.args    = CommandArgs
         self.command = CommandArgs.command
-
-        self.time_started = time_started
 
         self.delete_message_queue = []
         self.bot_responses        = []
@@ -148,12 +145,10 @@ class Response(Bloxlink.Module):
         self.send_modal = interaction.response.send_modal if interaction else None
 
     @staticmethod
-    def from_interaction(interaction, resolved=None, command=None, forwarded=False, time_started=None):
+    def from_interaction(interaction, resolved=None, command=None, forwarded=False):
         guild = interaction.guild
         channel = interaction.channel
         user = interaction.user
-
-        time_started = time_started or time.time()
 
         command_args = Args(
             command_name = command.name if command else None,
@@ -169,7 +164,7 @@ class Response(Bloxlink.Module):
             resolved = resolved
         )
 
-        return Response(command_args, user, channel, time_started, guild, interaction=interaction, forwarded=forwarded)
+        return Response(command_args, user, channel, guild, interaction=interaction, forwarded=forwarded)
 
     def loading(self, text="Please wait until the operation completes."):
         return ResponseLoading(self, text)
@@ -183,11 +178,9 @@ class Response(Bloxlink.Module):
         self.interaction = interaction
         self.slash_invalidated = False
         self.deferred = False
-        self.time_started = time.time()
 
     async def slash_defer(self, ephemeral=False):
         await self.interaction.response.defer(ephemeral=ephemeral)
-        self.args.first_slash_command = None
         self.deferred = True
 
     async def send_to(self, dest, content=None, files=None, embed=None, allowed_mentions=AllowedMentions(everyone=False, roles=False), send_as_slash_command=True, hidden=False, reference=None, mention_author=None, fail_on_dm=None, view=None):
@@ -197,6 +190,9 @@ class Response(Bloxlink.Module):
             return None
 
         if self.interaction and send_as_slash_command:
+            if self.interaction.is_expired():
+                return
+
             kwargs = {"content": content, "ephemeral": hidden}
             if embed:
                 kwargs["embeds"] = [embed]
@@ -206,24 +202,13 @@ class Response(Bloxlink.Module):
             if files:
                 kwargs["files"] = files
 
-            time_now = time.time()
-
-            if not self.deferred and time_now - self.time_started > 3.0:
-                self.slash_invalidated = True
-                return
-            elif self.deferred and time_now - self.time_started > 900.0: # 15 minutes
-                self.slash_invalidated = True
-                return
-
             if not self.interaction.response.is_done():
                 await self.interaction.response.send_message(**kwargs)
                 msg = InteractionWebhook(self.interaction, False)
-            else:
-                msg = InteractionWebhook(await self.interaction.followup.send(**kwargs), True) # webhook
-
-            if not self.first_slash_command:
                 self.first_slash_command = msg
                 self.args.first_slash_command = msg
+            else:
+                msg = InteractionWebhook(await self.interaction.followup.send(**kwargs), True) # webhook
 
         else:
             msg = await dest.send(content, embed=embed, files=files, allowed_mentions=allowed_mentions, reference=reference, mention_author=mention_author, view=view)

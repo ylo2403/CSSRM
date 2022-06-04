@@ -48,6 +48,9 @@ class GroupLockCommand(Bloxlink.Module):
         ]
 
     async def auto_complete_roleset(self, interaction, command_args, focused_option):
+        if not command_args.get("group"):
+            return []
+
         try:
             group = await get_group(command_args["group"], full_group=True)
         except RobloxNotFound:

@@ -2,7 +2,6 @@ from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-na
 from ..exceptions import CancelCommand # pylint: disable=import-error, no-name-in-module
 from discord import User, Message, PartialMessageable
 from ..constants import RELEASE # pylint: disable=import-error, no-name-in-module
-import time
 
 
 execute_interaction_command, send_autocomplete_options = Bloxlink.get_module("commands", attrs=["execute_interaction_command", "send_autocomplete_options"])
@@ -10,13 +9,19 @@ execute_interaction_command, send_autocomplete_options = Bloxlink.get_module("co
 
 @Bloxlink.event
 async def on_interaction(interaction):
-    time_started = time.time()
-
     data = interaction.data
     command_name = interaction.data.get("name")
     command_args = {}
 
     channel = interaction.channel
+    guild   = interaction.guild
+
+    if isinstance(channel, PartialMessageable) and guild:
+        channel = guild.get_channel(channel.id)
+
+        if not channel:
+            return
+
 
     if not data.get("type"):
         return
@@ -31,7 +36,7 @@ async def on_interaction(interaction):
                 resolved = Message(state=interaction._state, channel=channel, data=list(data["resolved"]["messages"].values())[0])
 
         try:
-            await execute_interaction_command("extensions", command_name, interaction=interaction, resolved=resolved, time_started=time_started)
+            await execute_interaction_command("extensions", command_name, interaction=interaction, resolved=resolved)
         except CancelCommand:
             pass
 
@@ -65,12 +70,12 @@ async def on_interaction(interaction):
                         subcommand = arg["name"]
 
         if focused_option:
-            await send_autocomplete_options(interaction, command_name, subcommand, command_args, focused_option, time_started=time_started)
+            await send_autocomplete_options(interaction, command_name, subcommand, command_args, focused_option)
             return
 
         # execute slash command
         try:
             await execute_interaction_command("commands", command_name, interaction=interaction, subcommand=subcommand,
-                                              arguments=command_args, time_started=time_started)
+                                              arguments=command_args)
         except CancelCommand:
             pass

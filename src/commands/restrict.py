@@ -70,7 +70,7 @@ class RestrictCommand(Bloxlink.Module):
         focused_option = focused_option.lower()
 
         guild = interaction.guild
-        restrictions = await get_guild_value(guild, "restrictions")
+        restrictions = await get_guild_value(guild, "restrictions") or {}
         parsed_restrictions = []
 
         for restriction_name, title_name in RESTRICTION_NAME_DB_USER_MAP.items():
