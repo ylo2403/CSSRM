@@ -1,6 +1,6 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 from ..constants import DEFAULTS # pylint: disable=import-error, no-name-in-module
-from ..exceptions import CancelCommand, RobloxDown # pylint: disable=import-error, no-name-in-module
+from ..exceptions import CancelCommand, RobloxDown, Blacklisted # pylint: disable=import-error, no-name-in-module
 import discord
 
 get_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value"])
@@ -29,7 +29,7 @@ class MemberUpdateEvent(Bloxlink.Module):
 
                 if auto_verification or auto_roles:
                     try:
-                        await guild_obligations(after, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown",))
+                        await guild_obligations(after, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
                     except CancelCommand:
                         pass
                     except RobloxDown:
@@ -37,3 +37,5 @@ class MemberUpdateEvent(Bloxlink.Module):
                             await after.send("Roblox appears to be down, so I was unable to retrieve your Roblox information. Please try again later.")
                         except discord.errors.Forbidden:
                             pass
+                    except Blacklisted as b:
+                        pass
