@@ -1666,6 +1666,10 @@ class Roblox(Bloxlink.Module):
             add_roles = add_roles.difference(user.roles)
 
             try:
+                for role in (*add_roles, *remove_roles):
+                    if role.position > me.top_role.position:
+                        raise PermissionError(f"Sorry, I can't add or remove roles above my highest role.\nPlease move the **{role}** role to a lower position or my highest role, **{me.top_role}**, higher.")
+
                 if add_roles:
                     await user.add_roles(*add_roles, reason="Adding group roles")
 
