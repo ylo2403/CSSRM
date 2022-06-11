@@ -2498,8 +2498,8 @@ class RobloxUser(Bloxlink.Module):
             elif "4199740" in roblox_data["groups"]:
                 roblox_data["overlay"] = "star"
 
-            elif "Administrator" in roblox_data["badges"]:
-                roblox_data["overlay"] = "rblx_staff"
+            # elif "Administrator" in roblox_data["badges"]:
+            #     roblox_data["overlay"] = "rblx_staff"
 
             if roblox_user:
                 roblox_user.overlay = roblox_data["overlay"]
@@ -2514,8 +2514,8 @@ class RobloxUser(Bloxlink.Module):
         if everything or "description" in args or "blurb" in args or "age" in args or "banned" in args:
             await profile()
 
-        if everything or "premium" in args or "badges" in args:
-            await membership_and_badges()
+        # if everything or "premium" in args or "badges" in args:
+        #     await membership_and_badges()
 
         # if everything or "dev_forum" in args or "devforum" in args:
         #     await dev_forum()
