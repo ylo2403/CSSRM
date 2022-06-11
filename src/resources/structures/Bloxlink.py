@@ -3,7 +3,7 @@ from os import environ as env
 from discord import AutoShardedClient, AllowedMentions, Intents, Game
 from config import WEBHOOKS # pylint: disable=E0611
 from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
-from ..secrets import (REDIS_PASSWORD, REDIS_PORT, REDIS_HOST, MONGO_CONNECTION_STRING, MONGO_CA_FILE) # pylint: disable=import-error, no-name-in-module
+from ..secrets import (REDIS_CONNECTION_STRING, MONGO_CONNECTION_STRING, MONGO_CA_FILE) # pylint: disable=import-error, no-name-in-module)
 from . import Permissions # pylint: disable=import-error, no-name-in-module
 from os.path import exists
 import functools
@@ -291,7 +291,7 @@ def load_redis():
 
     while not redis:
         try:
-            redis = aredis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, retry_on_timeout=True)
+            redis = aredis.StrictRedis.from_url(REDIS_CONNECTION_STRING, retry_on_timeout=True, connect_timeout=3)
         except aredis.exceptions.ConnectionError:
             raise SystemError("Failed to connect to Redis.")
         else:

@@ -73,17 +73,30 @@ class IPC(Bloxlink.Module):
                 if action == "request":
                     if action_type == "channels":
                         response_data["type"] = "channels"
-                        response_data["result"] = [
-                            {
-                                "id": str(c.id),
-                                "name": c.name,
-                                "position": c.position,
-                                "type": c.type,
+                        channels_result = []
 
-                            } for c in guild.channels
-                        ]
+                        for category, channels in guild.by_category():
+                            if category:
+                                channels_result.append({
+                                    "id": str(category.id),
+                                    "name": category.name,
+                                    "position": category.position,
+                                    "type": category.type,
+                                })
 
+                            if channels:
+                                channels_result += [
+                                    {
+                                        "id": str(c.id),
+                                        "name": c.name,
+                                        "position": c.position,
+                                        "type": c.type,
+                                    } for c in channels
+                                ]
+
+                        response_data["result"] = channels_result
                         response_data["success"] = True
+
                     elif action_type == "roles":
                         response_data["type"] = "roles"
                         response_data["result"] = [
