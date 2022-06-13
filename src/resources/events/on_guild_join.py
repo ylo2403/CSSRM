@@ -9,7 +9,7 @@ post_stats = Bloxlink.get_module("site_services", name_override="DBL", attrs="po
 get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
-NOT_PREMIUM = "**Notice - Server Not Premium**\nPro can only be used on " \
+NOT_PRO = "**Notice - Server Not Pro**\nPro can only be used on " \
               "servers with Pro from https://blox.link.\nFind more information with the " \
               "`/donate` command. Any trouble? Message us here: " + SERVER_INVITE
 
@@ -58,7 +58,7 @@ class GuildJoinEvent(Bloxlink.Module):
                 if "pro" not in profile.features:
                     if chosen_channel:
                         try:
-                            await chosen_channel.send(NOT_PREMIUM)
+                            await chosen_channel.send(NOT_PRO)
                         except (NotFound, Forbidden):
                             pass
 
