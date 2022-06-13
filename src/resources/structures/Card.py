@@ -339,6 +339,7 @@ class Card(Bloxlink.Module):
 
         if self.from_interaction:
             self.response.renew(interaction)
+            await interaction.response.defer(thinking=False)
 
         if self.side == CardSide.FRONT:
             await self.request_back_card()
