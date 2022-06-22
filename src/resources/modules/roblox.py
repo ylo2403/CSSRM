@@ -511,7 +511,7 @@ class Roblox(Bloxlink.Module):
         return role_binds, group_ids
 
 
-    async def guild_obligations(self, member, guild, join=None, cache=True, dm=False, event=False, response=None, exceptions=False, roles=True, nickname=True, roblox_user=None):
+    async def guild_obligations(self, member, guild, join=None, cache=True, dm=False, event=False, response=None, exceptions=None, roles=True, nickname=True, roblox_user=None):
         if member.bot:
             raise CancelCommand
 
@@ -986,6 +986,9 @@ class Roblox(Bloxlink.Module):
 
                 await post_log(leave_channel, RED_COLOR)
         finally:
+            if unverified and "UserNotVerified" in exceptions:
+                raise UserNotVerified
+
             self.pending_verifications.pop(member.id, None)
 
 
