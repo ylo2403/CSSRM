@@ -985,12 +985,12 @@ class Roblox(Bloxlink.Module):
                 leave_channel = await get_guild_value(guild, "leaveChannel")
 
                 await post_log(leave_channel, RED_COLOR)
-        finally:
+
             if unverified and "UserNotVerified" in exceptions:
                 raise UserNotVerified
 
+        finally:
             self.pending_verifications.pop(member.id, None)
-
 
     # async def get_binds_for_user(self, user, guild, *, guild_data=None, roblox_user=None, cache=False):
     #     """return the required and optional binds for the user"""
