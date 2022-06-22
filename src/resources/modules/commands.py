@@ -372,7 +372,7 @@ class Commands(Bloxlink.Module):
                     old_premium_timestamp = await get_guild_value(guild, ["oldPremiumWarningsSuppressed", 0])
                     time_expiring = datetime.datetime.fromtimestamp(old_premium_timestamp)
 
-                    if time_expiring + datetime.timedelta(days=30) <= datetime.datetime.utcnow():
+                    if time_expiring + datetime.timedelta(days=14) <= datetime.datetime.utcnow():
                         await response.send("This server has the old, deprecated premium. **You must migrate this server to use the new system** or it'll stop working soon!\n"
                                             "Have the subscription owner go to <https://blox.link/dashboard/patreon> to migrate and make this error go away.", view=OldPremiumView(), hidden=True)
 

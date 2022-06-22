@@ -23,7 +23,7 @@ class OldPremiumView(discord.ui.View):
         if user.resolved_permissions.administrator or user.resolved_permissions.manage_guild:
             datetime_now = datetime.datetime.now()
             await set_db_value("guilds", guild, oldPremiumWarningsSuppressed=datetime_now.timestamp())
-            await interaction.response.send_message("All warnings were suppressed for 1 month.", ephemeral=True)
+            await interaction.response.send_message("All warnings were suppressed for 2 weeks.", ephemeral=True)
         else:
             await interaction.response.send_message("You do not have permission to suppress warnings.", ephemeral=True)
 
