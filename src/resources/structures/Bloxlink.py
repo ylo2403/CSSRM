@@ -3,7 +3,7 @@ from os import environ as env
 from discord import AutoShardedClient, AllowedMentions, Intents, Game
 from config import WEBHOOKS # pylint: disable=E0611
 from ..constants import SHARD_RANGE, CLUSTER_ID, SHARD_COUNT, RELEASE, SELF_HOST, PLAYING_STATUS # pylint: disable=import-error, no-name-in-module
-from ..secrets import (REDIS_CONNECTION_STRING, MONGO_CONNECTION_STRING, MONGO_CA_FILE) # pylint: disable=import-error, no-name-in-module)
+from ..secrets import (REDIS_CONNECTION_STRING, MONGO_CONNECTION_STRING, MONGO_CA_FILE, DISCORD_PROXY) # pylint: disable=import-error, no-name-in-module)
 from . import Permissions # pylint: disable=import-error, no-name-in-module
 from os.path import exists
 import functools
@@ -282,7 +282,8 @@ Bloxlink = BloxlinkStructure(
     shard_ids=SHARD_RANGE,
     allowed_mentions=AllowedMentions(everyone=False, users=True, roles=False),
     intents=intents,
-    activity=Game(PLAYING_STATUS)
+    activity=Game(PLAYING_STATUS),
+    proxy=DISCORD_PROXY if DISCORD_PROXY else None,
 )
 
 
