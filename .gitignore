@@ -154,3 +154,4 @@ src/commands/registergame.py
 docker-compose.yml
 src/commands/eval2.py
 src/config.py
+src/data/blacklist.json

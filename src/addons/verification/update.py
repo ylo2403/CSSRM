@@ -200,10 +200,10 @@ class UpdateCommand(Bloxlink.Module):
                 except Blacklisted as b:
                     if isinstance(b.message, str):
                         text = f"has an action restriction for: `{b}`" if b.prefix else b
-                        raise Error(f"{user.mention}, {text}")
                     else:
                         text = f"has an action restriction from Bloxlink." if b.prefix else b
-                        raise Error(f"{user.mention} {text}")
+
+                    raise Error(f"{user.mention} {text}")
 
                 except CancelCommand:
                     pass

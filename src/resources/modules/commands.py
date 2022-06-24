@@ -620,7 +620,7 @@ class Commands(Bloxlink.Module):
             raise CancelCommand
 
         if guild:
-            guild_restriction = await get_restriction("guilds", guild.id)
+            guild_restriction = await get_restriction("guilds", guild.id) or await get_restriction("users", guild.owner_id)
 
             if guild_restriction:
                 await guild.leave()
