@@ -14,26 +14,14 @@ class VerifyChannelModal(discord.ui.Modal, title="Verification Channel"):
                                                 style=discord.TextStyle.paragraph,
                                                 max_length=2000)
 
-    def __init__(self, verify_channel, *args, **kwargs):
-        self.verify_channel = verify_channel
+    def __init__(self, *args, **kwargs):
+        self.submitted = False
         super().__init__(*args, **kwargs)
 
     async def on_submit(self, interaction: discord.Interaction):
-        guild = interaction.guild
+        self.submitted = True
 
-        verify_button_text = None
-
-        for child in self.children:
-            if child.custom_id == "verify_channel_modal:verify_button_label":
-                verify_button_text = child.value
-
-        try:
-            await self.verify_channel.send(str(self.bloxlink_post).replace("{server-name}", guild.name), view=VerificationView(verify_button_text or "Verify with Bloxlink", self.bloxlink_post.value))
-        except discord.errors.Forbidden:
-            await interaction.response.send_message("I was unable to post in your verification channel. Please make sure I have the correct permissions.")
-        else:
-            await interaction.response.send_message(f"Your new verification channel has been created! {self.verify_channel.mention}")
-
+        await interaction.response.send_message("Processing...", ephemeral=True)
 
 class VerifyChannelCommand(Bloxlink.Module):
     """create a special verification channel"""
@@ -56,22 +44,20 @@ class VerifyChannelCommand(Bloxlink.Module):
         response = CommandArgs.response
         guild    = CommandArgs.guild
 
-        is_premium = "premium" in (await has_premium(guild=guild)).features
-
         existing_channel = CommandArgs.parsed_args["existing_channel"]
 
-        verify_category = discord.utils.find(lambda c: c.name == "Verification", guild.categories) or await guild.create_category(name="Verification")
-        verify_channel  = existing_channel or discord.utils.find(lambda c: c.name == "verify", guild.text_channels) or await guild.create_text_channel(name="verify", category=verify_category)
+        is_premium = "premium" in (await has_premium(guild=guild)).features
 
-        await verify_channel.set_permissions(guild.me, send_messages=True, read_messages=True)
+        welcome_message = await get_guild_value(guild, "welcomeMessage")
 
-        verify_instructions = discord.utils.find(lambda c: c.name == "verify-instructions", guild.text_channels)
+        my_permissions = guild.me.guild_permissions
+
+        if not my_permissions.manage_channels or not my_permissions.manage_roles:
+            return await response.send("I need both the `Manage Channels` and `Manage Roles` permission for this command.")
 
         try:
-            verify_instructions = existing_channel or verify_instructions or verify_channel
-            welcome_message = await get_guild_value(guild, "welcomeMessage")
-
-            modal = VerifyChannelModal(verify_channel)
+            # discord.py doesn't support deferring then sending a modal so we need to send the modal FIRST then create channels after
+            modal = VerifyChannelModal()
 
             if is_premium:
                 modal.add_item(item=discord.ui.TextInput(label="What text do you want for your Verify button?",
@@ -88,23 +74,41 @@ class VerifyChannelCommand(Bloxlink.Module):
                             max_length=2000,
                             custom_id="verify_channel_modal:welcome_message"))
 
-            await verify_instructions.set_permissions(guild.me, send_messages=True, read_messages=True)
-            await verify_instructions.set_permissions(guild.default_role, send_messages=False, read_messages=True)
-
             await response.send_modal(modal)
+
+            if existing_channel:
+                verify_category = existing_channel.category
+            else:
+                verify_category = discord.utils.find(lambda c: c.name == "Verification", guild.categories) or await guild.create_category(name="Verification")
+
+            verify_channel = existing_channel or discord.utils.find(lambda c: c.name in ("verify", "verify-instructions"), guild.text_channels) or await guild.create_text_channel(name="verify", category=verify_category)
+
+            await verify_channel.set_permissions(guild.me, send_messages=True, read_messages=True)
 
             await modal.wait()
 
-            success_text = f"All done! Your new verification channel is {verify_channel.mention}!"
+            if not modal.submitted:
+                return
 
-            if not is_premium:
-                success_text += ("\n\n**Pro-tip:** Bloxlink Premium subscribers can "
-                                "[customize the text of the verification button and customize the text that Bloxlink posts!](<https://twitter.com/bloxlink/status/1521487474949857282>)\n"
-                                f"Subscribe from our [Dashboard!](<https://blox.link/dashboard/guilds/{guild.id}/premium>)")
+            verify_button_text = None
 
-            await response.send(success_text)
+            for child in modal.children:
+                if child.custom_id == "verify_channel_modal:verify_button_label":
+                    verify_button_text = child.value
 
+            try:
+                await verify_channel.send(modal.bloxlink_post.value.replace("{server-name}", guild.name), view=VerificationView(verify_button_text or "Verify with Bloxlink", modal.bloxlink_post.value))
+            except discord.errors.Forbidden:
+                await response.send("I was unable to post in your verification channel. Please make sure I have the correct permissions.")
+            else:
+                success_text = f"All done! Your new verification channel is {verify_channel.mention}!"
 
+                if not is_premium:
+                    success_text += ("\n\n**Pro-tip:** Bloxlink Premium subscribers can "
+                                    "[customize the text of the verification button and customize the text that Bloxlink posts!](<https://twitter.com/bloxlink/status/1521487474949857282>)\n"
+                                    f"Subscribe from our [Dashboard!](<https://blox.link/dashboard/guilds/{guild.id}/premium>)")
+
+                await response.send(success_text)
 
         except discord.errors.Forbidden:
-            await response.send("I encountered a permission error. Please make sure I can create channels and set permissions.")
+            await response.send("I encountered a permission error. Make sure I have the Manage Channels and Manage Permissions permissions.")

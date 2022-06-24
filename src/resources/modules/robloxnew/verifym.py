@@ -1,5 +1,5 @@
 from ...structures import Bloxlink, Response # pylint: disable=no-name-in-module, import-error
-from ...exceptions import BloxlinkBypass, Blacklisted, PermissionError, UserNotVerified, Message, Error, RobloxAPIError # pylint: disable=import-error, no-name-in-module
+from ...exceptions import BloxlinkBypass, Blacklisted, PermissionError, UserNotVerified, RobloxDown, RobloxAPIError, CancelCommand # pylint: disable=import-error, no-name-in-module
 from resources.constants import VERIFY_URL, VERIFY_URL_GUILD, DEFAULTS # pylint: disable=import-error, no-name-in-module
 import discord
 
@@ -64,10 +64,10 @@ class VerifyM(Bloxlink.Module):
             except Blacklisted as b:
                 if isinstance(b.message, str):
                     text = f"has an action restriction for: `{b}`" if b.prefix else b
-                    await response.send(f"{user.mention}, {text}", hidden=True)
                 else:
                     text = f"has an action restriction from Bloxlink." if b.prefix else b
-                    await response.send(f"{user.mention}, {text}", hidden=True)
+
+                await response.send(f"{user.mention}, {text}", hidden=True)
 
             except UserNotVerified:
                 verify_link = await VerifyM.get_verify_link(guild)
@@ -76,7 +76,16 @@ class VerifyM(Bloxlink.Module):
 
 
             except PermissionError as e:
-                raise Error(e.message)
+                await response.send(e.message, hidden=True)
+
+            except CancelCommand:
+                return
+
+            except RobloxDown:
+                await response.send("Roblox is currently down. Please try again later.", hidden=True)
+
+            except RobloxAPIError:
+                await response.send("I encountered an unknown Roblox API error. Please try again later.", hidden=True)
 
             else:
                 welcome_message, card, embed = await format_update_embed(
