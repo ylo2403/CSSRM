@@ -112,6 +112,18 @@ class IPC(Bloxlink.Module):
                         ]
 
                         response_data["success"] = True
+
+                    elif action_type == "guild":
+                        response_data["type"] = "guild"
+                        response_data["result"] = {
+                            "id": str(guild.id),
+                            "name": guild.name,
+                            "icon": str(guild.icon) if guild.icon else None,
+                            "owner": str(guild.owner_id),
+                            "splash": str(guild.banner) if guild.banner else None,
+                        }
+                        response_data["success"] = True
+
                     else:
                         response_data["success"] = False
                         response_data["error"] = "Invalid action type"
