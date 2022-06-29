@@ -121,6 +121,8 @@ class IPC(Bloxlink.Module):
                             "icon": str(guild.icon) if guild.icon else None,
                             "owner": str(guild.owner_id),
                             "splash": str(guild.banner) if guild.banner else None,
+                            "totalMembers": guild.member_count or 0,
+                            "createdDate": guild.created_at.timestamp(),
                         }
                         response_data["success"] = True
 
