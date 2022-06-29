@@ -844,7 +844,7 @@ class Roblox(Bloxlink.Module):
                                                 raise CancelCommand
 
                                         else:
-                                            raise Blacklisted(f"you do not have the required Roleset in the group [{group.name}](<{group.url}>).", prefix=False)
+                                            raise Blacklisted(f"you do not have the required Roleset in the group [{group.name}](<{group.url}>).", guild_restriction=True)
 
                                         return added, removed, chosen_nickname, errored, warnings, roblox_user
                             else:
