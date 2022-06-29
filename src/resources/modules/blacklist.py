@@ -1,4 +1,5 @@
 from ..structures import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..exceptions import Blacklisted # pylint: disable=import-error, no-name-in-module
 import json
 import logging
 
@@ -11,7 +12,8 @@ class Blacklist(Bloxlink.Module):
         self.blacklist = {
             "users": {},
             "guilds": {},
-            "robloxAccounts": {}
+            "robloxAccounts": {},
+            "roles": {}
         }
 
     async def __setup__(self):
@@ -20,7 +22,7 @@ class Blacklist(Bloxlink.Module):
                 blacklist_json = json.load(f)
 
                 for user_id, user_data in blacklist_json["users"].items():
-                    reason = user_data.get("reason") or "This user is prohibited from using Bloxlink for violating our rules."
+                    reason = user_data.get("reason") or True
 
                     self.blacklist["users"][user_id] = reason
 
@@ -36,26 +38,50 @@ class Blacklist(Bloxlink.Module):
         except FileNotFoundError:
             logging.error("Blacklist file not found.")
 
-    async def get_restriction(self, typex, idx, guild=None, roblox_user=None):
-        idx = str(idx)
+    async def check_restrictions(self, typex, *ids, guild=None, roblox_user=None):
 
         # server restrictions
         if guild:
             restrictions = await get_guild_value(guild, "restrictions")
 
             if restrictions:
-                restriction = restrictions.get(typex, {}).get(idx, {})
+                for idx in ids:
+                    idx = str(idx)
+                    restriction = restrictions.get(typex, {}).get(idx, {})
 
-                if restriction:
-                    return restriction.get("reason") or "This server has restricted you from verifying."
+                    if restriction:
+                        reason = restriction.get("reason")
 
-                if roblox_user:
-                    for restricted_group_id, restricted_group in restrictions.get("groups", {}).items():
-                        group = roblox_user.groups.get(restricted_group_id)
+                        if reason:
+                            if reason.endswith("."):
+                                reason = reason[:-1]
 
-                        if group:
-                            return restricted_group.get("reason") or f"This server has prevented your group {group.name} from verifying."
+                            raise Blacklisted(f"This server has prevented you from using Bloxlink for: `{reason}`.", guild_restriction=True)
 
+                        raise Blacklisted("This server has prevented you from using Bloxlink. This is NOT a Bloxlink blacklist.", guild_restriction=True)
+
+                    if roblox_user:
+                        for restricted_group_id, restricted_group in restrictions.get("groups", {}).items():
+                            group = roblox_user.groups.get(restricted_group_id)
+
+                            if group:
+                                reason = restricted_group.get("reason")
+
+                                if reason:
+                                    if reason.endswith("."):
+                                        reason = reason[:-1]
+
+                                    raise Blacklisted(f"This server has prevented your group `{group.name}` from verifying for: `{reason}`. This is NOT a Bloxlink blacklist.", guild_restriction=True)
+
+                                raise Blacklisted(f"This server has prevented your group `{group.name}` from verifying. This is NOT a Bloxlink blacklist.", guild_restriction=True)
 
         # bloxlink-wide restrictions
-        return self.blacklist[typex].get(idx)
+        for idx in ids:
+            idx = str(idx)
+            global_restriction = self.blacklist[typex].get(idx)
+
+            if global_restriction:
+                if isinstance(global_restriction, str):
+                    raise Blacklisted(f"You are restricted from using Bloxlink due to a policy violation: `{global_restriction}`.")
+                else:
+                    raise Blacklisted("You are restricted from using Bloxlink due to a policy violation.")

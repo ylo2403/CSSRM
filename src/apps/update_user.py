@@ -50,12 +50,12 @@ class UpdateUserExtension(Bloxlink.Module):
             raise Message("Since this user has the Bloxlink Bypass role, I was unable to update their roles/nickname.", type="info", hidden=True)
 
         except Blacklisted as b:
-            if isinstance(b.message, str):
-                text = f"has an action restriction for: `{b}`" if b.prefix else b
+            if b.guild_restriction:
+                await response.send(f"This user is server-restricted from using Bloxlink for: `{b.message}`. This is NOT a Bloxlink blacklist.", hidden=True)
             else:
-                text = f"has an action restriction from Bloxlink." if b.prefix else b
+                await response.send(f"This user is blacklisted from using Bloxlink for: `{b.message}`.", hidden=True)
 
-            raise Error(f"{user.mention} {text}", hidden=True)
+            return
 
         except CancelCommand:
             pass

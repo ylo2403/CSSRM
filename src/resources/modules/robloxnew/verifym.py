@@ -62,12 +62,9 @@ class VerifyM(Bloxlink.Module):
                 await response.send("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
             except Blacklisted as b:
-                if isinstance(b.message, str):
-                    text = f"has an action restriction for: `{b}`" if b.prefix else b
-                else:
-                    text = f"has an action restriction from Bloxlink." if b.prefix else b
+                await response.send(b.message, hidden=True)
 
-                await response.send(f"{user.mention}, {text}", hidden=True)
+                return
 
             except UserNotVerified:
                 verify_link = await VerifyM.get_verify_link(guild)

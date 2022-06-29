@@ -4,7 +4,8 @@ import asyncio
 #import sentry_sdk
 from concurrent.futures._base import CancelledError
 import discord
-from ..exceptions import PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error # pylint: disable=redefined-builtin, import-error
+from ..exceptions import (PermissionError, CancelledPrompt, Message, CancelCommand, RobloxAPIError, RobloxDown, Error, # pylint: disable=redefined-builtin, import-error
+                          Blacklisted) # pylint: disable=redefined-builtin, import-error
 from ..structures import Bloxlink, Command, Locale, Arguments, Response, Application # pylint: disable=import-error, no-name-in-module
 from ..constants import MAGIC_ROLES, DEFAULTS, RELEASE, CLUSTER_ID, ORANGE_COLOR # pylint: disable=import-error, no-name-in-module
 from ..secrets import TOKEN # pylint: disable=import-error, no-name-in-module
@@ -18,7 +19,7 @@ import time
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
 get_enabled_addons = Bloxlink.get_module("addonsm", attrs="get_enabled_addons")
 get_guild_value, set_db_value, set_guild_value = Bloxlink.get_module("cache", attrs=["get_guild_value", "set_db_value", "set_guild_value"])
-get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
+check_restrictions = Bloxlink.get_module("blacklist", attrs=["check_restrictions"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 
@@ -197,14 +198,6 @@ class Commands(Bloxlink.Module):
                                 pass
 
                         raise CancelCommand
-
-        restriction = await get_restriction("users", author.id)
-
-        if restriction:
-            restrction_text = isinstance(restriction, str) and f"has an active restriction for: `{restriction}`" or "has an active restriction from Bloxlink."
-
-            await response.send(f"{author.mention} {restrction_text}", hidden=True)
-            raise CancelCommand
 
         if command.cooldown and self.cache:
             redis_cooldown_key = f"cooldown_cache:{command.name}:{author.id}"
@@ -619,12 +612,18 @@ class Commands(Bloxlink.Module):
         elif typex == "commands" and not isinstance(command, Command):
             raise CancelCommand
 
-        if guild:
-            guild_restriction = await get_restriction("guilds", guild.id) or await get_restriction("users", guild.owner_id)
+        try:
+            if guild:
+                await check_restrictions("guilds", guild.id) or await check_restrictions("users", guild.owner_id)
+                await check_restrictions("roles", *[r.id for r in user.roles], guild=guild)
 
-            if guild_restriction:
-                await guild.leave()
-                raise CancelCommand
+            await check_restrictions("users", user.id, guild=guild)
+
+        except Blacklisted as b:
+            await interaction.response.send_message(b.message, ephemeral=True)
+
+            raise CancelCommand()
+
 
         if command:
             subcommand_attrs = {}

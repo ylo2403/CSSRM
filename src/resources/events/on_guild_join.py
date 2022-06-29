@@ -1,4 +1,5 @@
 from ..structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
+from ..exceptions import Blacklisted # pylint: disable=import-error, no-name-in-module
 from resources.constants import RELEASE, SERVER_INVITE # pylint: disable=import-error, no-name-in-module, no-name-in-module
 from discord.errors import NotFound, Forbidden
 
@@ -6,7 +7,7 @@ from discord.errors import NotFound, Forbidden
 
 has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 post_stats = Bloxlink.get_module("site_services", name_override="DBL", attrs="post_stats")
-get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
+check_restrictions = Bloxlink.get_module("blacklist", attrs=["check_restrictions"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 
 NOT_PRO = "**Notice - Server Not Pro**\nPro can only be used on " \
@@ -33,11 +34,10 @@ class GuildJoinEvent(Bloxlink.Module):
 
         @Bloxlink.event
         async def on_guild_join(guild):
-            guild_restriction = await get_restriction("guilds", guild.id)
-
-            if guild_restriction:
+            try:
+                await check_restrictions("guilds", guild.id)
+            except Blacklisted:
                 await guild.leave()
-
                 return
 
             await set_guild_value(guild, hasBot=True)

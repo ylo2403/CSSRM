@@ -27,7 +27,7 @@ roblox_group_regex = re.compile(r"roblox.com/groups/(\d+)/")
 fetch, post_event = Bloxlink.get_module("utils", attrs=["fetch", "post_event"])
 has_premium = Bloxlink.get_module("premium", attrs=["has_premium"])
 cache_set, cache_get, cache_pop, get_guild_value, get_db_value, get_user_value, set_db_value, set_user_value = Bloxlink.get_module("cache", attrs=["set", "get", "pop", "get_guild_value", "get_db_value", "get_user_value", "set_db_value", "set_user_value"])
-get_restriction = Bloxlink.get_module("blacklist", attrs=["get_restriction"])
+check_restrictions = Bloxlink.get_module("blacklist", attrs=["check_restrictions"])
 has_magic_role = Bloxlink.get_module("extras", attrs=["has_magic_role"])
 
 
@@ -236,10 +236,7 @@ class Roblox(Bloxlink.Module):
         else:
             roblox_id = str(roblox)
 
-        restriction = await get_restriction("users", user.id) or await get_restriction("robloxAccounts", roblox_id)
-
-        if restriction:
-            raise Blacklisted(restriction)
+        await check_restrictions("users", user.id) or await check_restrictions("robloxAccounts", roblox_id)
 
         options = await get_user_value(user, ["robloxAccounts", {}], "robloxID")
         roblox_accounts = options.get("robloxAccounts", {})
@@ -1074,7 +1071,7 @@ class Roblox(Bloxlink.Module):
     #         unverified = True
 
     #     else:
-    #         restriction = await get_restriction("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
+    #         restriction = await check_restrictions("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
 
     #         if restriction:
     #             raise Blacklisted(restriction)
@@ -1194,10 +1191,7 @@ class Roblox(Bloxlink.Module):
     #     print(optional_binds)
 
     async def update_member(self, user, guild, *, nickname=True, roles=True, group_roles=True, roblox_user=None, binds=None, response=None, dm=False, cache=True):
-        restriction = await get_restriction("users", user.id, guild=guild)
-
-        if restriction:
-            raise Blacklisted(restriction)
+        await check_restrictions("users", user.id, guild=guild)
 
         if not cache:
             await cache_pop(f"discord_profiles:{user.id}")
@@ -1358,10 +1352,7 @@ class Roblox(Bloxlink.Module):
             unverified = True
 
         else:
-            restriction = await get_restriction("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
-
-            if restriction:
-                raise Blacklisted(restriction)
+            await check_restrictions("robloxAccounts", roblox_user.id, guild=guild, roblox_user=roblox_user)
 
             if roles:
                 if unverified_role:

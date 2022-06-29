@@ -1,7 +1,8 @@
 from resources.structures.Bloxlink import Bloxlink # pylint: disable=import-error, no-name-in-module
 import discord
-from resources.exceptions import Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, Blacklisted, PermissionError # pylint: disable=import-error, no-name-in-module
-from resources.constants import GREEN_COLOR, VERIFY_URL # pylint: disable=import-error, no-name-in-module
+from resources.exceptions import (Message, UserNotVerified, Error, RobloxNotFound, BloxlinkBypass, # pylint: disable=import-error, no-name-in-module
+                                 Blacklisted, PermissionError, CancelCommand) # pylint: disable=import-error, no-name-in-module
+from resources.constants import GREEN_COLOR # pylint: disable=import-error, no-name-in-module
 
 get_user, get_nickname, get_roblox_id, parse_accounts, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "format_update_embed", "guild_obligations"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
@@ -62,12 +63,9 @@ class VerifyCommand(Bloxlink.Module):
             raise Message("Since you have the `Bloxlink Bypass` role, I was unable to update your roles/nickname.", type="info")
 
         except Blacklisted as b:
-            if isinstance(b.message, str):
-                text = f"has an action restriction for: `{b}`" if b.prefix else b
-            else:
-                text = f"has an action restriction from Bloxlink." if b.prefix else b
+            await response.send(b.message, hidden=True)
 
-            raise Error(f"{author.mention} {text}")
+            raise CancelCommand()
 
         except UserNotVerified:
             verify_link = await get_verify_link(guild)
