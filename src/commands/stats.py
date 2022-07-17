@@ -34,6 +34,8 @@ class StatsCommand(Bloxlink.Module):
         process = Process(getpid())
         process_mem = math.floor(process.memory_info()[0] / float(2 ** 20))
 
+        offline_nodes = []
+
         if IS_DOCKER:
             total_guilds = guilds = 0
             total_mem = 0
@@ -45,12 +47,13 @@ class StatsCommand(Bloxlink.Module):
             for cluster_id, cluster_data in stats.items():
                 if cluster_data in ("cluster offline", "cluster timeout"):
                     errored += 1
+                    offline_nodes.append(cluster_id)
                 else:
                     total_guilds += cluster_data[0]
                     total_mem += cluster_data[1]
 
             if errored:
-                guilds = f"{total_guilds} ({len(self.client.guilds)}) ({errored} non-reporting nodes)"
+                guilds = f"{total_guilds} ({len(self.client.guilds)}) ({errored} non-reporting nodes ({','.join(offline_nodes)}))"
             else:
                 guilds = f"{total_guilds} ({len(self.client.guilds)})"
 
@@ -87,7 +90,7 @@ class StatsCommand(Bloxlink.Module):
         embed.add_field(name="Memory Usage", value=f"{mem} MB")
 
         embed.add_field(name="Resources", value="**[Website](https://blox.link)** | **[Discord](https://blox.link/support)** | **[Invite Bot]"
-                             "(https://blox.link/invite)** | **[Premium](https://blox.link/premium)**\n\n**[Repository](https://github.com/bloxlink/Bloxlink)**",
+                             "(https://blox.link/invite)** | **[Upgrade](https://blox.link/pricing)**\n\n**[Repository](https://github.com/bloxlink/Bloxlink)**",
                              inline=False)
 
         embed.set_footer(text=f"Shards: {self.shard_range} | Node: {CLUSTER_ID}{'/'+(str(clusters-1)) if clusters > 1 else ''}")

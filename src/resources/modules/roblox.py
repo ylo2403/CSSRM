@@ -336,7 +336,7 @@ class Roblox(Bloxlink.Module):
         card  = None
 
         if not (added or removed or errors or nickname):
-            embed = discord.Embed(description="This user is all up-to-date; no changes were made.")
+            embed = discord.Embed(description="This user is all up-to-date; no changes were made. If this message isn't what you expected, then please contact this server's admins as they did not set up the bot or role permissions correctly.")
         else:
             author_accounts = await self.get_accounts(author)
             card = Card(user, author, author_accounts, roblox_user, "verify", guild, extra_data={"added": added, "removed": removed, "nickname": nickname, "errors": errors, "warnings": warnings}, from_interaction=from_interaction)
@@ -862,7 +862,7 @@ class Roblox(Bloxlink.Module):
                                     else:
                                         raise CancelCommand
                                 else:
-                                    raise Blacklisted(f"you are not in the required group [{group.name}](<{group.url}>). Please join [{group.name}](<{group.url}>) then run this command again.", prefix=False)
+                                    raise Blacklisted(f"you are not in the required group [{group.name}](<{group.url}>). Please join [{group.name}](<{group.url}>) then run this command again.", guild_restriction=True)
 
 
                                 return added, removed, chosen_nickname, errored, warnings, roblox_user

@@ -82,6 +82,12 @@ class Blacklist(Bloxlink.Module):
 
             if global_restriction:
                 if isinstance(global_restriction, str):
+                    if typex == "guilds":
+                        raise Blacklisted(f"This server is restricted from using Bloxlink due to a policy violation: `{global_restriction}`")
+
                     raise Blacklisted(f"You are restricted from using Bloxlink due to a policy violation: `{global_restriction}`.")
                 else:
+                    if typex == "guilds":
+                        raise Blacklisted("This server is restricted from using Bloxlink due to a policy violation.")
+
                     raise Blacklisted("You are restricted from using Bloxlink due to a policy violation.")

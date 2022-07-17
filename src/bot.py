@@ -11,6 +11,7 @@ from resources.secrets import TOKEN # , SENTRY_URL, VALID_SECRETS # pylint: disa
 logger = logging.getLogger()
 logging.basicConfig(level=getattr(logging, environ.get("LOG_LEVEL", "WARNING")))
 
+
 discord.http._set_api_version(9)
 
 async def register_modules():
