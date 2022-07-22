@@ -26,6 +26,9 @@ class MemberJoinEvent(Bloxlink.Module):
             unverified_dm = options.get("unverifiedDM")
             high_traffic_server = options.get("highTrafficServer", False)
 
+            if high_traffic_server:
+                return
+
             join_dm = verified_dm or unverified_dm
 
             if guild.verification_level == discord.VerificationLevel.highest:
@@ -48,7 +51,7 @@ class MemberJoinEvent(Bloxlink.Module):
             else:
                 if auto_verification or auto_roles:
                     try:
-                        await guild_obligations(member, guild, roles=not high_traffic_server, nickname=not high_traffic_server, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
+                        await guild_obligations(member, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
                     except (CancelCommand, Blacklisted):
                         pass
                     except RobloxDown:

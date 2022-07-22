@@ -28,9 +28,12 @@ class MemberUpdateEvent(Bloxlink.Module):
                 auto_verification = options.get("autoVerification")
                 high_traffic_server = options.get("highTrafficServer")
 
+                if high_traffic_server:
+                    return
+
                 if auto_verification or auto_roles:
                     try:
-                        await guild_obligations(after, guild, roles=not high_traffic_server, nickname=not high_traffic_server, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
+                        await guild_obligations(after, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
                     except CancelCommand:
                         pass
                     except RobloxDown:
