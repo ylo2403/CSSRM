@@ -50,7 +50,7 @@ class Utils(Bloxlink.Module):
 
     async def post_event(self, guild, event_name, text, color=None):
         options = await get_guild_value(guild, "logChannels", "highTrafficServer") or {}
-        log_channels = options.get("logChannels")
+        log_channels = options.get("logChannels") or {}
         log_channel  = log_channels.get(event_name) or log_channels.get("all")
         high_traffic_server = options.get("highTrafficServer")
 
