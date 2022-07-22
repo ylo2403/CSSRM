@@ -49,10 +49,15 @@ class Utils(Bloxlink.Module):
             pass
 
     async def post_event(self, guild, event_name, text, color=None):
-        log_channels = await get_guild_value(guild, "logChannels") or {}
+        options = await get_guild_value(guild, "logChannels", "highTrafficServer") or {}
+        log_channels = options.get("logChannels")
         log_channel  = log_channels.get(event_name) or log_channels.get("all")
+        high_traffic_server = options.get("highTrafficServer")
 
         webhook = None
+
+        if high_traffic_server and event_name == "verification":
+            return
 
         if log_channel:
             if isinstance(log_channel, str): # old data
@@ -148,7 +153,8 @@ class Utils(Bloxlink.Module):
                     try:
                         response_json = await response.json()
                     except aiohttp.client_exceptions.ContentTypeError:
-                        raise RobloxAPIError
+                        print(old_url, await response.text())
+                        raise RobloxAPIError()
 
                     response_body = response_json
 

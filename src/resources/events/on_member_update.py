@@ -22,14 +22,15 @@ class MemberUpdateEvent(Bloxlink.Module):
                 return
 
             if not before.bot and (before.pending and not after.pending) and "COMMUNITY" in guild.features:
-                options = await get_guild_value(guild, ["autoRoles", DEFAULTS.get("autoRoles")], ["autoVerification", DEFAULTS.get("autoVerification")])
+                options = await get_guild_value(guild, ["autoRoles", DEFAULTS.get("autoRoles")], ["autoVerification", DEFAULTS.get("autoVerification")], "highTrafficServer")
 
                 auto_roles = options.get("autoRoles")
                 auto_verification = options.get("autoVerification")
+                high_traffic_server = options.get("highTrafficServer")
 
                 if auto_verification or auto_roles:
                     try:
-                        await guild_obligations(after, guild, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
+                        await guild_obligations(after, guild, roles=not high_traffic_server, nickname=not high_traffic_server, cache=False, join=True, dm=True, event=True, exceptions=("RobloxDown", "Blacklisted"))
                     except CancelCommand:
                         pass
                     except RobloxDown:

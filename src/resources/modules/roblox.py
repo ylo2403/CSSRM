@@ -338,10 +338,15 @@ class Roblox(Bloxlink.Module):
         if not (added or removed or errors or nickname):
             embed = discord.Embed(description="This user is all up-to-date; no changes were made. If this message isn't what you expected, then please contact this server's admins as they did not set up the bot or role permissions correctly.")
         else:
-            author_accounts = await self.get_accounts(author)
-            card = Card(user, author, author_accounts, roblox_user, "verify", guild, extra_data={"added": added, "removed": removed, "nickname": nickname, "errors": errors, "warnings": warnings}, from_interaction=from_interaction)
+            high_traffic_server = await get_guild_value(guild, "highTrafficServer")
 
-            await card()
+            if not high_traffic_server:
+                author_accounts = await self.get_accounts(author)
+                card = Card(user, author, author_accounts, roblox_user, "verify", guild, extra_data={"added": added, "removed": removed, "nickname": nickname, "errors": errors, "warnings": warnings}, from_interaction=from_interaction)
+
+                await card()
+            else:
+                welcome_message = "You were successfully verified!"
 
         # view = discord.ui.View()
         # view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Add/Change Account", url=VERIFY_URL, emoji="🔗"))
@@ -642,7 +647,7 @@ class Roblox(Bloxlink.Module):
                                     pass
 
             if join is not False:
-                options = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel")
+                options = await get_guild_value(guild, ["verifiedDM", DEFAULTS.get("welcomeMessage")], ["unverifiedDM", DEFAULTS.get("unverifiedDM")], "ageLimit", ["disallowAlts", DEFAULTS.get("disallowAlts")], ["disallowBanEvaders", DEFAULTS.get("disallowBanEvaders")], "groupLock", "joinChannel", "highTrafficServer")
 
                 verified_dm = options.get("verifiedDM")
                 join_channel = options.get("joinChannel")
@@ -650,6 +655,10 @@ class Roblox(Bloxlink.Module):
                 age_limit = options.get("ageLimit")
                 disallow_alts = options.get("disallowAlts")
                 disallow_ban_evaders = options.get("disallowBanEvaders")
+                high_traffic_server = options.get("highTrafficServer")
+
+                if high_traffic_server:
+                    dm = False
 
                 try:
                     age_limit = int(age_limit) #FIXME
@@ -682,10 +691,11 @@ class Roblox(Bloxlink.Module):
                                             except discord.errors.NotFound:
                                                 pass
                                             else:
-                                                try:
-                                                    await member.send(f"This server ({guild.name}) forbids the use of alterantive accounts, so your old account has been removed from the server.")
-                                                except discord.errors.Forbidden:
-                                                    pass
+                                                if dm:
+                                                    try:
+                                                        await member.send(f"This server ({guild.name}) forbids the use of alterantive accounts, so your old account has been removed from the server.")
+                                                    except discord.errors.Forbidden:
+                                                        pass
 
                                                 try:
                                                     await user_find.kick(reason=f"disallowAlts is enabled - alt of {member} ({member.id})")
@@ -707,10 +717,11 @@ class Roblox(Bloxlink.Module):
                                                 action = disallow_ban_evaders == "kick" and "kick"   or "ban"
                                                 action_participle    = action == "kick" and "kicked" or "banned"
 
-                                                try:
-                                                    await member.send(f"This server ({guild.name}) forbids ban-evaders, and as you have a banned account in the server, you have been {action_participle}.")
-                                                except discord.errors.Forbidden:
-                                                    pass
+                                                if dm:
+                                                    try:
+                                                        await member.send(f"This server ({guild.name}) forbids ban-evaders, and as you have a banned account in the server, you have been {action_participle}.")
+                                                    except discord.errors.Forbidden:
+                                                        pass
 
                                                 try:
                                                     await ((getattr(guild, action))(member, reason=f"disallowBanEvaders is enabled - alt of {ban_entry.user} ({ban_entry.user.id})"))
