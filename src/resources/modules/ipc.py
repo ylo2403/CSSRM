@@ -106,7 +106,8 @@ class IPC(Bloxlink.Module):
                                 "position": r.position,
                                 "hoist": r.hoist,
                                 "managed": r.managed,
-                                "permissions": r.permissions.value
+                                "permissions": r.permissions.value,
+                                "color": str(r.colour)
 
                             } for r in guild.roles
                         ]
@@ -184,11 +185,11 @@ class IPC(Bloxlink.Module):
 
                     else:
                         response_data["success"] = False
-                        response_data["error"] = "Invald action type"
+                        response_data["error"] = "Invalid action type"
 
                 else:
                     response_data["success"] = False
-                    response_data["error"] = "Invald action type"
+                    response_data["error"] = "Invalid action type"
 
 
                 await self.redis.publish(nonce, json.dumps(response_data))
@@ -230,7 +231,7 @@ class IPC(Bloxlink.Module):
                         return
 
                     try:
-                        added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+                        added, removed, nickname, errors, warnings, roblox_user, _ = await guild_obligations(
                             member,
                             guild                = guild,
                             join                 = True,
