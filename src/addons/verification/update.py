@@ -137,7 +137,7 @@ class UpdateCommand(Bloxlink.Module):
                 for user in users:
                     if not user.bot:
                         try:
-                            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+                            added, removed, nickname, errors, warnings, roblox_user, _ = await guild_obligations(
                                 user,
                                 guild             = guild,
                                 roles             = True,
@@ -170,7 +170,7 @@ class UpdateCommand(Bloxlink.Module):
                 old_nickname = user.display_name
 
                 try:
-                    added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+                    added, removed, nickname, errors, warnings, roblox_user, bind_explanations = await guild_obligations(
                         user,
                         guild             = guild,
                         roles             = True,
@@ -180,14 +180,15 @@ class UpdateCommand(Bloxlink.Module):
                         event             = True,
                         exceptions        = ("BloxlinkBypass", "Blacklisted", "CancelCommand", "UserNotVerified", "PermissionError", "RobloxDown", "RobloxAPIError"))
 
-                    _, card, embed = await format_update_embed(
+                    _, card, embed, view = await format_update_embed(
                         roblox_user, user,
                         added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
                         author = author,
                         guild = guild,
+                        bind_explanations=bind_explanations
                     )
 
-                    message = await response.send(embed=embed, files=[card.front_card_file] if card else None, view=card.view if card else None)
+                    message = await response.send(embed=embed, files=[card.front_card_file] if card else None, view=card.view if card else view)
 
                     if card:
                         card.response = response

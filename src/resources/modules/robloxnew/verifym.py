@@ -46,7 +46,7 @@ class VerifyM(Bloxlink.Module):
             await response.slash_defer()
 
             try:
-                added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+                added, removed, nickname, errors, warnings, roblox_user, bind_explanations = await guild_obligations(
                     response.args.author,
                     join                 = True,
                     guild                = guild,
@@ -85,14 +85,15 @@ class VerifyM(Bloxlink.Module):
                 await response.send("I encountered an unknown Roblox API error. Please try again later.", hidden=True)
 
             else:
-                welcome_message, card, embed = await format_update_embed(
+                welcome_message, card, embed, view = await format_update_embed(
                     roblox_user,
                     user,
                     guild=guild,
                     added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
+                    bind_explanations=bind_explanations
                 )
 
-                message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, hidden=True)
+                message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else view, embed=embed, hidden=True)
 
                 if card:
                     card.response = response

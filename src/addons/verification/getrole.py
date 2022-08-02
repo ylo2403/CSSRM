@@ -4,7 +4,7 @@ from resources.exceptions import (Message, UserNotVerified, Error, RobloxNotFoun
                                  Blacklisted, PermissionError, CancelCommand) # pylint: disable=import-error, no-name-in-module
 from resources.constants import GREEN_COLOR # pylint: disable=import-error, no-name-in-module
 
-get_user, get_nickname, get_roblox_id, parse_accounts, format_update_embed, guild_obligations = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "format_update_embed", "guild_obligations"])
+get_user, get_nickname, get_roblox_id, parse_accounts, format_update_embed, guild_obligations, get_binds_explanation_button = Bloxlink.get_module("roblox", attrs=["get_user", "get_nickname", "get_roblox_id", "parse_accounts", "format_update_embed", "guild_obligations", "get_binds_explanation_button"])
 post_event = Bloxlink.get_module("utils", attrs=["post_event"])
 set_guild_value = Bloxlink.get_module("cache", attrs=["set_guild_value"])
 get_verify_link = Bloxlink.get_module("robloxnew.verifym", attrs=["get_verify_link"], name_override="verifym")
@@ -47,7 +47,7 @@ class GetRoleCommand(Bloxlink.Module):
 
             old_nickname = author.display_name
 
-            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+            added, removed, nickname, errors, warnings, roblox_user, bind_explanations = await guild_obligations(
                 CommandArgs.author,
                 join                 = True,
                 guild                = guild,
@@ -70,10 +70,19 @@ class GetRoleCommand(Bloxlink.Module):
         except UserNotVerified:
             verify_link = await get_verify_link(guild)
 
+            binds_explanation_button = await get_binds_explanation_button({
+                "success": [["unverified role", None, None, "You are not verified on Bloxlink.", []]],
+                "failure": []
+            })
+
             view = discord.ui.View()
             view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Verify with Bloxlink", url=verify_link, emoji="🔗"))
             view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Stuck? See a Tutorial", emoji="❔",
                                                  url="https://www.youtube.com/watch?v=mSbD91Zug5k&list=PLz7SOP-guESE1V6ywCCLc1IQWiLURSvBE&index=1"))
+
+            view.add_item(item=binds_explanation_button)
+
+
 
             await CommandArgs.response.send("To verify with Bloxlink, click the link below.", mention_author=True, view=view)
 
@@ -82,14 +91,15 @@ class GetRoleCommand(Bloxlink.Module):
             raise Error(e.message)
 
         else:
-            welcome_message, card, embed = await format_update_embed(
+            welcome_message, card, embed, view = await format_update_embed(
                 roblox_user,
                 author,
                 guild=guild,
                 added=added, removed=removed, errors=errors, warnings=warnings, nickname=nickname if old_nickname != nickname else None,
+                bind_explanations=bind_explanations
             )
 
-            message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed, mention_author=True)
+            message = await response.send(welcome_message, files=[card.front_card_file] if card else None, view=card.view if card else view, embed=embed, mention_author=True)
 
             if card:
                 card.response = response

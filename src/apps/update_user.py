@@ -34,7 +34,7 @@ class UpdateUserExtension(Bloxlink.Module):
                 raise Error("This user isn't in your server!")
 
         try:
-            added, removed, nickname, errors, warnings, roblox_user = await guild_obligations(
+            added, removed, nickname, errors, warnings, roblox_user, _ = await guild_obligations(
                 user,
                 guild             = guild,
                 roles             = True,

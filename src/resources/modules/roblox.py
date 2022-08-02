@@ -1,4 +1,3 @@
-from mailbox import NotEmptyError
 from ..structures.Bloxlink import Bloxlink # pylint: disable=no-name-in-module, import-error
 from ..structures.Card import Card # pylint: disable=no-name-in-module, import-error
 from ..exceptions import (BadUsage, RobloxAPIError, Error, CancelCommand, UserNotVerified,# pylint: disable=no-name-in-module, import-error
@@ -15,6 +14,7 @@ import asyncio
 import dateutil.parser as parser
 import math
 import traceback
+import uuid
 
 
 nickname_template_regex = re.compile(r"\{(.*?)\}")
@@ -326,7 +326,23 @@ class Roblox(Bloxlink.Module):
 
         return clan_tag
 
-    async def format_update_embed(self, roblox_user, user, *, guild, added, removed, errors, warnings, nickname, author=None, from_interaction=True):
+    async def save_binds_explanations(self, bind_explanations):
+        nonce = str(uuid.uuid4())
+
+        await self.redis.set(f"binds:{nonce}", json.dumps(bind_explanations), ex=3600)
+
+        return nonce
+
+    async def get_binds_explanation_button(self, bind_explanations):
+        if bind_explanations is not None:
+            binds_token = await self.save_binds_explanations(bind_explanations)
+            bind_explanation_button = discord.ui.Button(style=discord.ButtonStyle.link,
+                                                        label="Expecting different roles?",
+                                                        url=f"https://{'bloxlink.dev' if RELEASE in ('LOCAL', 'CANARY') else 'blox.link'}/binds/{binds_token}")
+
+            return bind_explanation_button
+
+    async def format_update_embed(self, roblox_user, user, *, guild, added, removed, errors, warnings, nickname, author=None, from_interaction=True, bind_explanations=None):
         author = author or user
 
         welcome_message = await get_guild_value(guild, ["welcomeMessage", DEFAULTS.get("welcomeMessage")])
@@ -334,25 +350,34 @@ class Roblox(Bloxlink.Module):
 
         embed = None
         card  = None
+        view  = discord.ui.View()
+
+        bind_explanation_button = await self.get_binds_explanation_button(bind_explanations)
 
         if not (added or removed or errors or nickname):
             embed = discord.Embed(description="This user is all up-to-date; no changes were made. If this message isn't what you expected, then please contact this server's admins as they did not set up the bot or role permissions correctly.")
+
+            if bind_explanation_button:
+                view.add_item(item=bind_explanation_button)
         else:
             high_traffic_server = await get_guild_value(guild, "highTrafficServer")
 
             if not high_traffic_server:
                 author_accounts = await self.get_accounts(author)
-                card = Card(user, author, author_accounts, roblox_user, "verify", guild, extra_data={"added": added, "removed": removed, "nickname": nickname, "errors": errors, "warnings": warnings}, from_interaction=from_interaction)
+                card = Card(user, author, author_accounts, roblox_user, "verify", guild, extra_components=[bind_explanation_button] if bind_explanations is not None else [], extra_data={"added": added, "removed": removed, "nickname": nickname, "errors": errors, "warnings": warnings}, from_interaction=from_interaction)
 
                 await card()
             else:
                 welcome_message = "You were successfully verified!"
 
+                if bind_explanations is not None:
+                    view.add_item(item=bind_explanation_button)
+
         # view = discord.ui.View()
         # view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Add/Change Account", url=VERIFY_URL, emoji="🔗"))
         # view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.link, label="Remove Account", emoji="🧑‍🔧", url=ACCOUNT_SETTINGS_URL))
 
-        return welcome_message, card, embed
+        return welcome_message, card, embed, view
 
     async def get_nickname(self, user, template=None, group=None, *, guild=None, skip_roblox_check=False, response=None, is_nickname=True, roblox_user=None, dm=False):
         template = template or ""
@@ -515,10 +540,10 @@ class Roblox(Bloxlink.Module):
 
     async def guild_obligations(self, member, guild, join=None, cache=True, dm=False, event=False, response=None, exceptions=None, roles=True, nickname=True, roblox_user=None):
         if member.bot:
-            raise CancelCommand
+            raise CancelCommand()
 
         if guild.id in IGNORED_SERVERS:
-            return
+            raise CancelCommand()
 
         if self.pending_verifications.get(member.id):
             raise CancelCommand("You are already queued for verification. This process can take a while depending on the size of the server due to Discord rate-limits.")
@@ -534,6 +559,7 @@ class Roblox(Bloxlink.Module):
             added, removed, errored, warnings, chosen_nickname = [], [], [], [], None
             card = None
             embed = None
+            bind_explanations = {"success": [], "failure": []}
 
             if RELEASE == "PRO":
                 donator_profile = await has_premium(guild=guild)
@@ -732,10 +758,10 @@ class Roblox(Bloxlink.Module):
 
                                                     raise CancelCommand
 
-                                                return added, removed, chosen_nickname, errored, warnings, roblox_user
+                                                return added, removed, chosen_nickname, errored, warnings, roblox_user, None
 
                 try:
-                    added, removed, chosen_nickname, errored, warnings, _ = await self.update_member(
+                    added, removed, chosen_nickname, errored, warnings, _, bind_explanations = await self.update_member(
                         member,
                         guild                   = guild,
                         roles                   = roles,
@@ -799,7 +825,7 @@ class Roblox(Bloxlink.Module):
                             else:
                                 raise CancelCommand
 
-                            return added, removed, chosen_nickname, errored, warnings, roblox_user
+                            return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
 
                     if required_groups:
                         for group_id, group_data in required_groups.items():
@@ -857,7 +883,7 @@ class Roblox(Bloxlink.Module):
                                         else:
                                             raise Blacklisted(f"you do not have the required Roleset in the group [{group.name}](<{group.url}>).", guild_restriction=True)
 
-                                        return added, removed, chosen_nickname, errored, warnings, roblox_user
+                                        return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
                             else:
                                 if dm:
                                     try:
@@ -876,7 +902,7 @@ class Roblox(Bloxlink.Module):
                                     raise Blacklisted(f"you are not in the required group [{group.name}](<{group.url}>). Please join [{group.name}](<{group.url}>) then run this command again.", guild_restriction=True)
 
 
-                                return added, removed, chosen_nickname, errored, warnings, roblox_user
+                                return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
 
                     if dm and verified_dm:
                         if verified_dm != DEFAULTS.get("welcomeMessage"):
@@ -884,7 +910,7 @@ class Roblox(Bloxlink.Module):
 
                         verified_dm = (await self.get_nickname(member, verified_dm, roblox_user=roblox_user, dm=dm, is_nickname=False))[:2000]
 
-                        _, card, embed = await self.format_update_embed(
+                        _, card, embed, view = await self.format_update_embed(
                             roblox_user,
                             member,
                             guild=guild,
@@ -893,7 +919,7 @@ class Roblox(Bloxlink.Module):
                         )
 
                         try:
-                            msg = await member.send(verified_dm, files=[card.front_card_file] if card else None, view=card.view if card else None, embed=embed)
+                            msg = await member.send(verified_dm, files=[card.front_card_file] if card else None, view=card.view if card else view, embed=embed)
                         except (discord.errors.Forbidden, discord.errors.HTTPException):
                             pass
                         else:
@@ -931,7 +957,7 @@ class Roblox(Bloxlink.Module):
                             else:
                                 raise CancelCommand
 
-                            return added, removed, chosen_nickname, errored, warnings, roblox_user
+                            return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
 
                     if required_groups:
                         should_kick_unverified = any(g.get("unverifiedAction", "kick") == "kick" for g in required_groups.values())
@@ -969,7 +995,7 @@ class Roblox(Bloxlink.Module):
                             else:
                                 raise CancelCommand
 
-                        return added, removed, chosen_nickname, errored, warnings, roblox_user
+                        return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
 
                     if dm and unverified_dm:
                         unverified_dm = await self.get_nickname(member, unverified_dm, skip_roblox_check=True, dm=dm, is_nickname=False)
@@ -982,12 +1008,14 @@ class Roblox(Bloxlink.Module):
                     await post_log(join_channel, GREEN_COLOR)
 
                 if not unverified:
-                    return added, removed, chosen_nickname, errored, warnings, roblox_user
+                    return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
                 else:
                     if "UserNotVerified" in exceptions:
                         raise UserNotVerified
 
-                    return added, removed, chosen_nickname, errored, warnings, roblox_user
+                    bind_explanations["success"].append(["unverified role", None, None, "You are not verified on Bloxlink.", ])
+
+                    return added, removed, chosen_nickname, errored, warnings, roblox_user, bind_explanations
 
             elif join == False:
                 leave_channel = await get_guild_value(guild, "leaveChannel")
@@ -1226,6 +1254,8 @@ class Roblox(Bloxlink.Module):
         unverified = False
         top_role_nickname = None
 
+        bind_explanations = {"success": [], "failure": [], "criteria": []}
+
         if not isinstance(user, discord.Member):
             user = await guild.fetch_member(user.id)
 
@@ -1353,6 +1383,7 @@ class Roblox(Bloxlink.Module):
             if roles:
                 if unverify_role_enabled:
                     add_roles.add(unverified_role)
+                    bind_explanations["success"].append(["unverified role", None, None, "You are not verified on Bloxlink.", [unverified_role.name]])
 
                 if verify_role_enabled and verified_role and verified_role in user.roles:
                     remove_roles.add(verified_role)
@@ -1372,6 +1403,7 @@ class Roblox(Bloxlink.Module):
 
                 if verified_role:
                     add_roles.add(verified_role)
+                    bind_explanations["success"].append(["verified role", None, None, "You are verified on Bloxlink.", [verified_role.name]])
 
         if not unverified:
             if group_roles and roblox_user:
@@ -1412,6 +1444,7 @@ class Roblox(Bloxlink.Module):
 
                                     if json_data.get("data"):
                                         # TODO: cache this
+                                        asset_roles = []
 
                                         for role_id in bound_roles:
                                             int_role_id = role_id.isdigit() and int(role_id)
@@ -1419,6 +1452,7 @@ class Roblox(Bloxlink.Module):
 
                                             if role:
                                                 add_roles.add(role)
+                                                asset_roles.append(role.name)
 
                                             if role and nickname and bind_nickname and bind_nickname != "skip":
                                                 if user.top_role == role:
@@ -1429,6 +1463,8 @@ class Roblox(Bloxlink.Module):
                                                 if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                     possible_nicknames.append([role, resolved_nickname])
 
+                                        bind_explanations["success"].append([category_title.lower(), bind_id, json_data["data"][0].get("name"), f"You own this {category_title.lower()}.", asset_roles])
+
                                         for role_id in bind_remove_roles:
                                             int_role_id = role_id.isdigit() and int(role_id)
                                             role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, user.roles)
@@ -1436,12 +1472,19 @@ class Roblox(Bloxlink.Module):
                                             if role:
                                                 remove_roles.add(role)
                                     else:
+                                        explanation_roles = []
+
                                         for role_id in bound_roles:
                                             int_role_id = role_id.isdigit() and int(role_id)
                                             role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                            if not allow_old_roles and role and role in user.roles:
-                                                remove_roles.add(role)
+                                            if role:
+                                                if not allow_old_roles and role in user.roles:
+                                                    remove_roles.add(role)
+
+                                                explanation_roles.append(role.name)
+
+                                        bind_explanations["failure"].append([category_title.lower(), bind_id, bind_data.get("displayName"), f"You do not own this {category_title.lower()}.", explanation_roles])
 
                         elif category == "robloxStaff":
                             devforum_data = roblox_user.dev_forum
@@ -1490,13 +1533,15 @@ class Roblox(Bloxlink.Module):
                                             if not bound_roles:
                                                 bound_roles = {group.user_rank_name}
 
+                                            explanation_roles = []
+
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-
                                                 if role:
                                                     add_roles.add(role)
+                                                    explanation_roles.append(role.name)
 
                                                 if role and nickname and bind_nickname and bind_nickname != "skip":
                                                     if user.top_role == role:
@@ -1507,6 +1552,13 @@ class Roblox(Bloxlink.Module):
                                                     if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                         possible_nicknames.append([role, resolved_nickname])
 
+                                            if bind_id == "all":
+                                                bind_explanations["success"].append(["group", group_id, group.name, "You are in the group.", explanation_roles])
+                                            elif rank == user_rank:
+                                                bind_explanations["success"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is the exact match for this bind.", explanation_roles])
+                                            elif rank and (rank < 0 and user_rank >= abs(rank)):
+                                                bind_explanations["success"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is at least {abs(rank)}.", explanation_roles])
+
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, user.roles)
@@ -1515,21 +1567,38 @@ class Roblox(Bloxlink.Module):
                                                     remove_roles.add(role)
 
                                         else:
+                                            explanation_roles = []
+
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                if not allow_old_roles and role and role in user.roles:
-                                                    remove_roles.add(role)
+                                                if role:
+                                                    if not allow_old_roles and role in user.roles:
+                                                        remove_roles.add(role)
+
+                                                    explanation_roles.append(role.name)
+
+                                            if bind_id == "all":
+                                                bind_explanations["failure"].append(["group", group_id, bind_data.get("groupName"), "You must be in the group.", explanation_roles])
+                                            elif rank and (rank < 0 and user_rank >= abs(rank)):
+                                                bind_explanations["failure"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is not greater than or equal to {rank}.", explanation_roles])
+                                            else:
+                                                bind_explanations["failure"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is not equal to {rank}.", explanation_roles])
+
+
                                     else:
                                         if bind_id == "0":
                                             if bound_roles:
+                                                explanation_roles = []
+
                                                 for role_id in bound_roles:
                                                     int_role_id = role_id.isdigit() and int(role_id)
                                                     role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
                                                     if role:
                                                         add_roles.add(role)
+                                                        explanation_roles.append(role.name)
 
                                                     if role and nickname and bind_nickname and bind_nickname != "skip":
                                                         if user.top_role == role:
@@ -1540,6 +1609,8 @@ class Roblox(Bloxlink.Module):
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
 
+                                                bind_explanations["success"].append(["group", group_id, "You are not in this group.", explanation_roles])
+
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, user.roles)
@@ -1547,12 +1618,24 @@ class Roblox(Bloxlink.Module):
                                                 if role:
                                                     remove_roles.add(role)
                                         else:
+                                            explanation_roles = []
+
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                if not allow_old_roles and role and role in user.roles:
-                                                    remove_roles.add(role)
+                                                if role:
+                                                    if not allow_old_roles and role in user.roles:
+                                                        remove_roles.add(role)
+
+                                                    explanation_roles.append(role.name)
+
+                                            if bind_id == "all":
+                                                bind_explanations["failure"].append(["group", group_id, data.get("groupName"), "You must be in the group.", explanation_roles])
+                                            elif rank and rank < 0:
+                                                bind_explanations["failure"].append(["group", group_id, data.get("groupName"), f"You must be in the group and your rank must be greater than or equal to {abs(rank)}.", explanation_roles])
+                                            else:
+                                                bind_explanations["failure"].append(["group", group_id, data.get("groupName"), f"You must be in the group and your rank must equal {rank}.", explanation_roles])
 
                                 for bind_range in data.get("ranges", []):
                                     bind_nickname = bind_range.get("nickname")
@@ -1566,6 +1649,8 @@ class Roblox(Bloxlink.Module):
                                             if not bound_roles:
                                                 bound_roles = {group.user_rank_name}
 
+                                            range_roles = []
+
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
@@ -1573,6 +1658,7 @@ class Roblox(Bloxlink.Module):
                                                 if role:
                                                     if roles:
                                                         add_roles.add(role)
+                                                        range_roles.append(role.name)
 
                                                         if nickname and user.top_role == role and bind_nickname:
                                                             top_role_nickname = await self.get_nickname(user=user, group=group, template=bind_nickname, roblox_user=roblox_user, dm=dm, response=response)
@@ -1583,6 +1669,8 @@ class Roblox(Bloxlink.Module):
                                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                                             possible_nicknames.append([role, resolved_nickname])
 
+                                            bind_explanations["success"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is within the range of ({bind_range['low']}, {bind_range['high']}).", range_roles])
+
                                             for role_id in bind_remove_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, user.roles)
@@ -1590,19 +1678,34 @@ class Roblox(Bloxlink.Module):
                                                 if role:
                                                     remove_roles.add(role)
                                         else:
+                                            explanation_roles = []
+
                                             for role_id in bound_roles:
                                                 int_role_id = role_id.isdigit() and int(role_id)
                                                 role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                                if not allow_old_roles and role and role in user.roles:
-                                                    remove_roles.add(role)
+                                                if role:
+                                                    if not allow_old_roles and role in user.roles:
+                                                        remove_roles.add(role)
+
+                                                    explanation_roles.append(role.name)
+
+                                            bind_explanations["failure"].append(["group", group_id, group.name, f"Your rank, {user_rank}, is not within the range of ({bind_range['low']}, {bind_range['high']}).", explanation_roles])
+
                                     else:
+                                        explanation_roles = []
+
                                         for role_id in bound_roles:
                                             int_role_id = role_id.isdigit() and int(role_id)
                                             role = discord.utils.find(lambda r: ((int_role_id and r.id == int_role_id) or r.name == role_id) and not r.managed, guild.roles)
 
-                                            if not allow_old_roles and role and role in user.roles:
-                                                remove_roles.add(role)
+                                            if role:
+                                                if not allow_old_roles and role in user.roles:
+                                                    remove_roles.add(role)
+
+                                                explanation_roles.append(role.name)
+
+                                        bind_explanations["failure"].append(["group", group_id, data.get("groupName"), f"You must be in the group and your rank must be within the range of ({bind_range['low']}, {bind_range['high']}).", explanation_roles])
 
                 if group_roles and group_ids:
                     for group_id, group_data in group_ids.items():
@@ -1637,6 +1740,7 @@ class Roblox(Bloxlink.Module):
 
                                 if group_role:
                                     add_roles.add(group_role)
+                                    bind_explanations["success"].append(["group", group_id, group.name, "You are in this group.", [group_role.name]])
 
                                     for role_id in bind_remove_roles:
                                         int_role_id = role_id.isdigit() and int(role_id)
@@ -1655,6 +1759,8 @@ class Roblox(Bloxlink.Module):
                                         if resolved_nickname and not resolved_nickname in possible_nicknames:
                                             possible_nicknames.append([group_role, resolved_nickname])
                             else:
+                                explanation_roles = []
+
                                 try:
                                     group = await self.get_group(group_id, full_group=False)
                                 except RobloxNotFound:
@@ -1665,6 +1771,9 @@ class Roblox(Bloxlink.Module):
 
                                     if not allow_old_roles and group_role:
                                         remove_roles.add(group_role)
+                                        explanation_roles.append(group_role.name)
+
+                                bind_explanations["failure"].append(["group", group_id, group.name, "You are not in this group.", explanation_roles])
 
         if roles:
             remove_roles = remove_roles.difference(add_roles)
@@ -1722,7 +1831,7 @@ class Roblox(Bloxlink.Module):
         if not roblox_user:
             roblox_user = (await self.get_user(user=user, guild=guild, everything=True))[0]
 
-        return [r.name for r in add_roles], [r.name for r in remove_roles], nickname, errors, warnings, roblox_user
+        return [r.name for r in add_roles], [r.name for r in remove_roles], nickname, errors, warnings, roblox_user, bind_explanations
 
     async def get_group_shout(self, group_id):
         """gets the group shout. not cached."""

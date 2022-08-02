@@ -43,7 +43,7 @@ class CardSide(enum.Enum):
     BACK  = 2
 
 class Card(Bloxlink.Module):
-    def __init__(self, user, author, author_accounts, roblox_user, type, guild=None, extra_data=None, from_interaction=True):
+    def __init__(self, user, author, author_accounts, roblox_user, type, guild=None, extra_components=None, extra_data=None, from_interaction=True):
         self.response = None
         self.user = user
         self.author = author
@@ -59,6 +59,7 @@ class Card(Bloxlink.Module):
         self.equipped_background = None
         self.message = None
         self.roblox_user = roblox_user
+        self.extra_components = extra_components or []
 
         self.premium_user = False
 
@@ -92,7 +93,11 @@ class Card(Bloxlink.Module):
         if self.roblox_user.id in self.author_accounts:
             self.add_change_background_button()
 
-        self.add_invite_button()
+        # self.add_invite_button()
+
+        if self.extra_components:
+            for component in self.extra_components:
+                self.view.add_item(item=component)
 
         await self.request_front_card()
 
