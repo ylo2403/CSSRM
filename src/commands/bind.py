@@ -80,8 +80,8 @@ class BindCommand(Bloxlink.Module):
                         discord.SelectOption(label="Asset", description="Users need to own this catalog item."),
                         discord.SelectOption(label="Badge", description="Users need to own this badge."),
                         discord.SelectOption(label="GamePass", description="Users need to own this GamePass."),
-                        discord.SelectOption(label="DevForum Members", description="Users need to be a member of the DevForum."),
-                        discord.SelectOption(label="Roblox Staff", description="Users need to be Roblox Staff members."),
+                        # discord.SelectOption(label="DevForum Members", description="Users need to be a member of the DevForum."),
+                        # discord.SelectOption(label="Roblox Staff", description="Users need to be Roblox Staff members."),
                     ])],
                 "choices": locale("commands.bind.prompts.bindTypePrompt.choices"),
                 "formatting": False
