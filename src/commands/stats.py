@@ -47,7 +47,7 @@ class StatsCommand(Bloxlink.Module):
             for cluster_id, cluster_data in stats.items():
                 if cluster_data in ("cluster offline", "cluster timeout"):
                     errored += 1
-                    offline_nodes.append(cluster_id)
+                    offline_nodes.append(str(cluster_id))
                 else:
                     total_guilds += cluster_data[0]
                     total_mem += cluster_data[1]
