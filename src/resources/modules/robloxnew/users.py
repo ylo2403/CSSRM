@@ -9,7 +9,7 @@ import math
 
 
 API_URL = "https://api.roblox.com"
-ALL_USER_API_SCOPES = ["groups", "badges", "avatar"]
+ALL_USER_API_SCOPES = ["groups", "badges"]
 
 
 fetch = Bloxlink.get_module("utils", attrs=["fetch"])
@@ -23,7 +23,7 @@ class RobloxUser:
     __slots__ = ("name", "id", "complete", "groups",
                  "avatar", "premium", "presence", "badges", "description",
                  "banned", "age_days", "created", "profile_link", "devforum", "display_name",
-                 "group_ranks", "overlay", "flags", "join_date", "headshot", "year_created",
+                 "group_ranks", "overlay", "flags", "headshot", "year_created",
                  "short_age_string")
 
     def __init__(self, name=None, id=None):
@@ -45,7 +45,6 @@ class RobloxUser:
         self.age_days = None
         self.year_created = None
         self.profile_link = None
-        self.join_date = None
         self.headshot = None
         self.short_age_string = None
 
@@ -69,21 +68,20 @@ class RobloxUser:
             if self.badges is not None and "badges" in includes:
                 includes.remove("badges")
 
-            if self.avatar is not None and "avatar" in includes:
-                includes.remove("avatar")
-
         includes = ",".join(includes)
 
-        user_json_data, user_data_response = await fetch(f"https://bloxlink-rblx.bloxlink.workers.dev/roblox/users/info?id={self.id}&include={includes}", json=True)
+        user_json_data, user_data_response = await fetch(f"https://bloxlink-info-server-vunlj.ondigitalocean.app/roblox/info?id={self.id}&include={includes}", json=True)
+        #user_json_data, user_data_response = await fetch(f"https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-0251fcbd-1e13-4992-b488-ef68fa029b1c/default/user-info?id={self.id}&include={includes}", json=True)
 
         if user_data_response.status == 200:
             self.description = user_json_data.get("description", self.description)
             self.name = user_json_data.get("name", self.name)
             self.banned = user_json_data.get("isBanned", self.banned)
-            self.join_date = user_json_data.get("join_date", self.join_date)
-            self.year_created = user_json_data.get("age", self.year_created)
+            #self.join_date = user_json_data.get("joinDate", self.join_date)
+            self.year_created = user_json_data.get("yearCreated", self.year_created)
             self.profile_link = user_json_data.get("profileLink", self.profile_link)
-            self.presence = user_json_data.get("presence", self.presence)
+            #self.presence = user_json_data.get("presence", self.presence)
+            self.presence = None
             self.badges = user_json_data.get("badges", self.badges)
             self.display_name = user_json_data.get("displayName", self.display_name)
             self.created = user_json_data.get("created", self.created)
