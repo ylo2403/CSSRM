@@ -403,10 +403,11 @@ class IPC(Bloxlink.Module):
 
             await self.redis.publish(f"{RELEASE}:CLUSTER_{original_cluster}", response_data)
 
-
     async def __setup__(self):
+        REDIS_CHANNELS = [f"{RELEASE}:GLOBAL", f"{RELEASE}:CLUSTER_{CLUSTER_ID}", "VERIFICATION", "ACTION_REQUEST"]
+
         pubsub = self.redis.pubsub()
-        await pubsub.subscribe(f"{RELEASE}:GLOBAL", f"{RELEASE}:CLUSTER_{CLUSTER_ID}", "VERIFICATION", "ACTION_REQUEST")
+        await pubsub.subscribe(*REDIS_CHANNELS)
 
         response_data = json.dumps({
             "nonce": None,
@@ -420,10 +421,23 @@ class IPC(Bloxlink.Module):
         await self.redis.publish(f"{RELEASE}:GLOBAL", response_data)
 
         while True:
-            message = await pubsub.get_message(ignore_subscribe_messages=True)
+            try:
+                message = await pubsub.get_message(ignore_subscribe_messages=True)
 
-            if message:
-                self.loop.create_task(self.handle_message(message))
+                if message:
+                    self.loop.create_task(self.handle_message(message))
+
+            except self.redis.exceptions.ConnectionError:
+                while True:
+                    try:
+                        await self.redis.ping()
+                    except self.redis.exceptions.ConnectionError:
+                        await asyncio.sleep(10)
+                    else:
+                        await pubsub.subscribe(REDIS_CHANNELS)
+                        break
+
+
 
 
     async def broadcast(self, message, type, send_to=f"{RELEASE}:GLOBAL", waiting_for=None, timeout=10, response=True, **kwargs):

@@ -289,16 +289,32 @@ Bloxlink = BloxlinkStructure(
 
 def load_redis():
     redis = redis_cache = None
+    loop = asyncio.get_event_loop()
 
-    while not redis:
-        try:
-            redis = aredis.StrictRedis.from_url(REDIS_CONNECTION_STRING, retry_on_timeout=True, connect_timeout=3)
-        except aredis.exceptions.ConnectionError:
-            raise SystemError("Failed to connect to Redis.")
-        else:
-            redis_cache = redis.cache("cache")
+    try:
+        redis = aredis.StrictRedis.from_url(
+            REDIS_CONNECTION_STRING,
+            retry_on_timeout=True,
+            connect_timeout=3,
+            socket_keepalive=True
+        )
+    except aredis.exceptions.ConnectionError:
+        raise SystemError("Failed to connect to Redis.")
+    else:
+        redis_cache = redis.cache("cache")
+
+    loop.create_task(redis_loop(redis))
 
     return redis, redis_cache
+
+async def redis_loop(redis):
+    while True:
+        try:
+            await redis.ping()
+        except redis.exceptions.ConnectionError as e:
+            raise SystemError("Failed to connect to Redis.") from e
+
+        await asyncio.sleep(1)
 
 redis, redis_cache = load_redis()
 
