@@ -7,12 +7,29 @@ from config import RELEASE # pylint: disable=no-name-in-module, import-error
 from ..constants import IS_DOCKER, TIP_CHANCES, SERVER_INVITE, PROMPT # pylint: disable=import-error, no-name-in-module
 import random
 import asyncio
+import traceback
 
 get_resolver = Bloxlink.get_module("resolver", attrs="get_resolver")
 broadcast = Bloxlink.get_module("ipc", attrs="broadcast")
 suppress_timeout_errors = Bloxlink.get_module("utils", attrs="suppress_timeout_errors")
 
 active_prompts = {}
+
+
+class StringArgumentModal(discord.ui.Modal, title="Bloxlink Prompt"):
+    def __init__(self, *args, **kwargs):
+        self.value = None
+        super().__init__(*args, **kwargs)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Recorded! Please proceed to the next step.", ephemeral=True)
+        for child in self.children:
+            if child.custom_id == "custom_response:text":
+                self.value = child.value
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        await interaction.response.send_message('Oops! Something went wrong.', ephemeral=True)
+        traceback.print_tb(error.__traceback__)
 
 
 class Arguments:
@@ -103,16 +120,27 @@ class Arguments:
         self.command_args.add(parsed_args=self.parsed_args, string_args=text_after and text_after.split(" ") or [])
 
 
-    async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False, components=None):
+    async def say(self, text, type=None, footer=None, embed_title=None, is_prompt=True, embed_color=INVISIBLE_COLOR, embed=True, dm=False, components=None, current_prompt=None):
+        components = components or []
+        current_prompt = current_prompt or {}
         embed_color = embed_color or INVISIBLE_COLOR
         view = discord.ui.View(timeout=PROMPT["PROMPT_TIMEOUT"])
 
-        if components:
-            for component in components:
-                if isinstance(component, discord.ui.Button):
-                    component.custom_id = component.label
+        component_order = [c for c in components if isinstance(c, discord.ui.Select)]
 
-                view.add_item(item=component)
+        if type != "error" and current_prompt.get("showFreeResponseButton", True):
+            component_order.append(discord.ui.Button(style=discord.ButtonStyle.primary, label="Type Response", custom_id="custom_response"))
+
+        # then add everything else
+        for component in components:
+            if not isinstance(component, discord.ui.Select):
+                component_order.append(component)
+
+            if isinstance(component, discord.ui.Button):
+                component.custom_id = component.label
+
+        for component in component_order:
+            view.add_item(item=component)
 
         if type != "error":
             view.add_item(item=discord.ui.Button(style=discord.ButtonStyle.secondary, label="Cancel", custom_id="cancel"))
@@ -247,7 +275,10 @@ class Arguments:
                         if current_prompt.get("formatting", True):
                             prompt_text = prompt_text.format(**resolved_args)
 
-                        bot_prompt = await self.say(prompt_text, embed_title=current_prompt.get("embed_title"), embed_color=current_prompt.get("embed_color"), footer=current_prompt.get("footer"), type=error and "error", embed=True, dm=dm, components=current_prompt.get("components", []))
+                        bot_prompt = await self.say(prompt_text, embed_title=current_prompt.get("embed_title"), embed_color=current_prompt.get("embed_color"), footer=current_prompt.get("footer"), type=error and "error", embed=True, dm=dm, components=current_prompt.get("components", []), current_prompt=current_prompt)
+
+                        if current_prompt.get("send_ephemeral"):
+                            await self.response.send(current_prompt["send_ephemeral"], hidden=True)
 
                         if dm and IS_DOCKER:
                             message_data = (await broadcast(self.author.id, type="DM_AND_INTERACTION", send_to=f"{RELEASE}:CLUSTER_0", waiting_for=1, timeout=PROMPT["PROMPT_TIMEOUT"]+50))[0]
@@ -323,6 +354,17 @@ class Arguments:
 
                         if custom_id == "cancel":
                             raise CancelledPrompt(type="delete")
+                        elif custom_id == "custom_response":
+                            modal = StringArgumentModal()
+                            modal.add_item(item=discord.ui.TextInput(label=current_prompt.get("modal_label") or "Type a value...",
+                                style=discord.TextStyle.paragraph,
+                                required=True,
+                                max_length=2000,
+                                custom_id="custom_response:text"))
+                            await self.response.send_modal(modal)
+                            await modal.wait()
+                            current_input = modal.value
+
                         elif current_input_lower == "cancel":
                             raise CancelledPrompt(type="delete", dm=dm)
                         elif current_input_lower == "cancel (timeout)":

@@ -93,8 +93,8 @@
 					"choices": ["group", "asset", "badge", "gamepass", "devforum members", "roblox staff"]
 				},
 				"nicknamePrompt": {
-					"line": "Should these members be given a nickname different from the server-wide `/nickname`? Please specify a nickname, or say `skip` to skip this option and default to the server-wide nickname `/nickname` template.\n\nYou may use these templates: ```{nickname_templates}```",
-					"footer": "Say **skip** to skip this option."
+					"line": "Should these members be given a nickname different from the server-wide nickname template? Please specify a nickname, or say `skip` to skip this option and default to the server-wide nickname template.\n\nYou may use these templates: ```{nickname_templates}```",
+					"footer": "Press the button and type **skip** to skip this option."
 				},
 				"groupPrompt": {
 					"line": "Please specify the **Group ID** to integrate with. The group ID is the rightmost numbers on your Group URL."

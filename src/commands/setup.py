@@ -65,11 +65,12 @@ class SetupCommand(Bloxlink.Module):
                           "such as the ability to `manage roles, nicknames, channels`, etc. If you do not set these "
                           "permissions, you may encounter issues with using certain commands.",
                 "name": "_",
-                "footer": "Say **next** to continue.",
+                "footer": "Click **next** to continue.",
                 "type": "choice",
                 "choices": ["next"],
                 "components": [discord.ui.Button(label="Next", style=discord.ButtonStyle.primary)],
-                "embed_title": "Setup Prompt"
+                "embed_title": "Setup Prompt",
+                "showFreeResponseButton": False
             },
             {
                 "prompt": "Should your members be given a nickname? Please create a nickname using these templates. You may "
@@ -78,22 +79,25 @@ class SetupCommand(Bloxlink.Module):
                 "embed_title": "Setup Prompt",
                 "footer": "Say **disable** to not have a nickname.\nSay **skip** to leave this as the default (`{smart-name}`).",
                 "formatting": False,
-                "exceptions": ("disable", "skip")
+                "exceptions": ("disable", "skip"),
+                "send_ephemeral": "Please click the `Type Response` button and type your nickname template."
             },
             {
                 "prompt": "Would you like to change the **Verified role** (the role people are given if they're linked to Bloxlink) name to something else?\n"
                           "Default: `Verified`",
                 "name": "verified_role",
-                "footer": "Say **disable** to disable the Verified role.\nSay **skip** to leave as-is.",
+                "footer": "Type **disable** to disable the Verified role.\nType **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
-                "max": 50
+                "max": 50,
+                "send_ephemeral": "Please click the `Type Response` button and type your response."
             },
             {
                 "prompt": "Would you like to link a **Roblox group** to this Discord server? Please provide the **Group URL, or Group ID**.",
                 "name": "group",
                 "footer": "Say **skip** to leave as-is.",
                 "embed_title": "Setup Prompt",
-                "validation": self.validate_group
+                "validation": self.validate_group,
+                "send_ephemeral": "Please click the `Type Response` button and type your group ID or URL."
             }
         ], dm=False, no_dm_post=False)
 
@@ -124,7 +128,8 @@ class SetupCommand(Bloxlink.Module):
                             discord.SelectOption(label="Skip", description="Your roles will be un-touched.")
                         ])],
                     "choices": ["merge", "replace", "skip", "next"],
-                    "embed_title": "Setup Prompt"
+                    "embed_title": "Setup Prompt",
+                    "showFreeResponseButton": False
 
                 }
             ], dm=False, no_dm_post=True))["merge_replace"][0]
@@ -143,12 +148,13 @@ class SetupCommand(Bloxlink.Module):
                            + "\n".join(settings_buffer),
                 "name": "setup_complete",
                 "type": "choice",
-                "footer": "Please say **done** to complete the setup.",
+                "footer": "Please click **done** to complete the setup.",
                 "choices": ["done"],
                 "embed_title": "Setup Prompt Confirmation",
                 "embed_color": BROWN_COLOR,
                 "components": [discord.ui.Button(label="Done", style=discord.ButtonStyle.primary)],
-                "formatting": False
+                "formatting": False,
+                "showFreeResponseButton": False
             }
         ], dm=False, no_dm_post=True, last=True)
 

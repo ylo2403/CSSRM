@@ -20,7 +20,7 @@ class PingCommand(Bloxlink.Module):
         t_1 = time.perf_counter()
 
         try:
-            await channel.trigger_typing()
+            await channel.typing()
         except (NotFound, Forbidden):
             pass
 

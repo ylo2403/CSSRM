@@ -268,7 +268,6 @@ intents = Intents.none()
 intents.members = True # pylint: disable=assigning-non-slot
 intents.guilds = True # pylint: disable=assigning-non-slot
 intents.guild_reactions = True # pylint: disable=assigning-non-slot
-intents.guild_messages = True # pylint: disable=assigning-non-slot
 intents.dm_messages = True # pylint: disable=assigning-non-slot
 intents.bans = True # pylint: disable=assigning-non-slot
 

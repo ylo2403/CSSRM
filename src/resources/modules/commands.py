@@ -420,7 +420,7 @@ class Commands(Bloxlink.Module):
 
                     try:
                         await channel.purge(limit=100, check=lambda m: m.id in delete_messages)
-                        await interaction.delete_original_message()
+                        await interaction.delete_original_response()
                     except (discord.errors.Forbidden, discord.errors.HTTPException):
                         pass
 

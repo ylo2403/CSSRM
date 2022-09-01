@@ -1,5 +1,4 @@
 from os import environ
-import discord.http
 import asyncio
 import logging
 import signal
@@ -12,7 +11,6 @@ logger = logging.getLogger()
 logging.basicConfig(level=getattr(logging, environ.get("LOG_LEVEL", "WARNING")))
 
 
-discord.http._set_api_version(9)
 
 async def register_modules():
     get_files = Bloxlink.get_module("utils", attrs="get_files")
@@ -89,7 +87,8 @@ async def main():
     await signals_handler()
     await register_modules()
 
-    await Bloxlink.start(TOKEN)
+    async with Bloxlink as bot:
+        await bot.start(TOKEN)
 
 
 

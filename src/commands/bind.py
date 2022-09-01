@@ -59,8 +59,6 @@ class BindCommand(Bloxlink.Module):
         author = CommandArgs.author
         locale = CommandArgs.locale
 
-        role_binds_trello, group_ids_trello = await get_binds(guild=guild)
-
         bind_count = await count_binds(guild)
 
         if bind_count >= FREE_BIND_COUNT:
@@ -80,11 +78,10 @@ class BindCommand(Bloxlink.Module):
                         discord.SelectOption(label="Asset", description="Users need to own this catalog item."),
                         discord.SelectOption(label="Badge", description="Users need to own this badge."),
                         discord.SelectOption(label="GamePass", description="Users need to own this GamePass."),
-                        # discord.SelectOption(label="DevForum Members", description="Users need to be a member of the DevForum."),
-                        # discord.SelectOption(label="Roblox Staff", description="Users need to be Roblox Staff members."),
                     ])],
                 "choices": locale("commands.bind.prompts.bindTypePrompt.choices"),
-                "formatting": False
+                "formatting": False,
+                "showFreeResponseButton": False
             },
             {
                 "prompt": locale("commands.bind.prompts.nicknamePrompt.line", nickname_templates=NICKNAME_TEMPLATES),
@@ -92,7 +89,8 @@ class BindCommand(Bloxlink.Module):
                 "max": 100,
                 "type": "string",
                 "footer": locale("commands.bind.prompts.nicknamePrompt.footer"),
-                "formatting": False
+                "formatting": False,
+                "send_ephemeral": "Please click the `Type Response` button and type your nickname template."
             },
             {
                 "prompt": "Should any **additional** roles be **removed from the user** if they meet the bind conditions? You can specify multiple roles.\n\n"
@@ -103,7 +101,7 @@ class BindCommand(Bloxlink.Module):
                 "type": "role",
                 "max": 10,
                 "exceptions": ("skip",),
-                "footer": "Say **skip** to skip this option."
+                "components": [discord.ui.Button(label="Skip")],
             }
         ])
 
@@ -116,14 +114,14 @@ class BindCommand(Bloxlink.Module):
                           "Display Names **aren't unique** and can **lead to impersonation.** Are you sure you want to use this? yes/no",
                 "type": "choice",
                 "components": [discord.ui.Select(max_values=1, options=[
-                        discord.SelectOption(label="Yes"),
-                        discord.SelectOption(label="No"),
-                    ])],
+                               discord.SelectOption(label="Yes"),
+                               discord.SelectOption(label="No")])],
                 "choices": ("yes", "no"),
                 "name": "confirm",
                 "embed_title": "Display Names Confirmation",
                 "embed_color": BROWN_COLOR,
-                "formatting": False
+                "formatting": False,
+                "showFreeResponseButton": False
             }]))["confirm"][0]
 
             if display_name_confirm == "no":
@@ -142,7 +140,8 @@ class BindCommand(Bloxlink.Module):
                 {
                     "prompt": locale("commands.bind.prompts.groupPrompt.line"),
                     "name": "group",
-                    "validation": self.validate_group
+                    "validation": self.validate_group,
+                    "send_ephemeral": "Please click the `Type Response` button and type your group ID or URL."
                 },
                 {
                 "prompt": f"{locale('commands.bind.prompts.groupBindMode.line_1', arrow=ARROW)}\n"
@@ -154,7 +153,8 @@ class BindCommand(Bloxlink.Module):
                             discord.SelectOption(label="Select specific rolesets", description="You can choose how the roles are called."),
                         ])],
                     "type": "choice",
-                    "choices": ("link my entire group", "select specific rolesets")
+                    "choices": ("link my entire group", "select specific rolesets"),
+                    "showFreeResponseButton": False
                 }
             ])
 
@@ -209,7 +209,8 @@ class BindCommand(Bloxlink.Module):
                         "name": "role",
                         "type": "role",
                         "multiple": True,
-                        "max": 10
+                        "max": 10,
+                        "send_ephemeral": "Please click the `Type Response` button and type the name of your roles."
                     }
                 ])
 
@@ -241,15 +242,16 @@ class BindCommand(Bloxlink.Module):
                         {
                             "prompt": f"Please select the rolesets that should receive the role(s) **{', '.join([r.name for r in discord_roles])}**. "
                                        "You may specify the roleset name or ID. You may provide them in a list, "
-                                       "or as a range. You may also say `everyone` to capture everyone in the group; "
+                                       "or as a range. You may also type `everyone` to capture everyone in the group; "
                                        "and you can negate the number to catch everyone with the rank _and above._\n"
-                                       "You can also say `guest` to include **all non-group members**.\n\n"
+                                       "You can also type `guest` to include **all non-group members**.\n\n"
                                        "Example 1: `1,4,-6,VIP, 10, 50-100, Staff Members, 255`.\nExample 2: `"
                                        "-100` means everyone with rank 100 _and above._\nExample 3: `everyone` "
                                        "means everyone in the group.\n\n"
                                        "For your convenience, your Rolesets' names and IDs were sent above.",
                             "name": "ranks",
-                            "formatting": False
+                            "formatting": False,
+                            "send_ephemeral": "Please click the `Type Response` button and type your ranks."
 
                         }
                     ], last=True)
@@ -406,7 +408,8 @@ class BindCommand(Bloxlink.Module):
                         "prompt": f"Please provide the **{bind_choice_title} ID** to use for this bind.",
                         "name": "bind_id",
                         "type": "number",
-                        "formatting": False
+                        "formatting": False,
+                        "send_ephemeral": "Please click the `Type Response` button and type your response."
                     }
                 ])
 
@@ -416,7 +419,8 @@ class BindCommand(Bloxlink.Module):
                     "name": "role",
                     "type": "role",
                     "multiple": True,
-                    "max": 10
+                    "max": 10,
+                    "send_ephemeral": "Please click the `Type Response` button and type the name of the roles."
                 },
             ], last=True)
 
